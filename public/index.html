@@ -289,6 +289,13 @@
             .app-card { padding: 32px 24px; border-radius: 20px; }
             .grid-inputs, .grid-buttons { grid-template-columns: 1fr; gap: 10px; }
             .divider { margin: 32px 0; }
+            
+            /* THE FIX: Puts the text back into the normal layout flow so it pushes the next input down */
+            .helper-text {
+                position: static;
+                margin-top: 6px;
+                white-space: normal;
+            }
         }
     </style>
 </head>
@@ -305,14 +312,21 @@
         <p class="subtitle">The universal transposer and Nashville Number engine.</p>
 
         <div class="info-box">
-            <h4>How it works</h4>
+            <h4>What is Chord Genius?</h4>
+            <p style="margin-top: 0; color: var(--text-muted); margin-bottom: 20px;">
+                Whether you need to shift a song's key to fit a singer's vocal range, or you want to prep a chart for a full band, Chord Genius does the heavy musical math for you. It instantly converts standard chords into any new key, or into the universal Nashville Number System.
+            </p>
+            
+            <h4>How to Use It</h4>
             <ul>
-                <li><strong>Search:</strong> Scrapes directly from Ultimate Guitar's database.</li>
-                <li><strong>Upload:</strong> Drop a local .txt or .docx chart to process.</li>
-                <li><strong>Transposition:</strong> Leave "To Key" set to Nashville to generate numbers, or select a specific key (e.g. 'G') to transpose the chords!</li>
+                <li><strong>1. Find Your Chart:</strong> Type a song name to instantly pull a chart from Ultimate Guitar's database, or upload your own local document.</li>
+                <li><strong>2. Verify the Original Key:</strong> We attempt to auto-detect the song's starting key. If it looks incorrect, you can manually override it using the <strong>Orig Key</strong> dropdown.</li>
+                <li><strong>3. Transpose or Convert:</strong> Select a new <strong>To Key</strong> to instantly transpose the song. If you want a chart that any musician can read regardless of key, leave it set to "Nashville" to convert the chords into numbers (e.g., 1, 4, 5).</li>
+                <li><strong>4. Download:</strong> Choose your format (.DOCX for easy editing, or .PDF for a stage-ready layout) and hit convert!</li>
             </ul>
-            <div class="warning-box">
-                ⚠️ Scraped keys can occasionally be incorrect. If the output looks wrong, verify the actual key and select it manually in the <strong>Orig Key</strong> box.
+
+            <div class="warning-box" style="margin-top: 20px;">
+                ⚠️ <strong>Note:</strong> Charts scraped from the web rely on the original author's accuracy. Always double-check that the starting key makes sense for the song!
             </div>
         </div>
 
