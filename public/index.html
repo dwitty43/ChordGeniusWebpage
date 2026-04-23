@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chord Genius Chart Generator</title>
     <style>
-        /* --- GLOBAL VARIABLES --- */
+        /* --- GLOBAL VARIABLES (Light Mode) --- */
         :root {
             --primary: #4f46e5;      
             --primary-hover: #4338ca;
@@ -24,12 +24,12 @@
 
         /* --- DARK MODE OVERRIDES --- */
         [data-theme="dark"] {
-            --bg-color: #111827;     /* Deep gray/black background */
-            --card-bg: #1f2937;      /* Darker card */
-            --input-bg: #374151;     /* Dark inputs */
-            --text-main: #f9fafb;    /* White text */
-            --text-muted: #9ca3af;   /* Light gray text */
-            --border: #374151;       /* Dark borders */
+            --bg-color: #111827;     
+            --card-bg: #1f2937;      
+            --input-bg: #374151;     
+            --text-main: #f9fafb;    
+            --text-muted: #9ca3af;   
+            --border: #374151;       
         }
 
         /* --- BASE STYLES --- */
@@ -48,7 +48,7 @@
         .app-card {
             background-color: var(--card-bg);
             width: 100%;
-            max-width: 600px;
+            max-width: 650px; /* Widened slightly for the new UI */
             padding: 40px;
             border-radius: 16px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05), 0 4px 6px rgba(0, 0, 0, 0.05);
@@ -66,7 +66,7 @@
         
         p.subtitle {
             color: var(--text-muted);
-            margin-bottom: 30px;
+            margin-bottom: 24px;
             font-size: 15px;
         }
 
@@ -75,6 +75,43 @@
             margin-bottom: 16px;
             font-size: 18px;
             color: var(--text-main);
+        }
+
+        /* --- INFO BOX & INSTRUCTIONS --- */
+        .info-box {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 30px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .info-box h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: var(--text-main);
+            font-size: 15px;
+        }
+        .info-box ul {
+            margin: 0 0 16px 0;
+            padding-left: 20px;
+            color: var(--text-muted);
+        }
+        .info-box li {
+            margin-bottom: 6px;
+        }
+        .warning-box {
+            padding: 10px 12px;
+            background-color: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-left: 4px solid #f59e0b;
+            color: #b45309;
+            border-radius: 4px;
+            font-size: 13.5px;
+        }
+        [data-theme="dark"] .warning-box {
+            color: #fbbf24;
         }
 
         /* --- LAYOUT SECTIONS --- */
@@ -103,8 +140,8 @@
             border: 1px solid var(--border);
             border-radius: 8px;
             outline: none;
-            background-color: var(--input-bg); /* Added */
-            color: var(--text-main);           /* Added */
+            background-color: var(--input-bg);
+            color: var(--text-main);
             transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s, color 0.3s;
         }
         
@@ -114,7 +151,7 @@
         }
 
         #songKey, #uploadKey {
-            flex: 0 0 100px; /* Key inputs stay narrow */
+            flex: 0 0 100px;
         }
 
         /* File Input Styling */
@@ -124,9 +161,10 @@
             font-size: 14px;
             border: 1px dashed var(--border);
             border-radius: 8px;
-            color: var(--text-muted);
+            color: var(--text-main);
             background-color: var(--input-bg);
             cursor: pointer;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
         }
         input[type="file"]::file-selector-button {
             margin-right: 12px;
@@ -137,7 +175,7 @@
             color: var(--text-main);
             font-weight: 500;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: background-color 0.2s, color 0.3s;
         }
         input[type="file"]::file-selector-button:hover {
             background-color: var(--border);
@@ -174,6 +212,7 @@
             color: var(--text-main);
             outline: none;
             cursor: pointer;
+            font-weight: 600;
         }
 
         #searchBtn { background-color: var(--primary); }
@@ -204,7 +243,7 @@
             font-size: 14px;
             font-weight: 500;
             text-align: center;
-            display: none; /* Hidden until needed */
+            display: none;
         }
         
         .status-active { display: block !important; background-color: #f3f4f6; color: var(--text-muted); }
@@ -213,16 +252,27 @@
     </style>
 </head>
 <body>
-    <div class ="app-card">
 
+    <div class="app-card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <h1 style="margin: 0;">🎸 Chord Genius Converter</h1>
+            <h1 style="margin: 0;">🎸 Chord Genius Chart Converter</h1>
             <button id="themeToggle" style="background: none; border: none; padding: 8px; cursor: pointer; color: var(--text-main); box-shadow: none; flex: none; width: auto;">
                 <svg id="moonIcon" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
                 <svg id="sunIcon" style="display: none;" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
             </button>
         </div>
-        <p class="subtitle">Search the web or upload your own chart to instantly convert it to Nashville Numbers.</p>
+        <p class="subtitle">Convert chord charts into universal Nashville Numbers.</p>
+
+        <div class="info-box">
+            <h4>How to Use</h4>
+            <ul>
+                <li><strong>Search:</strong> Type a song name. We'll scrape the tab from Ultimate Guitar and convert it.</li>
+                <li><strong>Upload:</strong> Have your own .txt or .docx chart? Upload it, provide the original key, and we'll handle the rest.</li>
+            </ul>
+            <div class="warning-box">
+                ⚠️ <strong>Note:</strong> Keys auto-scraped from Ultimate Guitar can occasionally be incorrect depending on the author. If your chart looks wrong, try verifying the key and entering it manually in the (Opt) box!
+            </div>
+        </div>
 
         <div class="section">
             <div class="input-group">
@@ -231,11 +281,11 @@
             </div>
             
             <div class="button-group">
+                <select id="searchFormat" class="format-select">
+                    <option value="docx">.DOCX</option>
+                    <option value="pdf">.PDF</option>
+                </select>
                 <button id="searchBtn">Scrape & Convert</button>
-                    <select id="searchFormat" class="format-select">
-                        <option value="docx">.DOCX</option>
-                        <option value="pdf">.PDF</option>
-                    </select>
                 <button id="downloadSearchBtn" class="downloadBtn" disabled>Download Chart</button>
             </div>
         </div>
@@ -251,11 +301,11 @@
             </div>
             
             <div class="button-group">
+                <select id="uploadFormat" class="format-select">
+                    <option value="docx">.DOCX</option>
+                    <option value="pdf">.PDF</option>
+                </select>
                 <button id="uploadBtn">Convert File</button>
-                    <select id="uploadFormat" class="format-select">
-                        <option value="docx">.DOCX</option>
-                        <option value="pdf">.PDF</option>
-                    </select>
                 <button id="downloadUploadBtn" class="downloadBtn" disabled>Download Chart</button>
             </div>
         </div>
@@ -269,7 +319,6 @@
         const sunIcon = document.getElementById('sunIcon');
         const moonIcon = document.getElementById('moonIcon');
         
-        // Check local storage for saved preference
         let currentTheme = localStorage.getItem('theme') || 'light';
         if (currentTheme === 'dark') applyDarkTheme();
 
@@ -296,6 +345,7 @@
             moonIcon.style.display = 'block';
         }
 
+        // --- DOWNLOAD MANAGER ---
         let currentDownloadUrl = null;
         let currentFilename = "Chart.docx";
         const statusDiv = document.getElementById('status');
@@ -330,25 +380,45 @@
             if (type === 'error') statusDiv.classList.add('status-error');
         }
 
+        // --- UI SAFEGUARDS (Format Change Reset) ---
+        const searchFormat = document.getElementById('searchFormat');
+        const dlSearchBtn = document.getElementById('downloadSearchBtn');
+        const uploadFormat = document.getElementById('uploadFormat');
+        const dlUploadBtn = document.getElementById('downloadUploadBtn');
+
+        searchFormat.addEventListener('change', () => {
+            if (!dlSearchBtn.disabled) {
+                dlSearchBtn.disabled = true;
+                dlSearchBtn.innerHTML = "Download Chart";
+                showStatus("Format changed. Please click 'Scrape & Convert' again to generate the new file.", "active");
+            }
+        });
+
+        uploadFormat.addEventListener('change', () => {
+            if (!dlUploadBtn.disabled) {
+                dlUploadBtn.disabled = true;
+                dlUploadBtn.innerHTML = "Download Chart";
+                showStatus("Format changed. Please click 'Convert File' again to generate the new file.", "active");
+            }
+        });
+
+
         // --- SEARCH LOGIC ---
         const searchBtn = document.getElementById('searchBtn');
         searchBtn.addEventListener('click', async () => {
             const query = document.getElementById('songQuery').value;
             const key = document.getElementById('songKey').value;
-            const format = document.getElementById('searchFormat').value;
-            const dlBtn = document.getElementById('downloadSearchBtn');
+            const format = searchFormat.value;
 
             if (!query) return showStatus("Please enter a song name!", "error");
 
-            // UI Loading State
             const originalBtnHTML = searchBtn.innerHTML;
             searchBtn.innerHTML = "⏳ Scraping...";
             searchBtn.disabled = true;
-            dlBtn.disabled = true;
+            dlSearchBtn.disabled = true;
             showStatus("Searching Ultimate Guitar and converting chords...", "active");
 
             try {
-                // FIXED: Now properly appends &format=pdf to the URL!
                 let url = `/api/convert?q=${encodeURIComponent(query)}&format=${format}`;
                 if (key) url += `&key=${encodeURIComponent(key)}`;
 
@@ -357,29 +427,26 @@
 
                 setupDownload(await response.blob(), response.headers.get('Content-Disposition'));
                 
-                // Update button to reflect the chosen format
-                dlBtn.innerHTML = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Download .${format.toUpperCase()}`;
-                dlBtn.disabled = false;
+                dlSearchBtn.innerHTML = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Download .${format.toUpperCase()}`;
+                dlSearchBtn.disabled = false;
                 showStatus("Chart generated! Ready to download.", "success");
 
             } catch (error) {
                 showStatus(`Error: ${error.message}`, "error");
             } finally {
-                // Restore original button state
                 searchBtn.innerHTML = originalBtnHTML;
                 searchBtn.disabled = false;
             }
         });
 
-        document.getElementById('downloadSearchBtn').addEventListener('click', triggerDownload);
+        dlSearchBtn.addEventListener('click', triggerDownload);
 
         // --- UPLOAD LOGIC ---
         const uploadBtn = document.getElementById('uploadBtn');
         uploadBtn.addEventListener('click', async () => {
             const fileInput = document.getElementById('fileInput');
             const key = document.getElementById('uploadKey').value;
-            const format = document.getElementById('uploadFormat').value;
-            const dlBtn = document.getElementById('downloadUploadBtn');
+            const format = uploadFormat.value;
             const file = fileInput.files[0];
 
             if (!file) return showStatus("Please select a file to upload!", "error");
@@ -387,23 +454,22 @@
 
             const validExtensions = ['.txt', '.docx'];
             const fileName = file.name.toLowerCase();
-
+            
             if (!validExtensions.some(ext => fileName.endsWith(ext))) {
                 return showStatus("Security Block: Only .txt and .docx files are allowed.", "error");
             }
-            if (file.size > 5 * 1024 * 1024) {
+            if (file.size > 5 * 1024 * 1024) { 
                 return showStatus("File is too large! Maximum allowed size is 5MB.", "error");
             }
-            
-            // UI Loading State
+
             const originalBtnHTML = uploadBtn.innerHTML;
             uploadBtn.innerHTML = "⏳ Converting...";
             uploadBtn.disabled = true;
-            dlBtn.disabled = true;
+            dlUploadBtn.disabled = true;
             showStatus("Uploading and aligning chart...", "active");
 
             const formData = new FormData();
-            formData.append('chartFile', fileInput.files[0]);
+            formData.append('chartFile', file);
             formData.append('key', key);
             formData.append('format', format);
 
@@ -413,21 +479,19 @@
 
                 setupDownload(await response.blob(), response.headers.get('Content-Disposition'));
                 
-                // Update button to reflect the chosen format
-                dlBtn.innerHTML = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Download .${format.toUpperCase()}`;
-                dlBtn.disabled = false;
+                dlUploadBtn.innerHTML = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Download .${format.toUpperCase()}`;
+                dlUploadBtn.disabled = false;
                 showStatus("File converted! Ready to download.", "success");
 
             } catch (error) {
                 showStatus(`Error: ${error.message}`, "error");
             } finally {
-                // Restore original button state
                 uploadBtn.innerHTML = originalBtnHTML;
                 uploadBtn.disabled = false;
             }
         });
 
-        document.getElementById('downloadUploadBtn').addEventListener('click', triggerDownload);
+        dlUploadBtn.addEventListener('click', triggerDownload);
     </script>
 </body>
 </html>
