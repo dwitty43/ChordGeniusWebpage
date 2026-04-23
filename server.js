@@ -19,23 +19,22 @@ app.use(express.static('public'));
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-// --- HELPER: Handles sending the correct format ---
-async function deliverFile(res, finalChart, originalName, songKey, format) {
+async function deliverFile(res, finalChart, originalName, targetKey, format) {
     let fileBuffer;
     let contentType;
     let extension;
 
     if (format === 'pdf') {
-        fileBuffer = await createPdfChart(finalChart, originalName, songKey);
+        fileBuffer = await createPdfChart(finalChart, originalName, targetKey);
         contentType = 'application/pdf';
         extension = 'pdf';
     } else {
-        fileBuffer = await createDocxChart(finalChart, originalName, songKey);
+        fileBuffer = await createDocxChart(finalChart, originalName, targetKey);
         contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
         extension = 'docx';
     }
 
-    const safeFilename = `${originalName.replace(/\s+/g, '_')}_Nashville.${extension}`;
+    const safeFilename = `${originalName.replace(/\s+/g, '_')}_Chart.${extension}`;
     res.setHeader('Content-Disposition', `attachment; filename="${safeFilename}"`);
     res.setHeader('Content-Type', contentType);
     res.send(fileBuffer);
@@ -43,10 +42,11 @@ async function deliverFile(res, finalChart, originalName, songKey, format) {
     console.log(`[API] Successfully delivered: ${safeFilename}`);
 }
 
-// --- ROUTE 1: THE SEARCH SCRAPER ---
+// --- ROUTE 1: SEARCH ---
 app.get('/api/convert', async (req, res) => {
     const query = req.query.q;
     let songKey = req.query.key;
+    const targetKey = req.query.targetKey || ''; // New!
     const format = req.query.format || 'docx';
 
     if (!query) return res.status(400).json({ error: "Please provide a song query." });
@@ -61,17 +61,13 @@ app.get('/api/convert', async (req, res) => {
         if (!songKey) songKey = tabData.songKey;
 
         if (!songKey) {
-            return res.status(400).json({ 
-                error: "No key found on UG. Please provide a manual key.",
-                needsManualKey: true 
-            });
+            return res.status(400).json({ error: "No key found on UG. Please provide a manual key.", needsManualKey: true });
         }
 
-        console.log(`[API] Converting to Nashville (Key: ${songKey})...`);
-        const finalChart = processAndAlignTabs(tabData.rawTabText, songKey);
+        console.log(`[API] Transposing chart...`);
+        const finalChart = processAndAlignTabs(tabData.rawTabText, songKey, targetKey);
         
-        // Hand off to the delivery function and STOP.
-        await deliverFile(res, finalChart, query, songKey, format);
+        await deliverFile(res, finalChart, query, targetKey, format);
 
     } catch (error) {
         console.error(`[API Error]`, error.message);
@@ -79,9 +75,10 @@ app.get('/api/convert', async (req, res) => {
     }
 });
 
-// --- ROUTE 2: THE FILE IMPORTER ---
+// --- ROUTE 2: UPLOAD ---
 app.post('/api/import', upload.single('chartFile'), async (req, res) => {
     const songKey = req.body.key;
+    const targetKey = req.body.targetKey || ''; // New!
     const file = req.file;
     const format = req.body.format || 'docx';
 
@@ -103,11 +100,10 @@ app.post('/api/import', upload.single('chartFile'), async (req, res) => {
 
         const originalName = file.originalname.replace(/\.[^/.]+$/, ""); 
         
-        console.log(`[API] Converting uploaded file to Nashville (Key: ${songKey})...`);
-        const finalChart = processAndAlignTabs(extractedText, songKey);
+        console.log(`[API] Transposing uploaded chart...`);
+        const finalChart = processAndAlignTabs(extractedText, songKey, targetKey);
         
-        // Hand off to the delivery function and STOP.
-        await deliverFile(res, finalChart, originalName, songKey, format);
+        await deliverFile(res, finalChart, originalName, targetKey, format);
 
     } catch (error) {
         console.error(`[API Error]`, error.message);
@@ -116,7 +112,6 @@ app.post('/api/import', upload.single('chartFile'), async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-// THE FIX: Explicitly bind to 0.0.0.0 so Railway can route traffic
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🎸 Nashville Engine API is running on port ${PORT}`);
 });

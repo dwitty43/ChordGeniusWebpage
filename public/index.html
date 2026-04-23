@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chord Genius Chart Generator</title>
     <style>
-        /* --- GLOBAL VARIABLES (Light Mode) --- */
+        /* --- GLOBAL VARIABLES & RESET --- */
         :root {
             --primary: #4f46e5;      
             --primary-hover: #4338ca;
@@ -13,7 +13,6 @@
             --success-hover: #059669;
             --upload: #8b5cf6;       
             --upload-hover: #7c3aed;
-            
             --bg-color: #f3f4f6;     
             --card-bg: #ffffff;
             --input-bg: #ffffff;
@@ -22,7 +21,6 @@
             --border: #d1d5db;
         }
 
-        /* --- DARK MODE OVERRIDES --- */
         [data-theme="dark"] {
             --bg-color: #111827;     
             --card-bg: #1f2937;      
@@ -32,7 +30,10 @@
             --border: #374151;       
         }
 
-        /* --- BASE STYLES --- */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--bg-color);
@@ -48,34 +49,15 @@
         .app-card {
             background-color: var(--card-bg);
             width: 100%;
-            max-width: 650px; /* Widened slightly for the new UI */
+            max-width: 650px;
             padding: 40px;
             border-radius: 16px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05), 0 4px 6px rgba(0, 0, 0, 0.05);
         }
 
-        /* --- TYPOGRAPHY --- */
-        h1 {
-            margin-top: 0;
-            margin-bottom: 8px;
-            font-size: 28px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        p.subtitle {
-            color: var(--text-muted);
-            margin-bottom: 24px;
-            font-size: 15px;
-        }
-
-        h3 {
-            margin-top: 0;
-            margin-bottom: 16px;
-            font-size: 18px;
-            color: var(--text-main);
-        }
+        h1 { margin-top: 0; margin-bottom: 8px; font-size: 28px; display: flex; align-items: center; gap: 10px; }
+        p.subtitle { color: var(--text-muted); margin-bottom: 24px; font-size: 15px; }
+        h3 { margin-top: 0; margin-bottom: 16px; font-size: 18px; color: var(--text-main); }
 
         /* --- INFO BOX & INSTRUCTIONS --- */
         .info-box {
@@ -87,20 +69,10 @@
             font-size: 14px;
             line-height: 1.5;
         }
-        .info-box h4 {
-            margin-top: 0;
-            margin-bottom: 10px;
-            color: var(--text-main);
-            font-size: 15px;
-        }
-        .info-box ul {
-            margin: 0 0 16px 0;
-            padding-left: 20px;
-            color: var(--text-muted);
-        }
-        .info-box li {
-            margin-bottom: 6px;
-        }
+        .info-box h4 { margin-top: 0; margin-bottom: 10px; color: var(--text-main); font-size: 15px; }
+        .info-box ul { margin: 0 0 16px 0; padding-left: 20px; color: var(--text-muted); }
+        .info-box li { margin-bottom: 6px; }
+        
         .warning-box {
             padding: 10px 12px;
             background-color: rgba(245, 158, 11, 0.1);
@@ -110,24 +82,13 @@
             border-radius: 4px;
             font-size: 13.5px;
         }
-        [data-theme="dark"] .warning-box {
-            color: #fbbf24;
-        }
+        [data-theme="dark"] .warning-box { color: #fbbf24; }
 
-        /* --- LAYOUT SECTIONS --- */
-        .section {
-            padding-bottom: 30px;
-            margin-bottom: 30px;
-            border-bottom: 1px solid var(--border);
-        }
-        .section:last-of-type {
-            border-bottom: none;
-            padding-bottom: 10px;
-            margin-bottom: 0;
-        }
+        .section { padding-bottom: 30px; margin-bottom: 30px; border-bottom: 1px solid var(--border); }
+        .section:last-of-type { border-bottom: none; padding-bottom: 10px; margin-bottom: 0; }
 
-        /* --- INPUTS & FORMS --- */
-        .input-group {
+        /* --- INPUTS & BUTTONS --- */
+        .input-group, .button-group {
             display: flex;
             gap: 12px;
             margin-bottom: 16px;
@@ -142,113 +103,53 @@
             outline: none;
             background-color: var(--input-bg);
             color: var(--text-main);
-            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s, color 0.3s;
+            transition: all 0.2s;
         }
+        input[type="text"]:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
         
-        input[type="text"]:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        }
+        #songKey, #uploadKey, #targetKeySearch, #targetKeyUpload { flex: 0 0 110px; }
 
-        #songKey, #uploadKey {
-            flex: 0 0 100px;
-        }
-
-        /* File Input Styling */
         input[type="file"] {
-            flex: 1;
-            padding: 9px 12px;
-            font-size: 14px;
-            border: 1px dashed var(--border);
-            border-radius: 8px;
-            color: var(--text-main);
-            background-color: var(--input-bg);
-            cursor: pointer;
-            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+            flex: 1; padding: 9px 12px; font-size: 14px; border: 1px dashed var(--border);
+            border-radius: 8px; color: var(--text-main); background-color: var(--input-bg); cursor: pointer;
         }
         input[type="file"]::file-selector-button {
-            margin-right: 12px;
-            padding: 6px 12px;
-            border: 1px solid var(--border);
-            border-radius: 4px;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.2s, color 0.3s;
+            margin-right: 12px; padding: 6px 12px; border: 1px solid var(--border); border-radius: 4px;
+            background-color: var(--bg-color); color: var(--text-main); font-weight: 500; cursor: pointer;
         }
-        input[type="file"]::file-selector-button:hover {
-            background-color: var(--border);
-        }
-
-        /* --- BUTTONS --- */
-        .button-group {
-            display: flex;
-            gap: 12px;
-        }
+        input[type="file"]::file-selector-button:hover { background-color: var(--border); }
 
         button {
-            flex: 1;
-            padding: 12px 20px;
-            font-size: 15px;
-            font-weight: 600;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
+            flex: 1; padding: 12px 20px; font-size: 15px; font-weight: 600; color: white;
+            border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s;
+            display: flex; justify-content: center; align-items: center; gap: 8px;
         }
-
         .format-select {
-            padding: 12px;
-            font-size: 15px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            background-color: var(--input-bg);
-            color: var(--text-main);
-            outline: none;
-            cursor: pointer;
-            font-weight: 600;
+            padding: 12px; font-size: 15px; border-radius: 8px; border: 1px solid var(--border);
+            background-color: var(--input-bg); color: var(--text-main); outline: none; cursor: pointer; font-weight: 600;
         }
 
         #searchBtn { background-color: var(--primary); }
         #searchBtn:hover { background-color: var(--primary-hover); }
-
         #uploadBtn { background-color: var(--upload); }
         #uploadBtn:hover { background-color: var(--upload-hover); }
-
         .downloadBtn { background-color: var(--success); }
         .downloadBtn:hover:not(:disabled) { background-color: var(--success-hover); }
+        button:disabled { background-color: #9ca3af; opacity: 0.6; cursor: not-allowed; transform: none !important; }
+        button:active:not(:disabled) { transform: scale(0.98); }
 
-        button:disabled {
-            background-color: #9ca3af;
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none !important;
-        }
-
-        button:active:not(:disabled) {
-            transform: scale(0.98);
-        }
-
-        /* --- STATUS BAR --- */
-        #status {
-            margin-top: 24px;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 500;
-            text-align: center;
-            display: none;
-        }
-        
+        #status { margin-top: 24px; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 500; text-align: center; display: none; }
         .status-active { display: block !important; background-color: #f3f4f6; color: var(--text-muted); }
         .status-success { display: block !important; background-color: #d1fae5; color: #065f46; border: 1px solid #10b981; }
         .status-error { display: block !important; background-color: #fee2e2; color: #991b1b; border: 1px solid #ef4444; }
+
+        /* --- MOBILE RESPONSIVENESS --- */
+        @media (max-width: 600px) {
+            .app-card { padding: 24px; }
+            .input-group, .button-group { flex-direction: column; gap: 8px; }
+            input[type="text"], input[type="file"], select, button { width: 100%; }
+            #songKey, #uploadKey, #targetKeySearch, #targetKeyUpload { flex: none; }
+        }
     </style>
 </head>
 <body>
@@ -261,23 +162,25 @@
                 <svg id="sunIcon" style="display: none;" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
             </button>
         </div>
-        <p class="subtitle">Convert chord charts into universal Nashville Numbers.</p>
+        <p class="subtitle">Convert chord charts between keys or to universal Nashville Numbers.</p>
 
         <div class="info-box">
             <h4>How to Use</h4>
             <ul>
-                <li><strong>Search:</strong> Type a song name. We'll scrape the tab from Ultimate Guitar and convert it.</li>
-                <li><strong>Upload:</strong> Have your own .txt or .docx chart? Upload it, provide the original key, and we'll handle the rest.</li>
+                <li><strong>Search:</strong> Type a song. We'll scrape it from Ultimate Guitar.</li>
+                <li><strong>Upload:</strong> Have a .txt or .docx? Upload it directly.</li>
+                <li><strong>Transposition:</strong> Leave "To Key" blank to convert the chart into Nashville Numbers. Want to transpose a song? Enter your desired key (e.g., 'G'). You can even use this to turn an existing Nashville chart back into standard chords!</li>
             </ul>
             <div class="warning-box">
-                ⚠️ <strong>Note:</strong> Keys auto-scraped from Ultimate Guitar can occasionally be incorrect depending on the author. If your chart looks wrong, try verifying the key and entering it manually in the (Opt) box!
+                ⚠️ <strong>Note:</strong> Auto-scraped keys can occasionally be wrong. If the output looks incorrect, verify the original key and enter it manually in the "Orig Key" box!
             </div>
         </div>
 
         <div class="section">
             <div class="input-group">
                 <input type="text" id="songQuery" placeholder='Search (e.g. "Gravity John Mayer")'>
-                <input type="text" id="songKey" placeholder='Key (Opt)'>
+                <input type="text" id="songKey" placeholder='Orig Key (Opt)'>
+                <input type="text" id="targetKeySearch" placeholder='To Key (Opt)'>
             </div>
             
             <div class="button-group">
@@ -297,7 +200,8 @@
             </p>
             <div class="input-group">
                 <input type="file" id="fileInput" accept=".txt,.docx">
-                <input type="text" id="uploadKey" placeholder='Key (Req)'>
+                <input type="text" id="uploadKey" placeholder='Orig Key (Req)'>
+                <input type="text" id="targetKeyUpload" placeholder='To Key (Opt)'>
             </div>
             
             <div class="button-group">
@@ -314,7 +218,6 @@
     </div>
 
     <script>
-        // --- DARK MODE LOGIC ---
         const themeToggle = document.getElementById('themeToggle');
         const sunIcon = document.getElementById('sunIcon');
         const moonIcon = document.getElementById('moonIcon');
@@ -324,11 +227,8 @@
 
         themeToggle.addEventListener('click', () => {
             currentTheme = currentTheme === 'light' ? 'dark' : 'light';
-            if (currentTheme === 'dark') {
-                applyDarkTheme();
-            } else {
-                applyLightTheme();
-            }
+            if (currentTheme === 'dark') applyDarkTheme();
+            else applyLightTheme();
         });
 
         function applyDarkTheme() {
@@ -345,7 +245,6 @@
             moonIcon.style.display = 'block';
         }
 
-        // --- DOWNLOAD MANAGER ---
         let currentDownloadUrl = null;
         let currentFilename = "Chart.docx";
         const statusDiv = document.getElementById('status');
@@ -380,7 +279,6 @@
             if (type === 'error') statusDiv.classList.add('status-error');
         }
 
-        // --- UI SAFEGUARDS (Format Change Reset) ---
         const searchFormat = document.getElementById('searchFormat');
         const dlSearchBtn = document.getElementById('downloadSearchBtn');
         const uploadFormat = document.getElementById('uploadFormat');
@@ -402,12 +300,12 @@
             }
         });
 
-
         // --- SEARCH LOGIC ---
         const searchBtn = document.getElementById('searchBtn');
         searchBtn.addEventListener('click', async () => {
             const query = document.getElementById('songQuery').value;
             const key = document.getElementById('songKey').value;
+            const targetKey = document.getElementById('targetKeySearch').value;
             const format = searchFormat.value;
 
             if (!query) return showStatus("Please enter a song name!", "error");
@@ -416,11 +314,12 @@
             searchBtn.innerHTML = "⏳ Scraping...";
             searchBtn.disabled = true;
             dlSearchBtn.disabled = true;
-            showStatus("Searching Ultimate Guitar and converting chords...", "active");
+            showStatus("Searching Ultimate Guitar and processing chart...", "active");
 
             try {
                 let url = `/api/convert?q=${encodeURIComponent(query)}&format=${format}`;
                 if (key) url += `&key=${encodeURIComponent(key)}`;
+                if (targetKey) url += `&targetKey=${encodeURIComponent(targetKey)}`;
 
                 const response = await fetch(url);
                 if (!response.ok) throw new Error((await response.json()).error || "Conversion failed.");
@@ -446,6 +345,7 @@
         uploadBtn.addEventListener('click', async () => {
             const fileInput = document.getElementById('fileInput');
             const key = document.getElementById('uploadKey').value;
+            const targetKey = document.getElementById('targetKeyUpload').value;
             const format = uploadFormat.value;
             const file = fileInput.files[0];
 
@@ -466,11 +366,12 @@
             uploadBtn.innerHTML = "⏳ Converting...";
             uploadBtn.disabled = true;
             dlUploadBtn.disabled = true;
-            showStatus("Uploading and aligning chart...", "active");
+            showStatus("Uploading and processing chart...", "active");
 
             const formData = new FormData();
             formData.append('chartFile', file);
             formData.append('key', key);
+            formData.append('targetKey', targetKey);
             formData.append('format', format);
 
             try {
