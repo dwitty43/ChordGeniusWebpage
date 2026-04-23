@@ -287,14 +287,26 @@
         /* --- MOBILE RESPONSIVENESS --- */
         @media (max-width: 640px) {
             .app-card { padding: 32px 24px; border-radius: 20px; }
-            .grid-inputs, .grid-buttons { grid-template-columns: 1fr; gap: 10px; }
+            .grid-inputs, .grid-buttons { grid-template-columns: 1fr; gap: 12px; }
             .divider { margin: 32px 0; }
             
-            /* THE FIX: Puts the text back into the normal layout flow so it pushes the next input down */
+            /* THE FIX: Revert the forced height so the box doesn't squish the text */
+            input[type="file"] {
+                height: auto;
+            }
+
+            /* Push the next dropdown down to make room for the text */
+            .file-wrapper {
+                margin-bottom: 14px;
+            }
+
+            /* Sit the text naturally under the dashed box */
             .helper-text {
                 position: static;
-                margin-top: 6px;
+                display: block;
+                margin-top: 8px;
                 white-space: normal;
+                line-height: 1.4;
             }
         }
     </style>
@@ -321,7 +333,7 @@
             <ul>
                 <li><strong>1. Find Your Chart:</strong> Type a song name to instantly pull a chart from Ultimate Guitar's database, or upload your own local document.</li>
                 <li><strong>2. Verify the Original Key:</strong> We attempt to auto-detect the song's starting key. If it looks incorrect, you can manually override it using the <strong>Orig Key</strong> dropdown.</li>
-                <li><strong>3. Transpose or Convert:</strong> Select a new <strong>To Key</strong> to instantly transpose the song. If you want a chart that any musician can read regardless of key, leave it set to "Nashville" to convert the chords into numbers (e.g., 1, 4, 5).</li>
+                <li><strong>3. Transpose or Convert:</strong> To transpose a song, select your new <strong>To Key</strong>. To generate a universal number chart, leave it set to "Nashville". <em>(Pro-Tip: If you are uploading a chart that is already in numbers, select "Nashville Numbers" as your Orig Key!)</em></li>
                 <li><strong>4. Download:</strong> Choose your format (.DOCX for easy editing, or .PDF for a stage-ready layout) and hit convert!</li>
             </ul>
 
@@ -366,12 +378,11 @@
 
     <script>
         // --- KEY DROPDOWN POPULATOR ---
-        // Keeps the HTML clean while providing robust, validated options
         const standardKeys = ['C', 'C#', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
         const minorKeys = standardKeys.map(k => k + 'm');
 
         function populateKeySelects() {
-            const createOptGroups = (selectId, defaultText, isRequired, isTarget) => {
+            const createOptGroups = (selectId, defaultText, isRequired) => {
                 const select = document.getElementById(selectId);
                 
                 // Add the default placeholder option
@@ -383,6 +394,15 @@
                     defaultOpt.selected = true;
                 }
                 select.appendChild(defaultOpt);
+
+                // THE UPGRADE: Inject "Nashville Numbers" as an Orig Key option
+                if (selectId === 'songKey' || selectId === 'uploadKey') {
+                    const nashOpt = document.createElement('option');
+                    nashOpt.value = "nashville";
+                    nashOpt.textContent = "Nashville Numbers";
+                    nashOpt.style.fontWeight = "700";
+                    select.appendChild(nashOpt);
+                }
 
                 // Build the Major Keys group
                 const optGroupMajor = document.createElement('optgroup');
