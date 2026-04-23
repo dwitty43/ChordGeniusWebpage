@@ -3,40 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chord Genius Chart Generator</title>
+    <title>Chord Genius Studio</title>
     <style>
-        /* --- GLOBAL VARIABLES & RESET --- */
+        /* --- GLOBAL VARIABLES --- */
         :root {
-            --primary: #4f46e5;      
-            --primary-hover: #4338ca;
+            --primary: #6366f1;      
+            --primary-hover: #4f46e5;
             --success: #10b981;      
             --success-hover: #059669;
             --upload: #8b5cf6;       
             --upload-hover: #7c3aed;
-            --bg-color: #f3f4f6;     
+            
+            --bg-gradient: radial-gradient(circle at top left, #f3f4f6, #e5e7eb);
             --card-bg: #ffffff;
-            --input-bg: #ffffff;
-            --text-main: #1f2937;
+            --input-bg: #f9fafb;
+            --text-main: #111827;
             --text-muted: #6b7280;
-            --border: #d1d5db;
+            --border: #e5e7eb;
+            --shadow-soft: 0 20px 40px -10px rgba(0, 0, 0, 0.05), 0 10px 15px -5px rgba(0, 0, 0, 0.02);
+            --focus-ring: rgba(99, 102, 241, 0.2);
         }
 
+        /* --- DARK MODE OVERRIDES --- */
         [data-theme="dark"] {
-            --bg-color: #111827;     
-            --card-bg: #1f2937;      
-            --input-bg: #374151;     
-            --text-main: #f9fafb;    
-            --text-muted: #9ca3af;   
-            --border: #374151;       
+            --bg-gradient: radial-gradient(circle at top left, #1f2937, #111827);
+            --card-bg: #1e293b;      
+            --input-bg: #0f172a;     
+            --text-main: #f8fafc;    
+            --text-muted: #94a3b8;   
+            --border: #334155;       
+            --shadow-soft: 0 20px 40px -10px rgba(0, 0, 0, 0.3), 0 10px 15px -5px rgba(0, 0, 0, 0.2);
+            --focus-ring: rgba(99, 102, 241, 0.4);
         }
 
-        *, *::before, *::after {
-            box-sizing: border-box;
-        }
+        *, *::before, *::after { box-sizing: border-box; }
 
         body {
             font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-color);
+            background: var(--bg-gradient);
             color: var(--text-main);
             display: flex;
             justify-content: center;
@@ -44,198 +48,267 @@
             min-height: 100vh;
             margin: 0;
             padding: 20px;
+            transition: background 0.4s ease;
         }
 
+        /* --- THE APP CARD --- */
         .app-card {
             background-color: var(--card-bg);
             width: 100%;
-            max-width: 650px;
-            padding: 40px;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05), 0 4px 6px rgba(0, 0, 0, 0.05);
+            max-width: 700px;
+            padding: 48px;
+            border-radius: 24px;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid var(--border);
+            transition: background-color 0.4s ease, border-color 0.4s ease;
+            animation: fadeInUp 0.5s ease-out;
         }
 
-        h1 { margin-top: 0; margin-bottom: 8px; font-size: 28px; display: flex; align-items: center; gap: 10px; }
-        p.subtitle { color: var(--text-muted); margin-bottom: 24px; font-size: 15px; }
-        h3 { margin-top: 0; margin-bottom: 16px; font-size: 18px; color: var(--text-main); }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-        /* --- INFO BOX & INSTRUCTIONS --- */
-        .info-box {
-            background-color: var(--bg-color);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 30px;
-            font-size: 14px;
+        /* --- TYPOGRAPHY --- */
+        .header-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        h1 { 
+            margin: 0; 
+            font-size: 32px; 
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            line-height: 1.2;          /* ADDED: Gives vertical breathing room */
+            padding-bottom: 6px;       /* ADDED: Prevents the bottom of the 'g' from clipping */
+            background: linear-gradient(135deg, var(--primary), var(--upload));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        p.subtitle { 
+            color: var(--text-muted); 
+            margin-top: 0;
+            margin-bottom: 32px; 
+            font-size: 16px; 
             line-height: 1.5;
         }
-        .info-box h4 { margin-top: 0; margin-bottom: 10px; color: var(--text-main); font-size: 15px; }
+
+        /* --- INFO & WARNING BOXES --- */
+        .info-box {
+            background-color: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 36px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .info-box h4 { margin: 0 0 12px 0; color: var(--text-main); font-size: 15px; font-weight: 700;}
         .info-box ul { margin: 0 0 16px 0; padding-left: 20px; color: var(--text-muted); }
-        .info-box li { margin-bottom: 6px; }
+        .info-box li { margin-bottom: 8px; }
         
         .warning-box {
-            padding: 10px 12px;
+            padding: 12px 16px;
             background-color: rgba(245, 158, 11, 0.1);
-            border: 1px solid rgba(245, 158, 11, 0.2);
             border-left: 4px solid #f59e0b;
             color: #b45309;
-            border-radius: 4px;
+            border-radius: 0 8px 8px 0;
             font-size: 13.5px;
         }
         [data-theme="dark"] .warning-box { color: #fbbf24; }
 
-        .section { padding-bottom: 30px; margin-bottom: 30px; border-bottom: 1px solid var(--border); }
-        .section:last-of-type { border-bottom: none; padding-bottom: 10px; margin-bottom: 0; }
-
-        /* --- INPUTS & BUTTONS --- */
-        .input-group, .button-group {
+        /* --- DIVIDER --- */
+        .divider {
             display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 40px 0;
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid var(--border);
+        }
+        .divider::before { margin-right: 16px; }
+        .divider::after { margin-left: 16px; }
+
+        /* --- GRID LAYOUTS (The Magic Alignment) --- */
+        .grid-inputs {
+            display: grid;
+            grid-template-columns: 1fr 135px 135px; /* Increased from 110px to 135px */
             gap: 12px;
             margin-bottom: 16px;
         }
 
-        /* CRITICAL: min-width: 0 prevents placeholders from breaking the layout */
-        input[type="text"], input[type="file"] {
-            min-width: 0; 
+        .grid-buttons {
+            display: grid;
+            grid-template-columns: 135px 1fr 1fr; /* Matched to 135px so the dropdown perfectly aligns with the inputs above it */
+            gap: 12px;
         }
 
-        input[type="text"] {
-            padding: 12px 16px;
+        /* --- INPUTS & FORMS --- */
+        input[type="text"], input[type="file"], select {
+            width: 100%;
+            padding: 14px 16px;
             font-size: 15px;
             border: 1px solid var(--border);
-            border-radius: 8px;
+            border-radius: 12px;
             outline: none;
             background-color: var(--input-bg);
             color: var(--text-main);
-            transition: all 0.2s;
+            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s;
+            font-family: inherit;
         }
         
-        input[type="text"]:focus { 
+        input[type="text"]:focus, select:focus { 
             border-color: var(--primary); 
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); 
+            box-shadow: 0 0 0 4px var(--focus-ring); 
         }
-        
+
+        input[type="text"]::placeholder {
+            color: var(--text-muted);
+            opacity: 0.7;
+        }
+
+        /* Custom File Upload Styling */
+        .file-wrapper { position: relative; }
         input[type="file"] {
-            padding: 9px 12px; 
-            font-size: 14px; 
-            border: 1px dashed var(--border);
-            border-radius: 8px; 
-            color: var(--text-main); 
-            background-color: var(--input-bg); 
+            padding: 11px 16px;
+            border: 2px dashed var(--border);
             cursor: pointer;
         }
-        
         input[type="file"]::file-selector-button {
-            margin-right: 12px; padding: 6px 12px; border: 1px solid var(--border); border-radius: 4px;
-            background-color: var(--bg-color); color: var(--text-main); font-weight: 500; cursor: pointer;
+            margin-right: 16px; padding: 6px 14px; border: 1px solid var(--border); border-radius: 6px;
+            background-color: var(--card-bg); color: var(--text-main); font-weight: 600; cursor: pointer;
+            transition: all 0.2s;
         }
-        
-        input[type="file"]::file-selector-button:hover { 
-            background-color: var(--border); 
+        input[type="file"]::file-selector-button:hover { background-color: var(--border); }
+        input[type="file"]:focus { border-color: var(--upload); box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2); }
+
+        .helper-text {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 6px;
+            margin-left: 4px;
         }
 
-        /* --- PROPORTIONAL FLEX SIZING --- */
-        #songQuery, #fileInput { 
-            flex: 2; /* Main inputs take up 50% of the row */
-        }
-        #songKey, #uploadKey, #targetKeySearch, #targetKeyUpload { 
-            flex: 1; /* Key inputs take up 25% of the row each */
-        }
-
+        /* --- BUTTONS --- */
         button {
-            flex: 1; padding: 12px 20px; font-size: 15px; font-weight: 600; color: white;
-            border: none; border-radius: 8px; cursor: pointer; transition: all 0.2s;
-            display: flex; justify-content: center; align-items: center; gap: 8px;
+            width: 100%;
+            padding: 14px 20px;
+            font-size: 15px;
+            font-weight: 700;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
         }
-        
-        .format-select {
-            padding: 12px; font-size: 15px; border-radius: 8px; border: 1px solid var(--border);
-            background-color: var(--input-bg); color: var(--text-main); outline: none; cursor: pointer; font-weight: 600;
-        }
+
+        select { font-weight: 600; cursor: pointer; }
 
         #searchBtn { background-color: var(--primary); }
-        #searchBtn:hover { background-color: var(--primary-hover); }
+        #searchBtn:hover:not(:disabled) { background-color: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
+        
         #uploadBtn { background-color: var(--upload); }
-        #uploadBtn:hover { background-color: var(--upload-hover); }
+        #uploadBtn:hover:not(:disabled) { background-color: var(--upload-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3); }
+        
         .downloadBtn { background-color: var(--success); }
-        .downloadBtn:hover:not(:disabled) { background-color: var(--success-hover); }
-        button:disabled { background-color: #9ca3af; opacity: 0.6; cursor: not-allowed; transform: none !important; }
-        button:active:not(:disabled) { transform: scale(0.98); }
+        .downloadBtn:hover:not(:disabled) { background-color: var(--success-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
+        
+        button:disabled { background-color: var(--border); color: var(--text-muted); cursor: not-allowed; box-shadow: none; }
+        button:active:not(:disabled) { transform: translateY(1px); }
 
-        #status { margin-top: 24px; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 500; text-align: center; display: none; }
-        .status-active { display: block !important; background-color: #f3f4f6; color: var(--text-muted); }
-        .status-success { display: block !important; background-color: #d1fae5; color: #065f46; border: 1px solid #10b981; }
-        .status-error { display: block !important; background-color: #fee2e2; color: #991b1b; border: 1px solid #ef4444; }
+        /* --- STATUS NOTIFICATION --- */
+        #status { 
+            margin-top: 32px; padding: 16px; border-radius: 12px; font-size: 14px; font-weight: 600; text-align: center; display: none; 
+            animation: fadeInUp 0.3s ease-out;
+        }
+        .status-active { display: block !important; background-color: var(--input-bg); border: 1px solid var(--border); color: var(--text-muted); }
+        .status-success { display: block !important; background-color: rgba(16, 185, 129, 0.1); color: #059669; border: 1px solid rgba(16, 185, 129, 0.2); }
+        .status-error { display: block !important; background-color: rgba(239, 68, 68, 0.1); color: #b91c1c; border: 1px solid rgba(239, 68, 68, 0.2); }
+        [data-theme="dark"] .status-success { color: #34d399; }
+        [data-theme="dark"] .status-error { color: #f87171; }
 
         /* --- MOBILE RESPONSIVENESS --- */
-        @media (max-width: 600px) {
-            .app-card { padding: 24px; }
-            .input-group, .button-group { flex-direction: column; gap: 8px; }
-            input[type="text"], input[type="file"], select, button { width: 100%; }
-            #songQuery, #fileInput, #songKey, #uploadKey, #targetKeySearch, #targetKeyUpload { flex: none; }
+        @media (max-width: 640px) {
+            .app-card { padding: 32px 24px; border-radius: 20px; }
+            .grid-inputs, .grid-buttons { grid-template-columns: 1fr; gap: 10px; }
+            .divider { margin: 32px 0; }
         }
     </style>
 </head>
 <body>
 
     <div class="app-card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <h1 style="margin: 0;">🎸 Chord Genius Chart Generator</h1>
-            <button id="themeToggle" style="background: none; border: none; padding: 8px; cursor: pointer; color: var(--text-main); box-shadow: none; flex: none; width: auto;">
-                <svg id="moonIcon" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
-                <svg id="sunIcon" style="display: none;" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+        <div class="header-container">
+            <h1>Chord Genius</h1>
+            <button id="themeToggle" style="background: var(--input-bg); border: 1px solid var(--border); padding: 10px; border-radius: 12px; cursor: pointer; color: var(--text-main); width: auto; box-shadow: none;">
+                <svg id="moonIcon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                <svg id="sunIcon" style="display: none;" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
             </button>
         </div>
-        <p class="subtitle">Convert chord charts between keys or to universal Nashville Numbers.</p>
+        <p class="subtitle">The universal transposer and Nashville Number engine.</p>
 
         <div class="info-box">
-            <h4>How to Use</h4>
+            <h4>How it works</h4>
             <ul>
-                <li><strong>Search:</strong> Type a song. We'll scrape it from Ultimate Guitar.</li>
-                <li><strong>Upload:</strong> Have a .txt or .docx? Upload it directly.</li>
-                <li><strong>Transposition:</strong> Leave "To Key" blank to convert the chart into Nashville Numbers. Want to transpose a song? Enter your desired key (e.g., 'G'). You can even use this to turn an existing Nashville chart back into standard chords!</li>
+                <li><strong>Search:</strong> Scrapes directly from Ultimate Guitar's database.</li>
+                <li><strong>Upload:</strong> Drop a local .txt or .docx chart to process.</li>
+                <li><strong>Transposition:</strong> Leave "To Key" blank to create a Nashville chart, or enter a specific key (e.g. 'G') to transpose the chords!</li>
             </ul>
             <div class="warning-box">
-                ⚠️ <strong>Note:</strong> Auto-scraped keys can occasionally be wrong. If the output looks incorrect, verify the original key and enter it manually in the "Orig Key" box!
+                ⚠️ Scraped keys can occasionally be incorrect. If the output looks wrong, verify the actual key and enter it manually in the <strong>Orig Key</strong> box.
             </div>
         </div>
 
-        <div class="section">
-            <div class="input-group">
-                <input type="text" id="songQuery" placeholder='Search (e.g. "Gravity John Mayer")'>
-                <input type="text" id="songKey" placeholder='Orig Key (Opt)'>
-                <input type="text" id="targetKeySearch" placeholder='To Key (Opt)'>
-            </div>
-            
-            <div class="button-group">
-                <select id="searchFormat" class="format-select">
-                    <option value="docx">.DOCX</option>
-                    <option value="pdf">.PDF</option>
-                </select>
-                <button id="searchBtn">Scrape & Convert</button>
-                <button id="downloadSearchBtn" class="downloadBtn" disabled>Download Chart</button>
-            </div>
+        <div class="grid-inputs">
+            <input type="text" id="songQuery" placeholder='Search (e.g. "Gravity John Mayer")'>
+            <input type="text" id="songKey" placeholder='Orig Key'>
+            <input type="text" id="targetKeySearch" placeholder='To Key'>
+        </div>
+        
+        <div class="grid-buttons">
+            <select id="searchFormat">
+                <option value="docx">.DOCX</option>
+                <option value="pdf">.PDF</option>
+            </select>
+            <button id="searchBtn">Scrape & Convert</button>
+            <button id="downloadSearchBtn" class="downloadBtn" disabled>Download Chart</button>
         </div>
 
-        <div class="section">
-            <h3>Or Upload a File</h3>
-            <p style="font-size: 13px; color: var(--text-muted); margin-top: -10px; margin-bottom: 15px;">
-                Supported formats: <strong>.txt</strong>, <strong>.docx</strong> (Max 5MB)
-            </p>
-            <div class="input-group">
+        <div class="divider">Or Upload a File</div>
+
+        <div class="grid-inputs">
+            <div class="file-wrapper">
                 <input type="file" id="fileInput" accept=".txt,.docx">
-                <input type="text" id="uploadKey" placeholder='Orig Key (Req)'>
-                <input type="text" id="targetKeyUpload" placeholder='To Key (Opt)'>
+                <div class="helper-text">Accepts .txt, .docx (Max 5MB)</div>
             </div>
-            
-            <div class="button-group">
-                <select id="uploadFormat" class="format-select">
-                    <option value="docx">.DOCX</option>
-                    <option value="pdf">.PDF</option>
-                </select>
-                <button id="uploadBtn">Convert File</button>
-                <button id="downloadUploadBtn" class="downloadBtn" disabled>Download Chart</button>
-            </div>
+            <input type="text" id="uploadKey" placeholder='Orig Key (Req)'>
+            <input type="text" id="targetKeyUpload" placeholder='To Key'>
+        </div>
+        
+        <div class="grid-buttons" style="margin-top: 16px;">
+            <select id="uploadFormat">
+                <option value="docx">.DOCX</option>
+                <option value="pdf">.PDF</option>
+            </select>
+            <button id="uploadBtn">Convert File</button>
+            <button id="downloadUploadBtn" class="downloadBtn" disabled>Download Chart</button>
         </div>
         
         <div id="status"></div>
@@ -312,7 +385,7 @@
             if (!dlSearchBtn.disabled) {
                 dlSearchBtn.disabled = true;
                 dlSearchBtn.innerHTML = "Download Chart";
-                showStatus("Format changed. Please click 'Scrape & Convert' again to generate the new file.", "active");
+                showStatus("Format changed. Please click 'Scrape & Convert' again.", "active");
             }
         });
 
@@ -320,7 +393,7 @@
             if (!dlUploadBtn.disabled) {
                 dlUploadBtn.disabled = true;
                 dlUploadBtn.innerHTML = "Download Chart";
-                showStatus("Format changed. Please click 'Convert File' again to generate the new file.", "active");
+                showStatus("Format changed. Please click 'Convert File' again.", "active");
             }
         });
 
@@ -335,7 +408,7 @@
             if (!query) return showStatus("Please enter a song name!", "error");
 
             const originalBtnHTML = searchBtn.innerHTML;
-            searchBtn.innerHTML = "⏳ Scraping...";
+            searchBtn.innerHTML = "⏳ Processing...";
             searchBtn.disabled = true;
             dlSearchBtn.disabled = true;
             showStatus("Searching Ultimate Guitar and processing chart...", "active");
