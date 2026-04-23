@@ -22,6 +22,9 @@
             --border: #e5e7eb;
             --shadow-soft: 0 20px 40px -10px rgba(0, 0, 0, 0.05), 0 10px 15px -5px rgba(0, 0, 0, 0.02);
             --focus-ring: rgba(99, 102, 241, 0.2);
+            
+            /* Custom Dropdown Chevron (Light Mode) */
+            --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
         }
 
         /* --- DARK MODE OVERRIDES --- */
@@ -34,6 +37,9 @@
             --border: #334155;       
             --shadow-soft: 0 20px 40px -10px rgba(0, 0, 0, 0.3), 0 10px 15px -5px rgba(0, 0, 0, 0.2);
             --focus-ring: rgba(99, 102, 241, 0.4);
+            
+            /* Custom Dropdown Chevron (Dark Mode) */
+            --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
         }
 
         *, *::before, *::after { box-sizing: border-box; }
@@ -55,7 +61,7 @@
         .app-card {
             background-color: var(--card-bg);
             width: 100%;
-            max-width: 700px;
+            max-width: 800px; /* Widened from 700px to 800px */
             padding: 48px;
             border-radius: 24px;
             box-shadow: var(--shadow-soft);
@@ -82,8 +88,8 @@
             font-size: 32px; 
             font-weight: 800;
             letter-spacing: -0.02em;
-            line-height: 1.2;          /* ADDED: Gives vertical breathing room */
-            padding-bottom: 6px;       /* ADDED: Prevents the bottom of the 'g' from clipping */
+            line-height: 1.2;
+            padding-bottom: 6px; 
             background: linear-gradient(135deg, var(--primary), var(--upload));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -142,17 +148,17 @@
         .divider::before { margin-right: 16px; }
         .divider::after { margin-left: 16px; }
 
-        /* --- GRID LAYOUTS (The Magic Alignment) --- */
+        /* --- GRID LAYOUTS --- */
         .grid-inputs {
             display: grid;
-            grid-template-columns: 1fr 135px 135px; /* Increased from 110px to 135px */
+            grid-template-columns: 1fr 190px 190px; /* Widened to 190px */
             gap: 12px;
-            margin-bottom: 16px;
+            margin-bottom: 26px;
         }
 
         .grid-buttons {
             display: grid;
-            grid-template-columns: 135px 1fr 1fr; /* Matched to 135px so the dropdown perfectly aligns with the inputs above it */
+            grid-template-columns: 190px 1fr 1fr; /* Matched to 190px */
             gap: 12px;
         }
 
@@ -180,26 +186,62 @@
             opacity: 0.7;
         }
 
+        /* Sleek Select Styling */
+        select {
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: var(--chevron);
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            background-size: 18px;
+            padding-right: 40px; 
+            cursor: pointer;
+            text-overflow: ellipsis; /* Ensures graceful clipping if text is still too long */
+        }
+        
+        select optgroup {
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+        select option {
+            font-weight: 500;
+            color: var(--text-main);
+            background-color: var(--card-bg);
+        }
+
         /* Custom File Upload Styling */
-        .file-wrapper { position: relative; }
+        .file-wrapper { 
+            position: relative; 
+        }
+        
         input[type="file"] {
             padding: 11px 16px;
             border: 2px dashed var(--border);
             cursor: pointer;
+            height: 100%; /* Forces it to perfectly match the height of the selects */
         }
+        
         input[type="file"]::file-selector-button {
             margin-right: 16px; padding: 6px 14px; border: 1px solid var(--border); border-radius: 6px;
             background-color: var(--card-bg); color: var(--text-main); font-weight: 600; cursor: pointer;
             transition: all 0.2s;
         }
-        input[type="file"]::file-selector-button:hover { background-color: var(--border); }
-        input[type="file"]:focus { border-color: var(--upload); box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2); }
+        
+        input[type="file"]::file-selector-button:hover { 
+            background-color: var(--border); 
+        }
+        
+        input[type="file"]:focus { 
+            border-color: var(--upload); box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2); 
+        }
 
         .helper-text {
+            position: absolute; /* Pulls text out of the grid so it doesn't stretch the row */
+            bottom: -22px;      /* Tucks it neatly underneath the dashed box */
+            left: 4px;
             font-size: 12px;
             color: var(--text-muted);
-            margin-top: 6px;
-            margin-left: 4px;
+            white-space: nowrap;
         }
 
         /* --- BUTTONS --- */
@@ -218,8 +260,6 @@
             align-items: center;
             gap: 8px;
         }
-
-        select { font-weight: 600; cursor: pointer; }
 
         #searchBtn { background-color: var(--primary); }
         #searchBtn:hover:not(:disabled) { background-color: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
@@ -269,18 +309,16 @@
             <ul>
                 <li><strong>Search:</strong> Scrapes directly from Ultimate Guitar's database.</li>
                 <li><strong>Upload:</strong> Drop a local .txt or .docx chart to process.</li>
-                <li><strong>Transposition:</strong> Leave "To Key" blank to create a Nashville chart, or enter a specific key (e.g. 'G') to transpose the chords!</li>
+                <li><strong>Transposition:</strong> Leave "To Key" set to Nashville to generate numbers, or select a specific key (e.g. 'G') to transpose the chords!</li>
             </ul>
             <div class="warning-box">
-                ⚠️ Scraped keys can occasionally be incorrect. If the output looks wrong, verify the actual key and enter it manually in the <strong>Orig Key</strong> box.
+                ⚠️ Scraped keys can occasionally be incorrect. If the output looks wrong, verify the actual key and select it manually in the <strong>Orig Key</strong> box.
             </div>
         </div>
 
         <div class="grid-inputs">
             <input type="text" id="songQuery" placeholder='Search (e.g. "Gravity John Mayer")'>
-            <input type="text" id="songKey" placeholder='Orig Key'>
-            <input type="text" id="targetKeySearch" placeholder='To Key'>
-        </div>
+            <select id="songKey"></select> <select id="targetKeySearch"></select> </div>
         
         <div class="grid-buttons">
             <select id="searchFormat">
@@ -298,9 +336,7 @@
                 <input type="file" id="fileInput" accept=".txt,.docx">
                 <div class="helper-text">Accepts .txt, .docx (Max 5MB)</div>
             </div>
-            <input type="text" id="uploadKey" placeholder='Orig Key (Req)'>
-            <input type="text" id="targetKeyUpload" placeholder='To Key'>
-        </div>
+            <select id="uploadKey"></select> <select id="targetKeyUpload"></select> </div>
         
         <div class="grid-buttons" style="margin-top: 16px;">
             <select id="uploadFormat">
@@ -315,6 +351,56 @@
     </div>
 
     <script>
+        // --- KEY DROPDOWN POPULATOR ---
+        // Keeps the HTML clean while providing robust, validated options
+        const standardKeys = ['C', 'C#', 'Db', 'D', 'Eb', 'E', 'F', 'F#', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+        const minorKeys = standardKeys.map(k => k + 'm');
+
+        function populateKeySelects() {
+            const createOptGroups = (selectId, defaultText, isRequired, isTarget) => {
+                const select = document.getElementById(selectId);
+                
+                // Add the default placeholder option
+                const defaultOpt = document.createElement('option');
+                defaultOpt.value = "";
+                defaultOpt.textContent = defaultText;
+                if (isRequired) {
+                    defaultOpt.disabled = true;
+                    defaultOpt.selected = true;
+                }
+                select.appendChild(defaultOpt);
+
+                // Build the Major Keys group
+                const optGroupMajor = document.createElement('optgroup');
+                optGroupMajor.label = "Major Keys";
+                standardKeys.forEach(k => {
+                    const opt = document.createElement('option');
+                    opt.value = k; opt.textContent = k;
+                    optGroupMajor.appendChild(opt);
+                });
+                select.appendChild(optGroupMajor);
+
+                // Build the Minor Keys group
+                const optGroupMinor = document.createElement('optgroup');
+                optGroupMinor.label = "Minor Keys";
+                minorKeys.forEach(k => {
+                    const opt = document.createElement('option');
+                    opt.value = k; opt.textContent = k;
+                    optGroupMinor.appendChild(opt);
+                });
+                select.appendChild(optGroupMinor);
+            };
+
+            createOptGroups('songKey', 'Orig Key (Auto)', false);
+            createOptGroups('targetKeySearch', 'To Key (Nashville)', false);
+            createOptGroups('uploadKey', 'Orig Key (Req)', true);
+            createOptGroups('targetKeyUpload', 'To Key (Nashville)', false);
+        }
+
+        // Run the populator immediately
+        populateKeySelects();
+
+        // --- DARK MODE LOGIC ---
         const themeToggle = document.getElementById('themeToggle');
         const sunIcon = document.getElementById('sunIcon');
         const moonIcon = document.getElementById('moonIcon');
@@ -342,6 +428,7 @@
             moonIcon.style.display = 'block';
         }
 
+        // --- DOWNLOAD MANAGER ---
         let currentDownloadUrl = null;
         let currentFilename = "Chart.docx";
         const statusDiv = document.getElementById('status');
@@ -376,6 +463,7 @@
             if (type === 'error') statusDiv.classList.add('status-error');
         }
 
+        // --- FORMAT CHANGE RESET ---
         const searchFormat = document.getElementById('searchFormat');
         const dlSearchBtn = document.getElementById('downloadSearchBtn');
         const uploadFormat = document.getElementById('uploadFormat');
