@@ -153,6 +153,6 @@ app.post('/api/import', upload.single('chartFile'), async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
     console.log(`🎸 Nashville Engine API is running on http://localhost:${PORT}`);
 });
