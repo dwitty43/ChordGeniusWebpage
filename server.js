@@ -19,17 +19,18 @@ app.use(express.static('public'));
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-async function deliverFile(res, finalChart, originalName, targetKey, format) {
+// --- UPDATED DELIVERY FUNCTION ---
+async function deliverFile(res, finalChart, originalName, originalKey, targetKey, format) {
     let fileBuffer;
     let contentType;
     let extension;
 
     if (format === 'pdf') {
-        fileBuffer = await createPdfChart(finalChart, originalName, targetKey);
+        fileBuffer = await createPdfChart(finalChart, originalName, originalKey, targetKey);
         contentType = 'application/pdf';
         extension = 'pdf';
     } else {
-        fileBuffer = await createDocxChart(finalChart, originalName, targetKey);
+        fileBuffer = await createDocxChart(finalChart, originalName, originalKey, targetKey);
         contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
         extension = 'docx';
     }
@@ -46,7 +47,7 @@ async function deliverFile(res, finalChart, originalName, targetKey, format) {
 app.get('/api/convert', async (req, res) => {
     const query = req.query.q;
     let songKey = req.query.key;
-    const targetKey = req.query.targetKey || ''; // New!
+    const targetKey = req.query.targetKey || ''; 
     const format = req.query.format || 'docx';
 
     if (!query) return res.status(400).json({ error: "Please provide a song query." });
@@ -67,7 +68,8 @@ app.get('/api/convert', async (req, res) => {
         console.log(`[API] Transposing chart...`);
         const finalChart = processAndAlignTabs(tabData.rawTabText, songKey, targetKey);
         
-        await deliverFile(res, finalChart, query, targetKey, format);
+        // Pass songKey into deliverFile
+        await deliverFile(res, finalChart, query, songKey, targetKey, format);
 
     } catch (error) {
         console.error(`[API Error]`, error.message);
@@ -78,7 +80,7 @@ app.get('/api/convert', async (req, res) => {
 // --- ROUTE 2: UPLOAD ---
 app.post('/api/import', upload.single('chartFile'), async (req, res) => {
     const songKey = req.body.key;
-    const targetKey = req.body.targetKey || ''; // New!
+    const targetKey = req.body.targetKey || ''; 
     const file = req.file;
     const format = req.body.format || 'docx';
 
@@ -103,7 +105,8 @@ app.post('/api/import', upload.single('chartFile'), async (req, res) => {
         console.log(`[API] Transposing uploaded chart...`);
         const finalChart = processAndAlignTabs(extractedText, songKey, targetKey);
         
-        await deliverFile(res, finalChart, originalName, targetKey, format);
+        // Pass songKey into deliverFile
+        await deliverFile(res, finalChart, originalName, songKey, targetKey, format);
 
     } catch (error) {
         console.error(`[API Error]`, error.message);

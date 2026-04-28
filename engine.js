@@ -269,7 +269,7 @@ function processAndAlignTabs(rawText, originalKey, targetKey) {
 }
 
 // --- DOCUMENT GENERATORS ---
-async function createDocxChart(finalChartText, songTitle, targetKey) {
+async function createDocxChart(finalChartText, songTitle, originalKey, targetKey) {
     const cleanText = finalChartText.replace(/\x1B\[\d+m/g, ''); 
     const lines = cleanText.split('\n');
 
@@ -300,7 +300,6 @@ async function createDocxChart(finalChartText, songTitle, targetKey) {
                 const mainChord = chordParts[0];
                 const bassNote = chordParts[1]; 
 
-                // UPDATED REGEX: Matches both standard chords and Nashville roots
                 const rootMatch = mainChord.match(/^([A-G][b#]?|[b#]?[1-7])(.*)$/i);
 
                 if (rootMatch) {
@@ -330,7 +329,11 @@ async function createDocxChart(finalChartText, songTitle, targetKey) {
         }
     });
 
-    const headerKeyText = (!targetKey || /^nashville$|^1$/i.test(targetKey)) ? 'Nashville Numbers' : `Key: ${targetKey.toUpperCase()}`;
+    // THE FIX: Smart Header Logic
+    let headerKeyText = `Key: ${targetKey.toUpperCase()}`;
+    if (!targetKey || /^nashville$|^1$/i.test(targetKey)) {
+        headerKeyText = /^nashville$/i.test(originalKey) ? 'Nashville Numbers' : `Key: ${originalKey.toUpperCase()}`;
+    }
 
     const titleParagraph = new Paragraph({
         children: [ new TextRun({ text: songTitle.toUpperCase(), font: "Courier New", size: 32, bold: true }) ],
@@ -349,7 +352,7 @@ async function createDocxChart(finalChartText, songTitle, targetKey) {
     return await Packer.toBuffer(doc);
 }
 
-async function createPdfChart(finalChartText, songTitle, targetKey) {
+async function createPdfChart(finalChartText, songTitle, originalKey, targetKey) {
     const lines = finalChartText.split('\n');
     
     let htmlLines = lines.map(line => {
@@ -378,7 +381,6 @@ async function createPdfChart(finalChartText, songTitle, targetKey) {
                 const mainChord = chordParts[0];
                 const bassNote = chordParts[1]; 
 
-                // UPDATED REGEX: Matches both standard chords and Nashville roots
                 const rootMatch = mainChord.match(/^([A-G][b#]?|[b#]?[1-7])(.*)$/i);
                 if (rootMatch) {
                     htmlLine += `<b>${rootMatch[1]}</b>`;
@@ -404,7 +406,11 @@ async function createPdfChart(finalChartText, songTitle, targetKey) {
         }
     });
 
-    const headerKeyText = (!targetKey || /^nashville$|^1$/i.test(targetKey)) ? 'Nashville Numbers' : `Key: ${targetKey.toUpperCase()}`;
+    // THE FIX: Smart Header Logic
+    let headerKeyText = `Key: ${targetKey.toUpperCase()}`;
+    if (!targetKey || /^nashville$|^1$/i.test(targetKey)) {
+        headerKeyText = /^nashville$/i.test(originalKey) ? 'Nashville Numbers' : `Key: ${originalKey.toUpperCase()}`;
+    }
 
     const htmlContent = `
     <!DOCTYPE html>
