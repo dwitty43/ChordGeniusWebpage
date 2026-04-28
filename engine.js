@@ -96,38 +96,44 @@ function transposeChord(chordString, originalKey, targetKey) {
 
 // --- SEARCH SCRAPER LOGIC ---
 async function getFirstSearchResult(query) {
-    const searchString = `site:ultimate-guitar.com ${query} chords`;
-    const searchUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(searchString)}`;
+    // Primary: Native Ultimate Guitar Search
+    const searchUrl = `https://www.ultimate-guitar.com/search.php?search_type=title&value=${encodeURIComponent(query)}`;
 
     try {
-        const html = await fetchUGPage(searchUrl);
-        const $ = cheerio.load(html);
+        const html = await fetchUGPage(searchUrl, true);
+        const cleanHtml = html.replace(/\\/g, '');
+
+        // Try to find a standard chords tab in the raw HTML/JSON
+        const regex = /(https:\/\/tabs\.ultimate-guitar\.com\/tab\/[^"'\s>]+-chords-\d+)/i;
+        const match = cleanHtml.match(regex);
+
+        if (match && match[1]) return match[1];
+
+        // Fallback: Bing Search
+        console.log("[Engine] Native search failed, trying Bing fallback...");
+        const bingUrl = `https://www.bing.com/search?q=${encodeURIComponent("site:tabs.ultimate-guitar.com/tab/ chords " + query)}`;
+        const bingHtml = await fetchUGPage(bingUrl, true);
+        const $ = cheerio.load(bingHtml);
         let tabUrl = null;
 
         $('a').each((i, el) => {
             let href = $(el).attr('href');
             if (!href) return;
-            if (href.includes('uddg=')) {
-                try {
-                    const prefix = href.startsWith('http') ? '' : 'https:';
-                    const parsedUrl = new URL(`${prefix}${href}`);
-                    href = decodeURIComponent(parsedUrl.searchParams.get('uddg'));
-                } catch (e) { return; }
-            }
             if (href.includes('tabs.ultimate-guitar.com/tab/') && href.includes('chords')) {
                 tabUrl = href;
-                return false; 
+                return false;
             }
         });
 
-        if (!tabUrl) throw new Error(`Could not find an Ultimate Guitar chords link for "${query}".`);
-        return tabUrl;
+        if (tabUrl) return tabUrl;
+
+        throw new Error(`Could not find an Ultimate Guitar chords link for "${query}".`);
     } catch (error) {
         throw new Error(`Search engine failed: ${error.message}`);
     }
 }
 
-async function fetchUGPage(url) {
+async function fetchUGPage(url, isSearch = false) {
     const browser = await puppeteer.launch({ headless: "new", args: ['--no-sandbox', '--disable-setuid-sandbox'] });
     const page = await browser.newPage();
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
@@ -135,6 +141,7 @@ async function fetchUGPage(url) {
     await page.setRequestInterception(true);
     page.on('request', (req) => {
         const resourceType = req.resourceType();
+        // Allow scripts to run so Cloudflare and React can execute!
         if (['image', 'stylesheet', 'font', 'media'].includes(resourceType)) {
             req.abort();
         } else {
@@ -144,7 +151,24 @@ async function fetchUGPage(url) {
 
     try {
         await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
-        try { await page.waitForSelector('pre', { timeout: 5000 }); } catch (e) {}
+
+        // Defeat Cloudflare "Just a moment..."
+        let title = await page.title();
+        let cfAttempts = 0;
+        while ((title.includes("Just a moment") || title.includes("Cloudflare")) && cfAttempts < 8) {
+            console.log(`[Scraper] Cloudflare detected. Waiting for clearance (Attempt ${cfAttempts + 1}/8)...`);
+            await new Promise(r => setTimeout(r, 2000));
+            title = await page.title();
+            cfAttempts++;
+        }
+
+        if (!isSearch) {
+            try { await page.waitForSelector('pre', { timeout: 5000 }); } catch (e) {}
+        } else {
+            // Give dynamic search engines (UG React or Bing) a moment to render links
+            await new Promise(r => setTimeout(r, 1500));
+        }
+
         const html = await page.content();
         await browser.close();
         return html;
