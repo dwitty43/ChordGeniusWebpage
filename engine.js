@@ -39,8 +39,8 @@ function getPreferredAccidentals(key) {
 function parseChord(chordString) {
     const parts = chordString.split('/'); 
     return parts.map(part => {
-        // Matches both standard chords (G#) AND Nashville numbers (b7)
-        const match = part.match(/^([A-G][#b]?|[b#]?[1-7])(.*)$/i);
+        // FIX: Nashville checked first, explicitly case-sensitive to protect "B" vs "b"
+        const match = part.match(/^([b#]?[1-7]|[A-Ga-g][#b]?)(.*)$/);
         if (match) return { root: match[1], extension: match[2] };
         return null;
     });
@@ -67,7 +67,7 @@ function transposeChord(chordString, originalKey, targetKey) {
         if (!part) return '';
         
         let distance = 0;
-        const isSourceNashville = /^[b#]?[1-7]$/i.test(part.root);
+        const isSourceNashville = /^[b#]?[1-7]$/.test(part.root);
 
         if (isSourceNashville) {
             distance = nashvilleToHalfSteps[part.root.toLowerCase()];
@@ -300,7 +300,7 @@ async function createDocxChart(finalChartText, songTitle, originalKey, targetKey
                 const mainChord = chordParts[0];
                 const bassNote = chordParts[1]; 
 
-                const rootMatch = mainChord.match(/^([A-G][b#]?|[b#]?[1-7])(.*)$/i);
+                const rootMatch = mainChord.match(/^([b#]?[1-7]|[A-Ga-g][b#]?)(.*)$/);
 
                 if (rootMatch) {
                     const root = rootMatch[1];
@@ -381,7 +381,7 @@ async function createPdfChart(finalChartText, songTitle, originalKey, targetKey)
                 const mainChord = chordParts[0];
                 const bassNote = chordParts[1]; 
 
-                const rootMatch = mainChord.match(/^([A-G][b#]?|[b#]?[1-7])(.*)$/i);
+                const rootMatch = mainChord.match(/^([b#]?[1-7]|[A-Ga-g][b#]?)(.*)$/);
                 if (rootMatch) {
                     htmlLine += `<b>${rootMatch[1]}</b>`;
                     const rawExtension = rootMatch[2];
