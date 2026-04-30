@@ -360,10 +360,11 @@
 
         <div class="grid-inputs">
             <div class="file-wrapper">
-                <input type="file" id="fileInput" accept=".txt,.docx">
-                <div class="helper-text">Accepts .txt, .docx (Max 5MB)</div>
+                <input type="file" id="fileInput" accept=".txt,.docx,.pdf">
+                <div class="helper-text">Accepts .txt, .docx, .pdf (Max 5MB)</div>
             </div>
-            <select id="uploadKey"></select> <select id="targetKeyUpload"></select> </div>
+            <select id="uploadKey"></select> <select id="targetKeyUpload"></select> 
+        </div>
         
         <div class="grid-buttons" style="margin-top: 16px;">
             <select id="uploadFormat">
@@ -572,11 +573,11 @@
             if (!file) return showStatus("Please select a file to upload!", "error");
             if (!key) return showStatus("You must provide the original key for uploaded files!", "error");
 
-            const validExtensions = ['.txt', '.docx'];
+            const validExtensions = ['.txt', '.docx', '.pdf'];
             const fileName = file.name.toLowerCase();
             
             if (!validExtensions.some(ext => fileName.endsWith(ext))) {
-                return showStatus("Security Block: Only .txt and .docx files are allowed.", "error");
+                return showStatus("Security Block: Only .txt, .docx, and .pdf files are allowed.", "error");
             }
             if (file.size > 5 * 1024 * 1024) { 
                 return showStatus("File is too large! Maximum allowed size is 5MB.", "error");

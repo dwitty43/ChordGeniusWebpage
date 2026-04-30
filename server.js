@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const mammoth = require('mammoth');
+const pdfParse = require('pdf-parse'); // NEW: Import the PDF parser
 
 const { 
     getFirstSearchResult, 
@@ -19,7 +20,6 @@ app.use(express.static('public'));
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-// --- UPDATED DELIVERY FUNCTION ---
 async function deliverFile(res, finalChart, originalName, originalKey, targetKey, format) {
     let fileBuffer;
     let contentType;
@@ -68,7 +68,6 @@ app.get('/api/convert', async (req, res) => {
         console.log(`[API] Transposing chart...`);
         const finalChart = processAndAlignTabs(tabData.rawTabText, songKey, targetKey);
         
-        // Pass songKey into deliverFile
         await deliverFile(res, finalChart, query, songKey, targetKey, format);
 
     } catch (error) {
@@ -84,20 +83,24 @@ app.post('/api/import', upload.single('chartFile'), async (req, res) => {
     const file = req.file;
     const format = req.body.format || 'docx';
 
-    if (!file) return res.status(400).json({ error: "Please upload a .txt or .docx file." });
+    if (!file) return res.status(400).json({ error: "Please upload a .txt, .docx, or .pdf file." });
     if (!songKey) return res.status(400).json({ error: "Please provide the original key of the song." });
 
     try {
         console.log(`[API] Processing upload: ${file.originalname}`);
         let extractedText = "";
 
+        // --- NEW: Multi-Format Extraction Logic ---
         if (file.mimetype === 'text/plain') {
             extractedText = file.buffer.toString('utf-8');
         } else if (file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
             const result = await mammoth.extractRawText({ buffer: file.buffer });
             extractedText = result.value;
+        } else if (file.mimetype === 'application/pdf') {
+            const pdfData = await pdfParse(file.buffer);
+            extractedText = pdfData.text;
         } else {
-            return res.status(400).json({ error: "Unsupported file type. Use .txt or .docx" });
+            return res.status(400).json({ error: "Unsupported file type. Use .txt, .docx, or .pdf" });
         }
 
         const originalName = file.originalname.replace(/\.[^/.]+$/, ""); 
@@ -105,7 +108,6 @@ app.post('/api/import', upload.single('chartFile'), async (req, res) => {
         console.log(`[API] Transposing uploaded chart...`);
         const finalChart = processAndAlignTabs(extractedText, songKey, targetKey);
         
-        // Pass songKey into deliverFile
         await deliverFile(res, finalChart, originalName, songKey, targetKey, format);
 
     } catch (error) {
