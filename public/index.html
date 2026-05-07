@@ -62,7 +62,7 @@
         .app-card {
             background-color: var(--card-bg);
             width: 100%;
-            max-width: 800px; /* Widened from 700px to 800px */
+            max-width: 800px; 
             padding: 48px;
             border-radius: 24px;
             box-shadow: var(--shadow-soft);
@@ -152,15 +152,17 @@
         /* --- GRID LAYOUTS --- */
         .grid-inputs {
             display: grid;
-            grid-template-columns: 1fr 190px 190px; /* Widened to 190px */
+            grid-template-columns: 1fr 180px 180px; 
             gap: 12px;
-            margin-bottom: 26px;
+            margin-bottom: 96px; /* Massive clearance to ensure text never overlaps the buttons below */
         }
 
         .grid-buttons {
             display: grid;
-            grid-template-columns: 190px 1fr 1fr; /* Matched to 190px */
+            /* THE FIX: Widened the first column from 100px to 130px */
+            grid-template-columns: 130px 1fr 1fr; 
             gap: 12px;
+            margin-bottom: 16px;
         }
 
         /* --- INPUTS & FORMS --- */
@@ -197,18 +199,11 @@
             background-size: 18px;
             padding-right: 40px; 
             cursor: pointer;
-            text-overflow: ellipsis; /* Ensures graceful clipping if text is still too long */
+            text-overflow: ellipsis; 
         }
         
-        select optgroup {
-            font-weight: 700;
-            color: var(--text-muted);
-        }
-        select option {
-            font-weight: 500;
-            color: var(--text-main);
-            background-color: var(--card-bg);
-        }
+        select optgroup { font-weight: 700; color: var(--text-muted); }
+        select option { font-weight: 500; color: var(--text-main); background-color: var(--card-bg); }
 
         /* Custom File Upload Styling */
         .file-wrapper { 
@@ -219,7 +214,7 @@
             padding: 11px 16px;
             border: 2px dashed var(--border);
             cursor: pointer;
-            height: 100%; /* Forces it to perfectly match the height of the selects */
+            height: 100%; 
         }
         
         input[type="file"]::file-selector-button {
@@ -236,13 +231,31 @@
             border-color: var(--upload); box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2); 
         }
 
-        .helper-text {
-            position: absolute; /* Pulls text out of the grid so it doesn't stretch the row */
-            bottom: -22px;      /* Tucks it neatly underneath the dashed box */
+        /* --- HELPER TEXT --- */
+        .helper-text-container {
+            position: absolute; 
+            top: 100%;
             left: 4px;
+            width: calc(100% + 350px); /* Safely stretches across the grid columns */
+            max-width: 600px; 
+            margin-top: 6px;
+            pointer-events: none;
+        }
+
+        .helper-text {
             font-size: 12px;
             color: var(--text-muted);
-            white-space: nowrap;
+            white-space: normal; 
+            line-height: 1.4;
+        }
+
+        .warning-text {
+            color: #b45309;
+            margin-top: 4px;
+        }
+
+        [data-theme="dark"] .warning-text { 
+            color: #fbbf24; 
         }
 
         /* --- BUTTONS --- */
@@ -285,29 +298,19 @@
         [data-theme="dark"] .status-success { color: #34d399; }
         [data-theme="dark"] .status-error { color: #f87171; }
 
-        /* --- MOBILE RESPONSIVENESS --- */
-        @media (max-width: 640px) {
+        /* --- RESPONSIVE BREAKPOINT --- */
+        @media (max-width: 768px) {
             .app-card { padding: 32px 24px; border-radius: 20px; }
-            .grid-inputs, .grid-buttons { grid-template-columns: 1fr; gap: 12px; }
+            .grid-inputs { grid-template-columns: 1fr; gap: 16px; margin-bottom: 24px; }
+            .grid-buttons { grid-template-columns: 1fr; gap: 12px; }
             .divider { margin: 32px 0; }
             
-            /* THE FIX: Revert the forced height so the box doesn't squish the text */
-            input[type="file"] {
-                height: auto;
-            }
+            input[type="file"] { height: auto; }
 
-            /* Push the next dropdown down to make room for the text */
-            .file-wrapper {
-                margin-bottom: 14px;
-            }
-
-            /* Sit the text naturally under the dashed box */
-            .helper-text {
+            .helper-text-container {
                 position: static;
-                display: block;
+                width: 100%;
                 margin-top: 8px;
-                white-space: normal;
-                line-height: 1.4;
             }
         }
     </style>
@@ -343,9 +346,10 @@
             </div>
         </div>
 
-        <div class="grid-inputs">
+        <div class="grid-inputs" style="margin-bottom: 32px;">
             <input type="text" id="songQuery" placeholder='Search (e.g. "Yellow Coldplay")'>
-            <select id="songKey"></select> <select id="targetKeySearch"></select> </div>
+            <select id="songKey"></select> <select id="targetKeySearch"></select> 
+        </div>
         
         <div class="grid-buttons">
             <select id="searchFormat">
@@ -361,15 +365,17 @@
         <div class="grid-inputs">
             <div class="file-wrapper">
                 <input type="file" id="fileInput" accept=".txt,.docx,.pdf">
-                <div class="helper-text">Accepts .txt, .docx, .pdf (Max 5MB)</div>
-                <div class="helper-text" style="color: #b45309; margin-top: 4px;">
-                    <em>Pro-Tip: PDFs often lose their chord spacing. For perfect alignment, open your PDF in Microsoft Word or Google Docs, save it as a .DOCX, and upload that instead!</em>
+                <div class="helper-text-container">
+                    <div class="helper-text">Accepts .txt, .docx, .pdf (Max 5MB)</div>
+                    <div class="helper-text warning-text">
+                        <em>Pro-Tip: PDFs often lose their chord spacing. For perfect alignment, open your PDF in Microsoft Word or Google Docs, save it as a .DOCX, and upload that instead!</em>
+                    </div>
                 </div>
             </div>
             <select id="uploadKey"></select> <select id="targetKeyUpload"></select> 
         </div>
         
-        <div class="grid-buttons" style="margin-top: 16px;">
+        <div class="grid-buttons">
             <select id="uploadFormat">
                 <option value="docx">.DOCX</option>
                 <option value="pdf">.PDF</option>
@@ -390,7 +396,6 @@
             const createOptGroups = (selectId, defaultText, isRequired) => {
                 const select = document.getElementById(selectId);
                 
-                // Add the default placeholder option
                 const defaultOpt = document.createElement('option');
                 defaultOpt.value = "";
                 defaultOpt.textContent = defaultText;
@@ -400,7 +405,6 @@
                 }
                 select.appendChild(defaultOpt);
 
-                // THE UPGRADE: Inject "Nashville Numbers" as an Orig Key option
                 if (selectId === 'songKey' || selectId === 'uploadKey') {
                     const nashOpt = document.createElement('option');
                     nashOpt.value = "nashville";
@@ -409,7 +413,6 @@
                     select.appendChild(nashOpt);
                 }
 
-                // Build the Major Keys group
                 const optGroupMajor = document.createElement('optgroup');
                 optGroupMajor.label = "Major Keys";
                 standardKeys.forEach(k => {
@@ -419,7 +422,6 @@
                 });
                 select.appendChild(optGroupMajor);
 
-                // Build the Minor Keys group
                 const optGroupMinor = document.createElement('optgroup');
                 optGroupMinor.label = "Minor Keys";
                 minorKeys.forEach(k => {
@@ -436,7 +438,6 @@
             createOptGroups('targetKeyUpload', 'To Key (Nashville)', false);
         }
 
-        // Run the populator immediately
         populateKeySelects();
 
         // --- DARK MODE LOGIC ---
