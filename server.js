@@ -89,6 +89,7 @@ app.post('/api/import', upload.single('chartFile'), async (req, res) => {
     try {
         console.log(`[API] Processing upload: ${file.originalname}`);
         let extractedText = "";
+        let isPdf = false;
 
         // --- NEW: Multi-Format Extraction Logic ---
         if (file.mimetype === 'text/plain') {
@@ -99,6 +100,7 @@ app.post('/api/import', upload.single('chartFile'), async (req, res) => {
         } else if (file.mimetype === 'application/pdf') {
             const pdfData = await pdfParse(file.buffer);
             extractedText = pdfData.text;
+            isPdf = true;
         } else {
             return res.status(400).json({ error: "Unsupported file type. Use .txt, .docx, or .pdf" });
         }
@@ -106,7 +108,8 @@ app.post('/api/import', upload.single('chartFile'), async (req, res) => {
         const originalName = file.originalname.replace(/\.[^/.]+$/, ""); 
         
         console.log(`[API] Transposing uploaded chart...`);
-        const finalChart = processAndAlignTabs(extractedText, songKey, targetKey);
+
+        const finalChart = processAndAlignTabs(extractedText, songKey, targetKey, isPdf);
         
         await deliverFile(res, finalChart, originalName, songKey, targetKey, format);
 

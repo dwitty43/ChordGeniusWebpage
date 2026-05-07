@@ -229,7 +229,7 @@ function isNoiseLine(line) {
 }
 
 // --- TEXT PROCESSING ---
-function processAndAlignTabs(rawText, originalKey, targetKey) {
+function processAndAlignTabs(rawText, originalKey, targetKey, isPdf = false) {
     const lines = rawText.split('\n');
     let processedLines = [];
     let hasStarted = false; 
@@ -247,6 +247,13 @@ function processAndAlignTabs(rawText, originalKey, targetKey) {
         }
 
         if (isChordLine(line) || isNashvilleLine(line)) {
+            if (isPdf && processedLines.length > 0) {
+                const lastLine = processedLines[processedLines.length - 1].trim();
+                const isHeader = /^\[?(Intro|Verse|Chorus|Pre-Chorus|Bridge|Outro|Solo|Instrumental)[^\]]*\]?$/i.test(lastLine);
+                if (lastLine != '' && !isHeader) {
+                    processedLines.push('');
+                }
+            }
             let newLine = line.replace(/(\S+)(\s*)/g, (match, chord, spaces) => {
                 const newChord = transposeChord(chord, originalKey, targetKey);
                 const lengthDiff = chord.length - newChord.length;
