@@ -237,7 +237,7 @@ function processAndAlignTabs(rawText, originalKey, targetKey) {
     for (let line of lines) {
         const trimmed = line.trim();
 
-        if (!hasStarted && /^\[(Intro|Verse|Chorus|Pre-Chorus|Bridge|Outro|Solo|Instrumental)[^\]]*\]$/i.test(trimmed)) hasStarted = true;
+        if (!hasStarted && /^\[?(Intro|Verse|Chorus|Pre-Chorus|Bridge|Outro|Solo|Instrumental)[^\]]*\]?$/i.test(trimmed)) hasStarted = true;
         if (!hasStarted) continue;
         if (isTabLine(line) || isNoiseLine(line)) continue; 
 
