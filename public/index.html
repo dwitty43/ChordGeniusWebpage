@@ -459,6 +459,117 @@
         .status-success { display: block !important; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); color: #10b981; }
         .status-error   { display: block !important; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); color: #ef4444; }
 
+        /* --- CAPO CALCULATOR --- */
+        .capo-toggle-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-top: 44px;
+        }
+
+        .capo-toggle-row .section-label {
+            margin-bottom: 0;
+            flex: 1;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+        .toggle-slider {
+            position: absolute;
+            inset: 0;
+            background: var(--border);
+            border-radius: 24px;
+            cursor: pointer;
+            transition: background 0.25s;
+        }
+
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            width: 18px; height: 18px;
+            left: 3px; top: 3px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            transition: transform 0.25s, background 0.25s;
+        }
+
+        .toggle-switch input:checked + .toggle-slider { background: var(--primary-glow); border: 1px solid var(--primary); }
+        .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); background: var(--primary); }
+
+        .capo-panel {
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            transition: max-height 0.35s ease, opacity 0.3s ease, margin-top 0.3s ease;
+            margin-top: 0;
+        }
+
+        .capo-panel.open {
+            max-height: 300px;
+            opacity: 1;
+            margin-top: 20px;
+        }
+
+        .capo-inner {
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--primary);
+            border-radius: 0 12px 12px 0;
+            padding: 22px 24px;
+        }
+
+        .capo-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .capo-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .capo-result {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 14px 18px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+        }
+
+        .capo-fret-badge {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--primary);
+            line-height: 1;
+            min-width: 48px;
+            text-align: center;
+        }
+
+        .capo-result-text {
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--text-muted);
+        }
+
+        .capo-result-text strong { color: var(--text-main); }
+
         /* --- FOOTER LINE --- */
         .card-footer {
             margin-top: 36px;
@@ -591,6 +702,37 @@
         </div>
 
         <div id="status"></div>
+
+        <!-- CAPO CALCULATOR -->
+        <div class="capo-toggle-row">
+            <div class="section-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/><circle cx="12" cy="12" r="10"/></svg>
+                Capo Calculator
+            </div>
+            <label class="toggle-switch" title="Toggle capo calculator">
+                <input type="checkbox" id="capoToggle">
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+
+        <div class="capo-panel" id="capoPanel">
+            <div class="capo-inner">
+                <div class="capo-grid">
+                    <div>
+                        <div class="capo-label">I want to play shapes in</div>
+                        <select id="capoShapeKey"></select>
+                    </div>
+                    <div>
+                        <div class="capo-label">Song actually sounds in</div>
+                        <select id="capoSongKey"></select>
+                    </div>
+                </div>
+                <div class="capo-result" id="capoResult">
+                    <div class="capo-fret-badge" id="capoFretNum">—</div>
+                    <div class="capo-result-text" id="capoResultText">Select both keys to calculate your capo position.</div>
+                </div>
+            </div>
+        </div>
 
         <div class="card-footer">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
@@ -831,6 +973,60 @@
         });
 
         dlUploadBtn.addEventListener('click', triggerDownload);
+
+        // --- CAPO CALCULATOR ---
+        const capoKeys = ['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
+        const capoKeyNames = { 'C#':'C# / Db', 'Eb':'Eb / D#', 'F#':'F# / Gb', 'Ab':'Ab / G#', 'Bb':'Bb / A#' };
+
+        function populateCapoSelect(selectId, defaultText) {
+            const sel = document.getElementById(selectId);
+            const def = document.createElement('option');
+            def.value = ''; def.textContent = defaultText; def.disabled = true; def.selected = true;
+            sel.appendChild(def);
+            capoKeys.forEach(k => {
+                const opt = document.createElement('option');
+                opt.value = k;
+                opt.textContent = capoKeyNames[k] || k;
+                sel.appendChild(opt);
+            });
+        }
+
+        populateCapoSelect('capoShapeKey', 'Shape key (e.g. G)');
+        populateCapoSelect('capoSongKey',  'Song key (e.g. Bb)');
+
+        document.getElementById('capoToggle').addEventListener('change', function() {
+            document.getElementById('capoPanel').classList.toggle('open', this.checked);
+        });
+
+        function updateCapo() {
+            const shapeKey = document.getElementById('capoShapeKey').value;
+            const songKey  = document.getElementById('capoSongKey').value;
+            const fretEl   = document.getElementById('capoFretNum');
+            const textEl   = document.getElementById('capoResultText');
+
+            if (!shapeKey || !songKey) {
+                fretEl.textContent = '—';
+                textEl.innerHTML = 'Select both keys to calculate your capo position.';
+                return;
+            }
+
+            const shapeIdx = capoKeys.indexOf(shapeKey);
+            const songIdx  = capoKeys.indexOf(songKey);
+            const fret     = (songIdx - shapeIdx + 12) % 12;
+
+            if (fret === 0) {
+                fretEl.textContent = '0';
+                textEl.innerHTML = `<strong>No capo needed.</strong> Your ${shapeKey} shapes already sound in ${songKey}.`;
+            } else {
+                const shapeName = capoKeyNames[shapeKey] || shapeKey;
+                const songName  = capoKeyNames[songKey]  || songKey;
+                fretEl.textContent = fret;
+                textEl.innerHTML = `<strong>Capo fret ${fret}.</strong> Play open <strong>${shapeName}</strong> chord shapes — they'll sound in <strong>${songName}</strong>.`;
+            }
+        }
+
+        document.getElementById('capoShapeKey').addEventListener('change', updateCapo);
+        document.getElementById('capoSongKey').addEventListener('change', updateCapo);
     </script>
 </body>
 </html>
