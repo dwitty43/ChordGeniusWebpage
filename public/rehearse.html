@@ -483,13 +483,18 @@ document.getElementById('bpmDown').addEventListener('click',()=>setBpm(bpm-1));
 document.getElementById('sigRow').addEventListener('click',e=>{const b=e.target.closest('.sig-btn');if(!b)return;document.querySelectorAll('.sig-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');beats=+b.dataset.beats;beat=0;buildDots();});
 let taps=[];
 document.getElementById('tapBtn').addEventListener('click',()=>{const n=Date.now();taps=taps.filter(t=>n-t<3000);taps.push(n);if(taps.length>=2){const avg=taps.slice(1).reduce((a,t,i)=>a+(t-taps[i]),0)/(taps.length-1);setBpm(Math.round(60000/avg));}});
-document.addEventListener('keydown',e=>{if(e.code==='Space'&&e.target.tagName!=='INPUT'){e.preventDefault();playing?stop():start();}});
+document.addEventListener('keydown',e=>{
+    if(e.code==='Space'&&!['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+        e.preventDefault();
+        playing?stop():start();
+    }
+});
 
 buildDots(); setBpm(120);
 
 // ── KEY FINDER ──
 const CHROMATIC = ['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
-const ENHARMONIC = {Db:'C#',D$:'Eb','D#':'Eb',Gb:'F#',G$:'Ab','G#':'Ab','A#':'Bb',Cb:'B',E$:'F','E#':'F',B$:'C','B#':'C',Fb:'E'};
+const ENHARMONIC = {'Db':'C#','D#':'Eb','Gb':'F#','G#':'Ab','A#':'Bb','Cb':'B','E#':'F','B#':'C','Fb':'E'};
 const MAJOR_IVLS  = [0,2,4,5,7,9,11];
 const MAJOR_QUALS = ['M','m','m','M','M','m','d'];
 const MAJOR_NAMES = ['I','ii','iii','IV','V','vi','vii°'];

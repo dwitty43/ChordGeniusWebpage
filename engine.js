@@ -109,12 +109,33 @@ async function getFirstSearchResult(query) {
 
         if (match && match[1]) return match[1];
 
-        // Fallback: Bing Search
-        console.log("[Engine] Native search failed, trying Bing fallback...");
-        const bingUrl = `https://www.bing.com/search?q=${encodeURIComponent("site:tabs.ultimate-guitar.com/tab/ chords " + query)}`;
-        const bingHtml = await fetchUGPage(bingUrl, true);
-        const $ = cheerio.load(bingHtml);
+        // Fallback 1: Google Search
+        console.log("[Engine] Native search failed, trying Google fallback...");
+        const googleUrl = `https://www.google.com/search?q=${encodeURIComponent("site:tabs.ultimate-guitar.com/tab/ chords " + query)}`;
+        const googleHtml = await fetchUGPage(googleUrl, true);
+        let $ = cheerio.load(googleHtml);
         let tabUrl = null;
+
+        $('a').each((i, el) => {
+            let href = $(el).attr('href');
+            if (!href) return;
+            // Google sometimes wraps outbound links in a tracking redirect, this unpacks it
+            if (href.startsWith('/url?q=')) {
+                href = decodeURIComponent(href.split('/url?q=')[1].split('&')[0]);
+            }
+            if (href.includes('tabs.ultimate-guitar.com/tab/') && href.includes('chords')) {
+                tabUrl = href;
+                return false; // Break the loop once we find the first valid chart
+            }
+        });
+
+        if (tabUrl) return tabUrl;
+
+        // Fallback 2: Yahoo Search (Highly reliable for cloud datacenter IPs)
+        console.log("[Engine] Google failed, trying Yahoo fallback...");
+        const yahooUrl = `https://search.yahoo.com/search?p=${encodeURIComponent("site:tabs.ultimate-guitar.com/tab/ chords " + query)}`;
+        const yahooHtml = await fetchUGPage(yahooUrl, true);
+        $ = cheerio.load(yahooHtml);
 
         $('a').each((i, el) => {
             let href = $(el).attr('href');
