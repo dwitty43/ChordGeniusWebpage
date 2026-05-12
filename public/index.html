@@ -7,249 +7,364 @@
     <title>Chord Genius Studio | Universal Transposer & Nashville Numbers</title>
     
     <meta name="description" content="Chord Genius is a free, lightning-fast tool for musicians to transpose chords, convert charts to Nashville Numbers, and generate stage-ready PDFs.">
-    
     <meta name="keywords" content="chordgenius, chord genius, nashville numbers converter, chord transposer, ultimate guitar to pdf, worship chart maker">
-    
     <meta name="google-site-verification" content="FqfX0cbmh5HYJS-u39vULmakHLG-L5qDULklEeslzVE" />
-    
     <meta property="og:title" content="Chord Genius Studio">
     <meta property="description" content="The universal transposer and Nashville Number engine.">
     <meta property="og:type" content="website">
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <style>
         /* --- GLOBAL VARIABLES --- */
         :root {
-            --primary: #6366f1;      
-            --primary-hover: #4f46e5;
-            --success: #10b981;      
+            --primary: #f59e0b;
+            --primary-hover: #d97706;
+            --primary-glow: rgba(245, 158, 11, 0.25);
+            --success: #10b981;
             --success-hover: #059669;
-            --upload: #8b5cf6;       
-            --upload-hover: #7c3aed;
-            
-            --bg-gradient: radial-gradient(circle at top left, #f3f4f6, #e5e7eb);
-            --card-bg: #ffffff;
-            --input-bg: #f9fafb;
-            --text-main: #111827;
-            --text-muted: #6b7280;
-            --border: #e5e7eb;
-            --shadow-soft: 0 20px 40px -10px rgba(0, 0, 0, 0.05), 0 10px 15px -5px rgba(0, 0, 0, 0.02);
-            --focus-ring: rgba(99, 102, 241, 0.2);
-            
-            /* Custom Dropdown Chevron (Light Mode) */
-            --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            --upload: #e8792a;
+            --upload-hover: #c96520;
+
+            --bg: #0c0e14;
+            --card-bg: #13161f;
+            --card-border: rgba(245, 158, 11, 0.18);
+            --input-bg: #0a0c12;
+            --text-main: #f0ead6;
+            --text-muted: #8a8070;
+            --border: #252830;
+            --shadow-main: 0 32px 64px -16px rgba(0,0,0,0.7), 0 0 0 1px rgba(245,158,11,0.08);
+            --focus-ring: rgba(245, 158, 11, 0.25);
+
+            --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%238a8070'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
         }
 
-        /* --- DARK MODE OVERRIDES --- */
-        [data-theme="dark"] {
-            --bg-gradient: radial-gradient(circle at top left, #1f2937, #111827);
-            --card-bg: #1e293b;      
-            --input-bg: #0f172a;     
-            --text-main: #f8fafc;    
-            --text-muted: #94a3b8;   
-            --border: #334155;       
-            --shadow-soft: 0 20px 40px -10px rgba(0, 0, 0, 0.3), 0 10px 15px -5px rgba(0, 0, 0, 0.2);
-            --focus-ring: rgba(99, 102, 241, 0.4);
-            
-            /* Custom Dropdown Chevron (Dark Mode) */
-            --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+        /* --- LIGHT MODE --- */
+        [data-theme="light"] {
+            --bg: #f5f0e8;
+            --card-bg: #ffffff;
+            --card-border: rgba(180, 130, 30, 0.2);
+            --input-bg: #faf7f2;
+            --text-main: #1a1208;
+            --text-muted: #7a6a50;
+            --border: #e8dfc8;
+            --shadow-main: 0 20px 48px -12px rgba(80,50,0,0.12), 0 0 0 1px rgba(180,130,30,0.1);
+            --focus-ring: rgba(245, 158, 11, 0.2);
+            --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%237a6a50'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
         }
 
         *, *::before, *::after { box-sizing: border-box; }
 
         body {
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: var(--bg-gradient);
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--bg);
+            background-image:
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 28px,
+                    rgba(245, 158, 11, 0.045) 28px,
+                    rgba(245, 158, 11, 0.045) 29px
+                );
             color: var(--text-main);
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: flex-start;
             min-height: 100vh;
             margin: 0;
-            padding: 20px;
-            transition: background 0.4s ease;
+            padding: 40px 20px;
+            transition: background-color 0.4s ease, color 0.4s ease;
         }
 
-        /* --- THE APP CARD --- */
+        /* --- APP CARD --- */
         .app-card {
             background-color: var(--card-bg);
             width: 100%;
-            max-width: 800px; 
-            padding: 48px;
-            border-radius: 24px;
-            box-shadow: var(--shadow-soft);
-            border: 1px solid var(--border);
+            max-width: 820px;
+            padding: 52px;
+            border-radius: 20px;
+            box-shadow: var(--shadow-main);
+            border: 1px solid var(--card-border);
             transition: background-color 0.4s ease, border-color 0.4s ease;
             animation: fadeInUp 0.5s ease-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Decorative amber top bar */
+        .app-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #f59e0b 20%, #e8792a 60%, transparent);
         }
 
         @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
+            from { opacity: 0; transform: translateY(24px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* --- TYPOGRAPHY --- */
+        /* --- HEADER --- */
         .header-container {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-        
-        h1 { 
-            margin: 0; 
-            font-size: 32px; 
-            font-weight: 800;
-            letter-spacing: -0.02em;
-            line-height: 1.2;
-            padding-bottom: 6px; 
-            background: linear-gradient(135deg, var(--primary), var(--upload));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        p.subtitle { 
-            color: var(--text-muted); 
-            margin-top: 0;
-            margin-bottom: 32px; 
-            font-size: 16px; 
-            line-height: 1.5;
+            align-items: flex-start;
+            margin-bottom: 6px;
         }
 
-        /* --- INFO & WARNING BOXES --- */
-        .info-box {
-            background-color: var(--input-bg);
-            border: 1px solid var(--border);
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #f59e0b, #e8792a);
             border-radius: 12px;
-            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 4px 16px rgba(245,158,11,0.35);
+        }
+
+        h1 {
+            margin: 0;
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 34px;
+            font-weight: 800;
+            letter-spacing: -0.01em;
+            line-height: 1.1;
+            background: linear-gradient(135deg, #f5c842 10%, #f59e0b 50%, #e8792a 90%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .badge {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            border-radius: 4px;
+            padding: 2px 7px;
+            margin-left: 2px;
+            vertical-align: middle;
+            opacity: 0.8;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            margin-top: 8px;
             margin-bottom: 36px;
+            font-size: 15px;
+            line-height: 1.5;
+            padding-left: 58px;
+        }
+
+        /* --- THEME TOGGLE --- */
+        #themeToggle {
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            padding: 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            color: var(--text-muted);
+            width: auto;
+            box-shadow: none;
+            flex-shrink: 0;
+            margin-top: 2px;
+            transition: border-color 0.2s, color 0.2s;
+        }
+        #themeToggle:hover { border-color: var(--primary); color: var(--primary); }
+
+        /* --- SECTION LABELS --- */
+        .section-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 14px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--primary);
+        }
+        .section-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, var(--primary), transparent);
+            opacity: 0.3;
+        }
+
+        /* --- INFO BOX --- */
+        .info-box {
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--primary);
+            border-radius: 0 12px 12px 0;
+            padding: 22px 24px;
+            margin-bottom: 40px;
             font-size: 14px;
-            line-height: 1.6;
+            line-height: 1.65;
         }
-        
-        .info-box h4 { margin: 0 0 12px 0; color: var(--text-main); font-size: 15px; font-weight: 700;}
-        .info-box ul { margin: 0 0 16px 0; padding-left: 20px; color: var(--text-muted); }
-        .info-box li { margin-bottom: 8px; }
-        
+
+        .info-box h4 {
+            margin: 0 0 10px 0;
+            color: var(--primary);
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .info-box p {
+            color: var(--text-muted);
+            margin: 0 0 20px 0;
+        }
+
+        .info-box ul {
+            margin: 0 0 18px 0;
+            padding-left: 18px;
+            color: var(--text-muted);
+        }
+
+        .info-box li { margin-bottom: 9px; }
+        .info-box li strong { color: var(--text-main); }
+
         .warning-box {
-            padding: 12px 16px;
-            background-color: rgba(245, 158, 11, 0.1);
-            border-left: 4px solid #f59e0b;
-            color: #b45309;
+            padding: 11px 16px;
+            background-color: rgba(245, 158, 11, 0.07);
+            border-left: 3px solid #f59e0b;
+            color: var(--primary);
             border-radius: 0 8px 8px 0;
-            font-size: 13.5px;
+            font-size: 13px;
         }
-        [data-theme="dark"] .warning-box { color: #fbbf24; }
 
         /* --- DIVIDER --- */
         .divider {
             display: flex;
             align-items: center;
             text-align: center;
-            margin: 40px 0;
+            margin: 44px 0;
             color: var(--text-muted);
-            font-size: 14px;
-            font-weight: 600;
+            font-size: 12px;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.1em;
+            letter-spacing: 0.14em;
+            gap: 16px;
         }
         .divider::before, .divider::after {
             content: '';
             flex: 1;
             border-bottom: 1px solid var(--border);
         }
-        .divider::before { margin-right: 16px; }
-        .divider::after { margin-left: 16px; }
+        .divider-icon {
+            color: var(--primary);
+            opacity: 0.6;
+            font-size: 16px;
+        }
 
         /* --- GRID LAYOUTS --- */
         .grid-inputs {
             display: grid;
-            grid-template-columns: 1fr 180px 180px; 
-            gap: 12px;
-            margin-bottom: 96px; /* Massive clearance to ensure text never overlaps the buttons below */
+            grid-template-columns: 1fr 168px 168px;
+            gap: 10px;
+            margin-bottom: 96px;
         }
 
         .grid-buttons {
             display: grid;
-            /* THE FIX: Widened the first column from 100px to 130px */
-            grid-template-columns: 130px 1fr 1fr; 
-            gap: 12px;
+            grid-template-columns: 120px 1fr 1fr;
+            gap: 10px;
             margin-bottom: 16px;
         }
 
         /* --- INPUTS & FORMS --- */
         input[type="text"], input[type="file"], select {
             width: 100%;
-            padding: 14px 16px;
-            font-size: 15px;
+            padding: 13px 16px;
+            font-size: 14.5px;
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: 10px;
             outline: none;
             background-color: var(--input-bg);
             color: var(--text-main);
             transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s;
-            font-family: inherit;
+            font-family: 'Inter', inherit;
         }
-        
-        input[type="text"]:focus, select:focus { 
-            border-color: var(--primary); 
-            box-shadow: 0 0 0 4px var(--focus-ring); 
+
+        input[type="text"]:focus, select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--focus-ring);
         }
 
         input[type="text"]::placeholder {
             color: var(--text-muted);
-            opacity: 0.7;
+            opacity: 0.6;
         }
 
-        /* Sleek Select Styling */
         select {
             appearance: none;
             -webkit-appearance: none;
             background-image: var(--chevron);
             background-repeat: no-repeat;
-            background-position: right 14px center;
-            background-size: 18px;
-            padding-right: 40px; 
+            background-position: right 12px center;
+            background-size: 17px;
+            padding-right: 36px;
             cursor: pointer;
-            text-overflow: ellipsis; 
         }
-        
+
         select optgroup { font-weight: 700; color: var(--text-muted); }
         select option { font-weight: 500; color: var(--text-main); background-color: var(--card-bg); }
 
-        /* Custom File Upload Styling */
-        .file-wrapper { 
-            position: relative; 
-        }
-        
+        /* File Upload */
+        .file-wrapper { position: relative; }
+
         input[type="file"] {
-            padding: 11px 16px;
+            padding: 10px 16px;
             border: 2px dashed var(--border);
             cursor: pointer;
-            height: 100%; 
+            height: 100%;
         }
-        
+
         input[type="file"]::file-selector-button {
-            margin-right: 16px; padding: 6px 14px; border: 1px solid var(--border); border-radius: 6px;
-            background-color: var(--card-bg); color: var(--text-main); font-weight: 600; cursor: pointer;
-            transition: all 0.2s;
+            margin-right: 14px; padding: 5px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background-color: var(--card-bg);
+            color: var(--text-muted);
+            font-weight: 600; cursor: pointer;
+            transition: all 0.2s; font-size: 13px;
         }
-        
-        input[type="file"]::file-selector-button:hover { 
-            background-color: var(--border); 
+
+        input[type="file"]::file-selector-button:hover {
+            border-color: var(--primary);
+            color: var(--primary);
         }
-        
-        input[type="file"]:focus { 
-            border-color: var(--upload); box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2); 
+
+        input[type="file"]:focus {
+            border-color: var(--upload);
+            box-shadow: 0 0 0 3px rgba(232, 121, 42, 0.2);
         }
 
         /* --- HELPER TEXT --- */
         .helper-text-container {
-            position: absolute; 
+            position: absolute;
             top: 100%;
             left: 4px;
-            width: calc(100% + 350px); /* Safely stretches across the grid columns */
-            max-width: 600px; 
+            width: calc(100% + 350px);
+            max-width: 600px;
             margin-top: 6px;
             pointer-events: none;
         }
@@ -257,146 +372,227 @@
         .helper-text {
             font-size: 12px;
             color: var(--text-muted);
-            white-space: normal; 
+            white-space: normal;
             line-height: 1.4;
         }
 
         .warning-text {
-            color: #b45309;
+            color: #b08020;
             margin-top: 4px;
         }
 
-        [data-theme="dark"] .warning-text { 
-            color: #fbbf24; 
-        }
+        [data-theme="light"] .warning-text { color: #a06010; }
 
         /* --- BUTTONS --- */
         button {
             width: 100%;
-            padding: 14px 20px;
-            font-size: 15px;
+            padding: 13px 20px;
+            font-size: 14.5px;
             font-weight: 700;
             color: white;
             border: none;
-            border-radius: 12px;
+            border-radius: 10px;
             cursor: pointer;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             justify-content: center;
             align-items: center;
             gap: 8px;
+            font-family: 'Inter', inherit;
+            letter-spacing: 0.01em;
         }
 
-        #searchBtn { background-color: var(--primary); }
-        #searchBtn:hover:not(:disabled) { background-color: var(--primary-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
-        
-        #uploadBtn { background-color: var(--upload); }
-        #uploadBtn:hover:not(:disabled) { background-color: var(--upload-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3); }
-        
-        .downloadBtn { background-color: var(--success); }
-        .downloadBtn:hover:not(:disabled) { background-color: var(--success-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
-        
-        button:disabled { background-color: var(--border); color: var(--text-muted); cursor: not-allowed; box-shadow: none; }
-        button:active:not(:disabled) { transform: translateY(1px); }
+        #searchBtn {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: #0c0e14;
+        }
+        #searchBtn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(245,158,11,0.4);
+        }
 
-        /* --- STATUS NOTIFICATION --- */
-        #status { 
-            margin-top: 32px; padding: 16px; border-radius: 12px; font-size: 14px; font-weight: 600; text-align: center; display: none; 
+        #uploadBtn {
+            background: linear-gradient(135deg, #e8792a, #c96520);
+            color: #fff;
+        }
+        #uploadBtn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #f08030, #e8792a);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(232,121,42,0.4);
+        }
+
+        .downloadBtn {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        .downloadBtn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #34d399, #10b981);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(16,185,129,0.35);
+        }
+
+        button:disabled {
+            background: var(--border) !important;
+            color: var(--text-muted) !important;
+            cursor: not-allowed;
+            box-shadow: none !important;
+            transform: none !important;
+        }
+        button:active:not(:disabled) { transform: translateY(1px) !important; }
+
+        /* --- STATUS --- */
+        #status {
+            margin-top: 28px;
+            padding: 14px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            display: none;
             animation: fadeInUp 0.3s ease-out;
         }
-        .status-active { display: block !important; background-color: var(--input-bg); border: 1px solid var(--border); color: var(--text-muted); }
-        .status-success { display: block !important; background-color: rgba(16, 185, 129, 0.1); color: #059669; border: 1px solid rgba(16, 185, 129, 0.2); }
-        .status-error { display: block !important; background-color: rgba(239, 68, 68, 0.1); color: #b91c1c; border: 1px solid rgba(239, 68, 68, 0.2); }
-        [data-theme="dark"] .status-success { color: #34d399; }
-        [data-theme="dark"] .status-error { color: #f87171; }
+        .status-active  { display: block !important; background: var(--input-bg); border: 1px solid var(--border); color: var(--text-muted); }
+        .status-success { display: block !important; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); color: #10b981; }
+        .status-error   { display: block !important; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); color: #ef4444; }
 
-        /* --- RESPONSIVE BREAKPOINT --- */
+        /* --- FOOTER LINE --- */
+        .card-footer {
+            margin-top: 36px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-muted);
+            opacity: 0.6;
+        }
+
+        /* --- RESPONSIVE --- */
         @media (max-width: 768px) {
-            .app-card { padding: 32px 24px; border-radius: 20px; }
-            .grid-inputs { grid-template-columns: 1fr; gap: 16px; margin-bottom: 24px; }
-            .grid-buttons { grid-template-columns: 1fr; gap: 12px; }
+            body { padding: 20px 12px; }
+            .app-card { padding: 32px 24px; border-radius: 16px; }
+            .grid-inputs { grid-template-columns: 1fr; gap: 14px; margin-bottom: 24px; }
+            .grid-buttons { grid-template-columns: 1fr; gap: 10px; }
             .divider { margin: 32px 0; }
-            
             input[type="file"] { height: auto; }
-
-            .helper-text-container {
-                position: static;
-                width: 100%;
-                margin-top: 8px;
-            }
+            p.subtitle { padding-left: 0; }
+            .helper-text-container { position: static; width: 100%; margin-top: 8px; }
         }
     </style>
 </head>
 <body>
 
     <div class="app-card">
+
         <div class="header-container">
-            <h1>Chord Genius</h1>
-            <button id="themeToggle" style="background: var(--input-bg); border: 1px solid var(--border); padding: 10px; border-radius: 12px; cursor: pointer; color: var(--text-main); width: auto; box-shadow: none;">
-                <svg id="moonIcon" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
-                <svg id="sunIcon" style="display: none;" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+            <div class="brand">
+                <div class="brand-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M9 18V5l12-2v13" stroke="#0c0e14" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="6" cy="18" r="3" stroke="#0c0e14" stroke-width="2"/>
+                        <circle cx="18" cy="16" r="3" stroke="#0c0e14" stroke-width="2"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1>Chord Genius <span class="badge">Studio</span></h1>
+                </div>
+            </div>
+            <button id="themeToggle" title="Toggle theme">
+                <svg id="moonIcon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                <svg id="sunIcon" style="display:none" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
             </button>
         </div>
-        <p class="subtitle">The universal transposer and Nashville Number engine.</p>
+
+        <p class="subtitle">The universal transposer &amp; Nashville Number engine.</p>
 
         <div class="info-box">
             <h4>What is Chord Genius?</h4>
-            <p style="margin-top: 0; color: var(--text-muted); margin-bottom: 20px;">
-                Whether you need to shift a song's key to fit a singer's vocal range, or you want to prep a chart for a full band, Chord Genius does the heavy musical math for you. It instantly converts standard chords into any new key, or into the universal Nashville Number System.
+            <p>
+                Whether you need to shift a song's key to fit a singer's vocal range, or prep a chart for a full band, Chord Genius handles the musical math for you — instantly converting chords to any key or the Nashville Number System.
             </p>
-            
+
             <h4>How to Use It</h4>
             <ul>
-                <li><strong>1. Find Your Chart:</strong> Type a song name to instantly pull a chart from Ultimate Guitar's database, or upload your own local document.</li>
-                <li><strong>2. Verify the Original Key:</strong> We attempt to auto-detect the song's starting key. If it looks incorrect, you can manually override it using the <strong>Orig Key</strong> dropdown.</li>
-                <li><strong>3. Transpose or Convert:</strong> To transpose a song, select your new <strong>To Key</strong>. To generate a universal number chart, leave it set to "Nashville". <em>(Pro-Tip: If you are uploading a chart that is already in numbers, select "Nashville Numbers" as your Orig Key!)</em></li>
-                <li><strong>4. Download:</strong> Choose your format (.DOCX for easy editing, or .PDF for a stage-ready layout) and hit convert!</li>
+                <li><strong>1. Find Your Chart:</strong> Search by song name to pull from Ultimate Guitar, or upload your own .txt, .docx, or .pdf file.</li>
+                <li><strong>2. Verify the Key:</strong> We auto-detect the key — override it with <strong>Orig Key</strong> if needed.</li>
+                <li><strong>3. Transpose or Convert:</strong> Pick a <strong>To Key</strong> to transpose, or leave it on "Nashville" to generate number charts. <em>Already in numbers? Select "Nashville Numbers" as your Orig Key.</em></li>
+                <li><strong>4. Download:</strong> Choose .DOCX for easy editing or .PDF for a stage-ready print, then hit convert.</li>
             </ul>
 
-            <div class="warning-box" style="margin-top: 20px;">
-                ⚠️ <strong>Note:</strong> Charts scraped from the web rely on the original author's accuracy. Always double-check that the starting key makes sense for the song!
+            <div class="warning-box">
+                &#9835; <strong>Heads up:</strong> Web-scraped charts depend on the original author's accuracy. Always verify the starting key sounds right!
             </div>
         </div>
 
-        <div class="grid-inputs" style="margin-bottom: 32px;">
-            <input type="text" id="songQuery" placeholder='Search (e.g. "Yellow Coldplay")'>
-            <select id="songKey"></select> <select id="targetKeySearch"></select> 
+        <div class="section-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/></svg>
+            Search &amp; Convert
         </div>
-        
+
+        <div class="grid-inputs" style="margin-bottom: 32px;">
+            <input type="text" id="songQuery" placeholder='Song name (e.g. "Yellow – Coldplay")'>
+            <select id="songKey"></select>
+            <select id="targetKeySearch"></select>
+        </div>
+
         <div class="grid-buttons">
             <select id="searchFormat">
                 <option value="docx">.DOCX</option>
                 <option value="pdf">.PDF</option>
             </select>
-            <button id="searchBtn">Scrape & Convert</button>
+            <button id="searchBtn">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                Scrape &amp; Convert
+            </button>
             <button id="downloadSearchBtn" class="downloadBtn" disabled>Download Chart</button>
         </div>
 
-        <div class="divider">Or Upload a File</div>
+        <div class="divider">
+            <span class="divider-icon">&#9836;</span>
+            Or Upload a File
+            <span class="divider-icon">&#9836;</span>
+        </div>
+
+        <div class="section-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            Upload &amp; Convert
+        </div>
 
         <div class="grid-inputs">
             <div class="file-wrapper">
                 <input type="file" id="fileInput" accept=".txt,.docx,.pdf">
                 <div class="helper-text-container">
-                    <div class="helper-text">Accepts .txt, .docx, .pdf (Max 5MB)</div>
+                    <div class="helper-text">Accepts .txt, .docx, .pdf &mdash; Max 5 MB</div>
                     <div class="helper-text warning-text">
-                        <em>Pro-Tip: PDFs often lose their chord spacing. For perfect alignment, open your PDF in Microsoft Word or Google Docs, save it as a .DOCX, and upload that instead!</em>
+                        <em>Pro-Tip: PDFs often lose chord spacing. Convert your PDF to .DOCX in Word or Google Docs first for the best result.</em>
                     </div>
                 </div>
             </div>
-            <select id="uploadKey"></select> <select id="targetKeyUpload"></select> 
+            <select id="uploadKey"></select>
+            <select id="targetKeyUpload"></select>
         </div>
-        
+
         <div class="grid-buttons">
             <select id="uploadFormat">
                 <option value="docx">.DOCX</option>
                 <option value="pdf">.PDF</option>
             </select>
-            <button id="uploadBtn">Convert File</button>
+            <button id="uploadBtn">
+                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                Convert File
+            </button>
             <button id="downloadUploadBtn" class="downloadBtn" disabled>Download Chart</button>
         </div>
-        
+
         <div id="status"></div>
+
+        <div class="card-footer">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            Chord Genius Studio &mdash; Built for musicians, by musicians.
+        </div>
+
     </div>
 
     <script>
@@ -456,25 +652,26 @@
         const themeToggle = document.getElementById('themeToggle');
         const sunIcon = document.getElementById('sunIcon');
         const moonIcon = document.getElementById('moonIcon');
-        
-        let currentTheme = localStorage.getItem('theme') || 'light';
-        if (currentTheme === 'dark') applyDarkTheme();
+
+        let currentTheme = localStorage.getItem('theme') || 'dark';
+        if (currentTheme === 'light') applyLightTheme();
+        else applyDarkTheme();
 
         themeToggle.addEventListener('click', () => {
-            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
             if (currentTheme === 'dark') applyDarkTheme();
             else applyLightTheme();
         });
 
         function applyDarkTheme() {
-            document.documentElement.setAttribute('data-theme', 'dark');
+            document.documentElement.removeAttribute('data-theme');
             localStorage.setItem('theme', 'dark');
             moonIcon.style.display = 'none';
             sunIcon.style.display = 'block';
         }
 
         function applyLightTheme() {
-            document.documentElement.removeAttribute('data-theme');
+            document.documentElement.setAttribute('data-theme', 'light');
             localStorage.setItem('theme', 'light');
             sunIcon.style.display = 'none';
             moonIcon.style.display = 'block';
@@ -508,7 +705,7 @@
         }
 
         function showStatus(text, type) {
-            statusDiv.className = ''; 
+            statusDiv.className = '';
             statusDiv.innerText = text;
             if (type === 'active') statusDiv.classList.add('status-active');
             if (type === 'success') statusDiv.classList.add('status-success');
@@ -563,7 +760,7 @@
 
                 setupDownload(await response.blob(), response.headers.get('Content-Disposition'));
                 
-                dlSearchBtn.innerHTML = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Download .${format.toUpperCase()}`;
+                dlSearchBtn.innerHTML = `<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Download .${format.toUpperCase()}`;
                 dlSearchBtn.disabled = false;
                 showStatus("Chart generated! Ready to download.", "success");
 
@@ -595,7 +792,7 @@
             if (!validExtensions.some(ext => fileName.endsWith(ext))) {
                 return showStatus("Security Block: Only .txt, .docx, and .pdf files are allowed.", "error");
             }
-            if (file.size > 5 * 1024 * 1024) { 
+            if (file.size > 5 * 1024 * 1024) {
                 return showStatus("File is too large! Maximum allowed size is 5MB.", "error");
             }
 
@@ -617,7 +814,7 @@
 
                 setupDownload(await response.blob(), response.headers.get('Content-Disposition'));
                 
-                dlUploadBtn.innerHTML = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Download .${format.toUpperCase()}`;
+                dlUploadBtn.innerHTML = `<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Download .${format.toUpperCase()}`;
                 dlUploadBtn.disabled = false;
                 showStatus("File converted! Ready to download.", "success");
 
