@@ -76,6 +76,55 @@ app.get('/api/convert', async (req, res) => {
     }
 });
 
+// --- FEATURE 8: RAW TEXT GENERATOR FOR EDITOR ---
+app.get('/api/preview', async (req, res) => {
+    const { q: query, key: songKey, targetKey, simplify } = req.query;
+    try {
+        const tabUrl = await getFirstSearchResult(query); 
+        const html = await fetchUGPage(tabUrl);
+        const tabData = extractTabData(html);
+        
+        const finalKey = songKey || tabData.songKey;
+        if (!finalKey) return res.status(400).json({ error: "No key found." });
+
+        const isSimplify = simplify === 'true';
+        const finalChart = processAndAlignTabs(tabData.rawTabText, finalKey, targetKey || '', false, isSimplify);
+        
+        // Return raw text instead of a file buffer!
+        res.json({ title: query, originalKey: finalKey, targetKey: targetKey || 'Nashville', text: finalChart });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// --- FEATURE 9: BATCH SETLIST BINDER EXPORT ---
+app.post('/api/binder', async (req, res) => {
+    const { setlist, format } = req.body; 
+    // setlist is an array of objects: { title, originalKey, targetKey, text }
+    
+    if (!setlist || setlist.length === 0) return res.status(400).json({ error: "Setlist is empty." });
+
+    try {
+        console.log(`[API] Generating ${format} Binder for ${setlist.length} songs...`);
+        
+        // Stitch the text together with massive page breaks
+        let combinedText = "";
+        for (let song of setlist) {
+            // Add spacing between songs so Mammoth/Puppeteer forces page breaks
+            combinedText += `\n\n\n=== SONG START ===\n${song.title.toUpperCase()}\n`;
+            combinedText += `Key: ${song.targetKey}\n\n`;
+            combinedText += song.text;
+            combinedText += `\n\n\n\n\n`; // Pad the bottom
+        }
+
+        // We use the same delivery function, treating the combined text as one massive chart
+        await deliverFile(res, combinedText, "Setlist_Binder", "Mixed", "Mixed", format);
+
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // --- ROUTE 2: UPLOAD ---
 app.post('/api/import', upload.single('chartFile'), async (req, res) => {
     const songKey = req.body.key;
