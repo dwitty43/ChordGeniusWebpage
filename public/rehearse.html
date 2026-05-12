@@ -179,6 +179,89 @@
         .kb-hint { text-align: center; margin-top: 16px; font-size: 11px; color: var(--text-muted); opacity: 0.6; }
         .kb-hint kbd { background: var(--card-bg); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; font-family: inherit; font-size: 10px; }
 
+        /* ── KEY FINDER ── */
+        .kf-panel { background: var(--panel-bg); border: 1px solid var(--border); border-left: 3px solid var(--primary); border-radius: 0 16px 16px 0; padding: 28px; }
+        .kf-input-row { display: flex; gap: 10px; margin-bottom: 8px; }
+        .kf-textarea {
+            flex: 1; padding: 13px 16px; font-size: 14px; border: 1px solid var(--border);
+            border-radius: 10px; outline: none; background: var(--input-bg); color: var(--text-main);
+            font-family: 'Inter', inherit; resize: none; height: 48px; line-height: 1.4;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .kf-textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--focus-ring); }
+        .kf-textarea::placeholder { color: var(--text-muted); opacity: 0.55; }
+        .kf-btn {
+            padding: 12px 22px; font-size: 13.5px; font-weight: 800;
+            background: linear-gradient(135deg, #f59e0b, #d97706); color: #09060a;
+            border: none; border-radius: 10px; cursor: pointer;
+            transition: all 0.2s; font-family: 'Inter', inherit;
+            display: flex; align-items: center; gap: 7px; white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .kf-btn:hover { background: linear-gradient(135deg, #fbbf24, #f59e0b); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(245,158,11,0.35); }
+        .kf-hint { font-size: 11.5px; color: var(--text-muted); margin-bottom: 20px; }
+        .kf-hint em { opacity: 0.7; }
+
+        /* Result */
+        .kf-result { display: none; animation: fadeInUp 0.35s ease-out; }
+        .kf-result.show { display: block; }
+        .kf-result-main {
+            display: flex; align-items: center; gap: 24px;
+            background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: 14px; padding: 24px 28px; margin-bottom: 16px;
+            position: relative; overflow: hidden;
+        }
+        .kf-result-main::before {
+            content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+            background: linear-gradient(to bottom, #f59e0b, #e8792a);
+        }
+        .kf-key-name {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 52px; font-weight: 800; color: var(--primary);
+            line-height: 1; text-shadow: 0 0 40px rgba(245,158,11,0.3);
+            flex-shrink: 0; min-width: 80px; letter-spacing: -1px;
+        }
+        .kf-key-meta { flex: 1; }
+        .kf-mode {
+            font-size: 18px; font-weight: 700; color: var(--text-main);
+            font-family: 'Playfair Display', serif; margin-bottom: 6px;
+        }
+        .kf-confidence { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .kf-conf-bar-wrap { flex: 1; height: 5px; background: var(--border); border-radius: 3px; max-width: 180px; }
+        .kf-conf-bar { height: 100%; border-radius: 3px; background: linear-gradient(90deg, #f59e0b, #10b981); transition: width 0.6s ease; }
+        .kf-conf-text { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+        .kf-relative { font-size: 12.5px; color: var(--text-muted); }
+        .kf-relative strong { color: var(--text-main); }
+
+        /* Diatonic chords grid */
+        .kf-chords-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: var(--text-muted); margin-bottom: 10px; }
+        .kf-chords { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 16px; }
+        .kf-chord-pill {
+            padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border);
+            background: var(--card-bg); font-size: 13px; font-weight: 700;
+            color: var(--text-muted); display: flex; flex-direction: column; align-items: center; gap: 2px;
+            min-width: 46px; text-align: center;
+        }
+        .kf-chord-pill.matched {
+            background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.5);
+            color: var(--primary); box-shadow: 0 0 12px rgba(245,158,11,0.1);
+        }
+        .kf-chord-pill .roman { font-size: 9px; font-weight: 700; letter-spacing: 0.08em; opacity: 0.6; }
+
+        /* Alternatives */
+        .kf-alts { display: flex; gap: 8px; flex-wrap: wrap; }
+        .kf-alt-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); margin-bottom: 8px; }
+        .kf-alt-pill {
+            padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border);
+            background: var(--card-bg); font-size: 12.5px; font-weight: 700; color: var(--text-muted);
+            cursor: pointer; transition: all 0.2s;
+        }
+        .kf-alt-pill:hover { border-color: var(--primary); color: var(--primary); }
+        .kf-no-match {
+            padding: 16px 20px; background: rgba(239,68,68,0.07); border: 1px solid rgba(239,68,68,0.18);
+            border-radius: 10px; color: #ef4444; font-size: 13.5px; font-weight: 600; text-align: center;
+        }
+
         /* ── FOOTER ── */
         .card-footer { margin-top: 44px; padding-top: 20px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 11.5px; color: var(--text-muted); opacity: 0.5; }
 
@@ -308,6 +391,28 @@
             </div>
         </div>
 
+        <!-- KEY FINDER -->
+        <div class="section">
+            <div class="section-label">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/><path stroke-linecap="round" stroke-linejoin="round" d="M11 8v3m0 2h.01"/></svg>
+                Song Key Finder
+            </div>
+            <div class="kf-panel">
+                <div class="kf-input-row">
+                    <textarea class="kf-textarea" id="kfInput" placeholder="Type your chords separated by spaces or commas — e.g.  Am  F  C  G" rows="1"></textarea>
+                    <button class="kf-btn" id="kfBtn">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        Find Key
+                    </button>
+                </div>
+                <div class="kf-hint"><em>Works with major, minor, dim, sus, 7th chords — just type them as you'd write them on a chart.</em></div>
+
+                <div class="kf-result" id="kfResult">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
         <div class="card-footer">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
             Chord Genius Studio &mdash; Built for musicians, by musicians.
@@ -381,6 +486,130 @@ document.getElementById('tapBtn').addEventListener('click',()=>{const n=Date.now
 document.addEventListener('keydown',e=>{if(e.code==='Space'&&e.target.tagName!=='INPUT'){e.preventDefault();playing?stop():start();}});
 
 buildDots(); setBpm(120);
+
+// ── KEY FINDER ──
+const CHROMATIC = ['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
+const ENHARMONIC = {Db:'C#',D$:'Eb','D#':'Eb',Gb:'F#',G$:'Ab','G#':'Ab','A#':'Bb',Cb:'B',E$:'F','E#':'F',B$:'C','B#':'C',Fb:'E'};
+const MAJOR_IVLS  = [0,2,4,5,7,9,11];
+const MAJOR_QUALS = ['M','m','m','M','M','m','d'];
+const MAJOR_NAMES = ['I','ii','iii','IV','V','vi','vii°'];
+const MINOR_IVLS  = [0,2,3,5,7,8,10];
+const MINOR_QUALS = ['m','d','M','m','m','M','M'];
+const MINOR_NAMES = ['i','ii°','III','iv','v','VI','VII'];
+
+const normalizeNote = r => ENHARMONIC[r] || r;
+
+function parseChords(raw) {
+    return raw.split(/[\s,;|/\n]+/).map(s => s.trim()).filter(Boolean).map(s => {
+        const m = s.match(/^([A-G][#b]?)(.*)/);
+        if (!m) return null;
+        const root = normalizeNote(m[1]);
+        const rest = m[2].toLowerCase();
+        let quality = 'M';
+        if (/^(m|min)(?!aj)/.test(rest)) quality = 'm';
+        else if (/dim/.test(rest)) quality = 'd';
+        return { root, quality, raw: s };
+    }).filter(Boolean);
+}
+
+function scoreKey(chords, rootNote, intervals, quals) {
+    const rootIdx = CHROMATIC.indexOf(rootNote);
+    let score = 0; const matches = new Set();
+    chords.forEach(chord => {
+        const ci = CHROMATIC.indexOf(chord.root);
+        const ivl = (ci - rootIdx + 12) % 12;
+        const di = intervals.indexOf(ivl);
+        if (di >= 0 && chord.quality === quals[di]) { score++; matches.add(chord.raw); }
+        // Also accept dominant 7 / aug as major
+        if (di >= 0 && quals[di]==='M' && chord.quality==='M') matches.add(chord.raw);
+    });
+    return { score, matches };
+}
+
+function buildDiatonicPills(rootNote, intervals, quals, names, userChords, container) {
+    const rootIdx = CHROMATIC.indexOf(rootNote);
+    const userRoots = new Set(userChords.map(c=>c.root+c.quality[0]));
+    container.innerHTML = '';
+    intervals.forEach((ivl, i) => {
+        const noteIdx = (rootIdx + ivl) % 12;
+        const noteName = CHROMATIC[noteIdx];
+        const chordName = noteName + (quals[i]==='m'?'m':quals[i]==='d'?'dim':'');
+        const matched = userRoots.has(noteName+quals[i]);
+        const pill = document.createElement('div');
+        pill.className = 'kf-chord-pill' + (matched ? ' matched' : '');
+        pill.innerHTML = `<span>${chordName}</span><span class="roman">${names[i]}</span>`;
+        container.appendChild(pill);
+    });
+}
+
+function relativeKey(rootNote, mode) {
+    const idx = CHROMATIC.indexOf(rootNote);
+    if (mode === 'major') {
+        const relIdx = (idx + 9) % 12;
+        return CHROMATIC[relIdx] + ' minor';
+    } else {
+        const relIdx = (idx + 3) % 12;
+        return CHROMATIC[relIdx] + ' major';
+    }
+}
+
+function runKeyFinder() {
+    const raw = document.getElementById('kfInput').value;
+    const resultEl = document.getElementById('kfResult');
+    const chords = parseChords(raw);
+    if (!chords.length) { resultEl.className='kf-result show'; resultEl.innerHTML='<div class="kf-no-match">Please enter at least one chord.</div>'; return; }
+
+    let results = [];
+    CHROMATIC.forEach(root => {
+        const maj = scoreKey(chords, root, MAJOR_IVLS, MAJOR_QUALS);
+        results.push({ root, mode:'major', ...maj, intervals:MAJOR_IVLS, quals:MAJOR_QUALS, names:MAJOR_NAMES });
+        const min = scoreKey(chords, root, MINOR_IVLS, MINOR_QUALS);
+        results.push({ root, mode:'minor', ...min, intervals:MINOR_IVLS, quals:MINOR_QUALS, names:MINOR_NAMES });
+    });
+    results.sort((a,b) => b.score - a.score || (a.mode==='major' ? -0.1 : 0.1));
+
+    const best = results[0];
+    const alts = results.filter((r,i) => i>0 && r.score>0 && r.score >= best.score-1).slice(0,4);
+
+    const modeName = best.mode === 'major' ? 'Major' : 'Minor';
+    const pct = best.score / chords.length * 100;
+
+    let html = `
+        <div class="kf-result-main">
+            <div class="kf-key-name">${best.root}</div>
+            <div class="kf-key-meta">
+                <div class="kf-mode">${best.root} ${modeName}</div>
+                <div class="kf-confidence">
+                    <div class="kf-conf-bar-wrap"><div class="kf-conf-bar" style="width:${pct}%"></div></div>
+                    <span class="kf-conf-text">${best.score} of ${chords.length} chord${chords.length!==1?'s':''} match</span>
+                </div>
+                <div class="kf-relative">Relative ${best.mode==='major'?'minor':'major'}: <strong>${relativeKey(best.root, best.mode)}</strong></div>
+            </div>
+        </div>
+        <div class="kf-chords-label">Diatonic chords in ${best.root} ${modeName}</div>
+        <div class="kf-chords" id="kfDiatonicChords"></div>`;
+
+    if (alts.length) {
+        html += `<div class="kf-alt-label">Other possible keys</div><div class="kf-alts">`;
+        alts.forEach(r => {
+            html += `<div class="kf-alt-pill">${r.root} ${r.mode==='major'?'Major':'Minor'} <span style="opacity:0.5;font-size:11px">(${r.score}/${chords.length})</span></div>`;
+        });
+        html += `</div>`;
+    }
+
+    if (best.score === 0) {
+        resultEl.className='kf-result show';
+        resultEl.innerHTML=`<div class="kf-no-match">No diatonic match found. The progression may be chromatic, modal, or borrowed from another key. Try checking individual chords.</div>`;
+        return;
+    }
+
+    resultEl.className='kf-result show';
+    resultEl.innerHTML = html;
+    buildDiatonicPills(best.root, best.intervals, best.quals, best.names, chords, document.getElementById('kfDiatonicChords'));
+}
+
+document.getElementById('kfBtn').addEventListener('click', runKeyFinder);
+document.getElementById('kfInput').addEventListener('keydown', e => { if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); runKeyFinder(); } });
 </script>
 </body>
 </html>
