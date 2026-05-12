@@ -46,8 +46,7 @@ function parseChord(chordString) {
     });
 }
 
-// NEW: Added simplify parameter
-function transposeChord(chordString, originalKey, targetKey, simplify = false) {
+function transposeChord(chordString, originalKey, targetKey) {
     if (/^[|()\[\]{}:\-~,]+$/.test(chordString)) return chordString;
 
     const match = chordString.match(/^(\(?)(.*?)(\)?)$/);
@@ -57,28 +56,26 @@ function transposeChord(chordString, originalKey, targetKey, simplify = false) {
 
     if (/^N\.?C\.?$/i.test(rawChord)) return prefix + rawChord + suffix;
 
+    // Determine target format
     const isTargetNashville = !targetKey || /^nashville$|^1$/i.test(targetKey.trim());
     const targetScale = isTargetNashville ? null : getPreferredAccidentals(targetKey.trim());
     const targetKeyIndex = isTargetNashville ? 0 : getNoteIndex(targetKey.trim());
 
     const parsedParts = parseChord(rawChord);
     
-    const convertedParts = parsedParts.map((part, index) => {
+    const convertedParts = parsedParts.map(part => {
         if (!part) return '';
         
-        // FEATURE 10: If simplify is true, completely drop the bass note (index > 0)
-        if (simplify && index > 0) return null; 
-
         let distance = 0;
         const isSourceNashville = /^[b#]?[1-7]$/.test(part.root);
 
         if (isSourceNashville) {
             distance = nashvilleToHalfSteps[part.root.toLowerCase()];
-            if (distance === undefined) return part.root + (simplify ? '' : part.extension);
+            if (distance === undefined) return part.root + part.extension;
         } else {
             const noteIndex = getNoteIndex(part.root);
             const origKeyIndex = getNoteIndex(originalKey.trim().replace(/m|min|minor$/i, ''));
-            if (noteIndex === -1 || origKeyIndex === -1) return part.root + (simplify ? '' : part.extension); 
+            if (noteIndex === -1 || origKeyIndex === -1) return part.root + part.extension; 
             distance = (noteIndex - origKeyIndex + 12) % 12;
         }
 
@@ -90,14 +87,8 @@ function transposeChord(chordString, originalKey, targetKey, simplify = false) {
             newRoot = targetScale[outIndex];
         }
         
-        // FEATURE 10: Drop the extension if simplify is true (unless it's a minor 'm')
-        let newExt = part.extension;
-        if (simplify) {
-            newExt = newExt.startsWith('m') && !newExt.startsWith('maj') ? 'm' : '';
-        }
-        
-        return newRoot + newExt;
-    }).filter(Boolean); // Clean up the dropped bass notes
+        return newRoot + part.extension;
+    });
 
     return prefix + convertedParts.join('/') + suffix; 
 }
@@ -272,7 +263,7 @@ function isNoiseLine(line) {
 }
 
 // --- TEXT PROCESSING ---
-function processAndAlignTabs(rawText, originalKey, targetKey, isPdf = false, simplify = false) {
+function processAndAlignTabs(rawText, originalKey, targetKey, isPdf = false) {
     const lines = rawText.split('\n');
     let processedLines = [];
     let hasStarted = false; 
@@ -298,7 +289,7 @@ function processAndAlignTabs(rawText, originalKey, targetKey, isPdf = false, sim
                 }
             }
             let newLine = line.replace(/(\S+)(\s*)/g, (match, chord, spaces) => {
-                const newChord = transposeChord(chord, originalKey, targetKey, simplify);
+                const newChord = transposeChord(chord, originalKey, targetKey);
                 const lengthDiff = chord.length - newChord.length;
                 let newSpaces = spaces;
                 

@@ -13,6 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
     <style>
         :root {
             --primary: #f59e0b;
@@ -70,6 +71,7 @@
             animation: fadeInUp 0.5s ease-out;
             position: relative; overflow: hidden;
         }
+        /* Amber top bar */
         .app-card::before {
             content: '';
             position: absolute; top: 0; left: 0; right: 0; height: 3px;
@@ -78,154 +80,385 @@
         @keyframes fadeInUp { from { opacity:0; transform:translateY(28px); } to { opacity:1; transform:translateY(0); } }
 
         /* ── HERO HEADER ── */
-        .hero { padding: 40px 52px 32px; position: relative; border-bottom: 1px solid var(--border); }
+        .hero {
+            padding: 40px 52px 32px;
+            position: relative;
+            border-bottom: 1px solid var(--border);
+        }
+        /* Faint waveform watermark */
         .hero::after {
             content: '';
             position: absolute; right: -20px; top: 0; bottom: 0; width: 280px;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 280 120'%3E%3Cpolyline points='0,60 20,30 35,80 50,15 65,90 80,40 95,70 110,20 125,85 140,35 155,75 170,25 185,80 200,45 215,65 230,30 245,70 260,50 280,60' fill='none' stroke='%23f59e0b' stroke-width='1.5' stroke-opacity='0.07'/%3E%3C/svg%3E");
-            background-repeat: no-repeat; background-position: center; background-size: contain; pointer-events: none;
+            background-repeat: no-repeat; background-position: center; background-size: contain;
+            pointer-events: none;
         }
-        .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+        .top-bar {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 24px;
+        }
         .brand { display: flex; align-items: center; gap: 16px; }
         .brand-icon {
             width: 48px; height: 48px;
             background: linear-gradient(135deg, #f5c842, #f59e0b, #e8792a);
             border-radius: 14px; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 6px 24px rgba(245,158,11,0.4), 0 2px 8px rgba(0,0,0,0.4); flex-shrink: 0; position: relative;
+            box-shadow: 0 6px 24px rgba(245,158,11,0.4), 0 2px 8px rgba(0,0,0,0.4);
+            flex-shrink: 0; position: relative;
         }
         .brand-text h1 {
-            margin: 0; font-family: 'Playfair Display', Georgia, serif;
+            margin: 0;
+            font-family: 'Playfair Display', Georgia, serif;
             font-size: 28px; font-weight: 800; letter-spacing: -0.01em; line-height: 1;
             background: linear-gradient(135deg, #f5d060 0%, #f59e0b 45%, #e8792a 100%);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
             display: flex; align-items: center; gap: 8px;
         }
         .badge {
-            display: inline-block; font-size: 9.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+            display: inline-block; font-size: 9.5px; font-weight: 700;
+            letter-spacing: 0.14em; text-transform: uppercase;
             color: var(--primary); -webkit-text-fill-color: var(--primary);
             background: none; -webkit-background-clip: unset; background-clip: unset;
-            border: 1px solid rgba(245,158,11,0.5); border-radius: 4px; padding: 2px 6px; font-family: 'Inter', sans-serif;
+            border: 1px solid rgba(245,158,11,0.5); border-radius: 4px;
+            padding: 2px 6px; font-family: 'Inter', sans-serif;
         }
-        .brand-tagline { font-size: 12px; color: var(--text-muted); margin-top: 5px; font-style: italic; letter-spacing: 0.02em; }
-        .eq-bars { display: flex; align-items: flex-end; gap: 3px; height: 22px; margin-left: 4px; }
-        .eq-bar { width: 3px; border-radius: 2px; background: linear-gradient(to top, #f59e0b, #fbbf24); animation: eq 1.4s ease-in-out infinite; opacity: 0.7; }
+        .brand-tagline {
+            font-size: 12px; color: var(--text-muted); margin-top: 5px;
+            font-style: italic; letter-spacing: 0.02em;
+        }
+
+        /* Animated EQ bars */
+        .eq-bars {
+            display: flex; align-items: flex-end; gap: 3px; height: 22px; margin-left: 4px;
+        }
+        .eq-bar {
+            width: 3px; border-radius: 2px;
+            background: linear-gradient(to top, #f59e0b, #fbbf24);
+            animation: eq 1.4s ease-in-out infinite;
+            opacity: 0.7;
+        }
         .eq-bar:nth-child(1) { animation-duration: 1.1s; animation-delay: 0s; }
         .eq-bar:nth-child(2) { animation-duration: 1.4s; animation-delay: 0.18s; }
         .eq-bar:nth-child(3) { animation-duration: 0.9s; animation-delay: 0.06s; }
         .eq-bar:nth-child(4) { animation-duration: 1.2s; animation-delay: 0.28s; }
         .eq-bar:nth-child(5) { animation-duration: 1.0s; animation-delay: 0.12s; }
-        @keyframes eq { 0%, 100% { height: 4px; opacity: 0.4; } 50% { height: 20px; opacity: 0.9; } }
+        @keyframes eq {
+            0%, 100% { height: 4px; opacity: 0.4; }
+            50% { height: 20px; opacity: 0.9; }
+        }
+
+        /* Controls */
         .controls-row { display: flex; align-items: center; gap: 10px; }
-        .nav-tabs { display: flex; gap: 3px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 10px; padding: 3px; }
-        .nav-tab { padding: 7px 16px; border-radius: 7px; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; color: var(--text-muted); transition: all 0.2s; border: none; background: none; font-family: 'Inter', inherit; }
+        .nav-tabs {
+            display: flex; gap: 3px;
+            background: var(--input-bg); border: 1px solid var(--border);
+            border-radius: 10px; padding: 3px;
+        }
+        .nav-tab {
+            padding: 7px 16px; border-radius: 7px; font-size: 13px; font-weight: 700;
+            cursor: pointer; text-decoration: none; color: var(--text-muted);
+            transition: all 0.2s; border: none; background: none; font-family: 'Inter', inherit;
+        }
         .nav-tab:hover { color: var(--text-main); }
-        .nav-tab.active { background: linear-gradient(135deg, #f59e0b, #e8792a); color: #0c0800; box-shadow: 0 2px 8px rgba(245,158,11,0.35); }
-        #themeToggle { background: var(--input-bg); border: 1px solid var(--border); padding: 9px; border-radius: 10px; cursor: pointer; color: var(--text-muted); width: auto; box-shadow: none; display: flex; align-items: center; transition: border-color 0.2s, color 0.2s; }
+        .nav-tab.active {
+            background: linear-gradient(135deg, #f59e0b, #e8792a);
+            color: #0c0800; box-shadow: 0 2px 8px rgba(245,158,11,0.35);
+        }
+        #themeToggle {
+            background: var(--input-bg); border: 1px solid var(--border);
+            padding: 9px; border-radius: 10px; cursor: pointer;
+            color: var(--text-muted); width: auto; box-shadow: none;
+            display: flex; align-items: center; transition: border-color 0.2s, color 0.2s;
+        }
         #themeToggle:hover { border-color: var(--primary); color: var(--primary); }
 
         /* Feature strip */
-        .feature-strip { display: flex; gap: 10px; flex-wrap: wrap; }
-        .feature-chip { display: flex; align-items: center; gap: 7px; padding: 7px 14px; background: var(--panel-bg); border: 1px solid var(--border); border-radius: 24px; font-size: 12.5px; font-weight: 600; color: var(--text-muted); transition: all 0.2s; }
+        .feature-strip {
+            display: flex; gap: 10px; flex-wrap: wrap;
+        }
+        .feature-chip {
+            display: flex; align-items: center; gap: 7px;
+            padding: 7px 14px;
+            background: var(--panel-bg); border: 1px solid var(--border);
+            border-radius: 24px; font-size: 12.5px; font-weight: 600;
+            color: var(--text-muted); transition: all 0.2s;
+        }
         .feature-chip svg { color: var(--primary); flex-shrink: 0; }
         .feature-chip:hover { border-color: var(--primary); color: var(--text-main); }
 
         /* ── MAIN BODY ── */
         .card-body { padding: 36px 52px 48px; }
 
+        /* ── INFO BOX (accordion) ── */
+        .info-accordion {
+            background: var(--panel-bg); border: 1px solid var(--border);
+            border-left: 3px solid var(--primary); border-radius: 0 14px 14px 0;
+            margin-bottom: 36px; overflow: hidden;
+        }
+        .info-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 20px; cursor: pointer; user-select: none;
+            transition: background 0.2s;
+        }
+        .info-header:hover { background: rgba(245,158,11,0.04); }
+        .info-header-left {
+            display: flex; align-items: center; gap: 12px;
+        }
+        .info-header-title {
+            font-size: 13px; font-weight: 700; color: var(--primary);
+            text-transform: uppercase; letter-spacing: 0.1em;
+        }
+        .info-header-sub {
+            font-size: 12px; color: var(--text-muted); margin-top: 1px;
+        }
+        .info-chevron {
+            color: var(--text-muted); transition: transform 0.3s;
+            flex-shrink: 0;
+        }
+        .info-accordion.open .info-chevron { transform: rotate(180deg); }
+        .info-body {
+            max-height: 0; overflow: hidden;
+            transition: max-height 0.4s ease, padding 0.3s;
+            padding: 0 20px;
+        }
+        .info-accordion.open .info-body { max-height: 600px; padding: 0 20px 20px; }
+        .info-body p { color: var(--text-muted); font-size: 14px; line-height: 1.7; margin: 0 0 16px; }
+        .info-body ul { margin: 0 0 16px; padding-left: 18px; color: var(--text-muted); font-size: 14px; line-height: 1.65; }
+        .info-body li { margin-bottom: 9px; }
+        .info-body li strong { color: var(--text-main); }
+        .info-body .warning-box {
+            padding: 10px 14px; background: rgba(245,158,11,0.06);
+            border-left: 3px solid var(--primary); color: var(--primary);
+            border-radius: 0 8px 8px 0; font-size: 12.5px;
+        }
+
         /* ── SECTION LABEL ── */
-        .section-label { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.14em; color: var(--primary); }
-        .section-label::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(245,158,11,0.4), transparent); }
+        .section-label {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+            font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.14em; color: var(--primary);
+        }
+        .section-label::after {
+            content: ''; flex: 1; height: 1px;
+            background: linear-gradient(90deg, rgba(245,158,11,0.4), transparent);
+        }
 
         /* ── GRIDS ── */
-        .grid-inputs { display: grid; grid-template-columns: 1fr 160px 160px; gap: 10px; margin-bottom: 16px; }
-        .grid-buttons { display: grid; grid-template-columns: 140px 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+        .grid-inputs {
+            display: grid; grid-template-columns: 1fr 160px 160px;
+            gap: 10px; margin-bottom: 96px;
+        }
+        .grid-buttons {
+            display: grid; grid-template-columns: 105px 1fr 1fr 1fr;
+            gap: 8px; margin-bottom: 12px;
+        }
 
         /* ── INPUTS ── */
-        input[type="text"], input[type="file"], select { width: 100%; padding: 13px 16px; font-size: 14px; border: 1px solid var(--border); border-radius: 10px; outline: none; background-color: var(--input-bg); color: var(--text-main); transition: border-color 0.2s, box-shadow 0.2s; font-family: 'Inter', inherit; }
-        input[type="text"]:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--focus-ring); }
+        input[type="text"], input[type="file"], select {
+            width: 100%; padding: 13px 16px; font-size: 14px;
+            border: 1px solid var(--border); border-radius: 10px; outline: none;
+            background-color: var(--input-bg); color: var(--text-main);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            font-family: 'Inter', inherit;
+        }
+        input[type="text"]:focus, select:focus {
+            border-color: var(--primary); box-shadow: 0 0 0 3px var(--focus-ring);
+        }
         input[type="text"]::placeholder { color: var(--text-muted); opacity: 0.55; }
-        select { appearance: none; -webkit-appearance: none; background-image: var(--chevron); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 36px; cursor: pointer; }
+        select {
+            appearance: none; -webkit-appearance: none;
+            background-image: var(--chevron); background-repeat: no-repeat;
+            background-position: right 12px center; background-size: 16px;
+            padding-right: 36px; cursor: pointer;
+        }
         select optgroup { font-weight: 700; color: var(--text-muted); }
         select option { font-weight: 500; color: var(--text-main); background: var(--card-bg); }
         .file-wrapper { position: relative; }
-        input[type="file"] { padding: 10px 16px; border: 2px dashed var(--border); cursor: pointer; height: 100%; }
-        input[type="file"]::file-selector-button { margin-right: 12px; padding: 5px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--card-bg); color: var(--text-muted); font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 12.5px; }
+        input[type="file"] {
+            padding: 10px 16px; border: 2px dashed var(--border); cursor: pointer; height: 100%;
+        }
+        input[type="file"]::file-selector-button {
+            margin-right: 12px; padding: 5px 12px; border: 1px solid var(--border);
+            border-radius: 6px; background: var(--card-bg); color: var(--text-muted);
+            font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 12.5px;
+        }
         input[type="file"]::file-selector-button:hover { border-color: var(--primary); color: var(--primary); }
         input[type="file"]:focus { border-color: var(--upload); box-shadow: 0 0 0 3px rgba(232,121,42,0.18); }
-
-        .checkbox-wrapper { margin-bottom: 32px; padding-left: 4px; }
-        .checkbox-wrapper label { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--text-muted); cursor: pointer; }
-        
-        .helper-text-container { position: absolute; top: 100%; left: 4px; width: calc(100% + 340px); max-width: 560px; margin-top: 6px; pointer-events: none; }
+        .helper-text-container {
+            position: absolute; top: 100%; left: 4px;
+            width: calc(100% + 340px); max-width: 560px; margin-top: 6px; pointer-events: none;
+        }
         .helper-text { font-size: 11.5px; color: var(--text-muted); white-space: normal; line-height: 1.4; }
         .warning-text { color: #a07820; margin-top: 4px; }
         [data-theme="light"] .warning-text { color: #8a5e10; }
 
         /* ── BUTTONS ── */
-        button { width: 100%; padding: 12px 14px; font-size: 13.5px; font-weight: 700; color: white; border: none; border-radius: 10px; cursor: pointer; transition: all 0.2s cubic-bezier(0.4,0,0.2,1); display: flex; justify-content: center; align-items: center; gap: 6px; font-family: 'Inter', inherit; }
-        #searchBtn, #uploadBtn { background: linear-gradient(135deg, #f59e0b, #d97706); color: #09060a; font-weight: 800; }
-        #searchBtn:hover:not(:disabled), #uploadBtn:hover:not(:disabled) { background: linear-gradient(135deg, #fbbf24, #f59e0b); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(245,158,11,0.35); }
+        button {
+            width: 100%; padding: 12px 14px; font-size: 13.5px; font-weight: 700;
+            color: white; border: none; border-radius: 10px; cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+            display: flex; justify-content: center; align-items: center;
+            gap: 6px; font-family: 'Inter', inherit;
+        }
+        #searchBtn { background: linear-gradient(135deg, #f59e0b, #d97706); color: #09060a; font-weight: 800; }
+        #searchBtn:hover:not(:disabled) { background: linear-gradient(135deg, #fbbf24, #f59e0b); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(245,158,11,0.35); }
+        #uploadBtn { background: linear-gradient(135deg, #f59e0b, #d97706); color: #09060a; font-weight: 800; }
+        #uploadBtn:hover:not(:disabled) { background: linear-gradient(135deg, #fbbf24, #f59e0b); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(245,158,11,0.35); }
         .downloadBtn { background: linear-gradient(135deg, #10b981, #059669); }
         .downloadBtn:hover:not(:disabled) { background: linear-gradient(135deg, #34d399, #10b981); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(16,185,129,0.3); }
         .previewBtn { background: var(--input-bg); border: 1px solid var(--border); color: var(--text-muted); }
         .previewBtn:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(245,158,11,0.12); }
         button:disabled { background: var(--border) !important; color: var(--text-muted) !important; cursor: not-allowed; box-shadow: none !important; transform: none !important; border-color: transparent !important; }
+        button:active:not(:disabled) { transform: translateY(1px) !important; box-shadow: none !important; }
 
         /* ── DIVIDER ── */
-        .divider { display: flex; align-items: center; text-align: center; margin: 40px 0; color: var(--text-muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.16em; gap: 16px; }
+        .divider {
+            display: flex; align-items: center; text-align: center;
+            margin: 40px 0; color: var(--text-muted); font-size: 11px;
+            font-weight: 700; text-transform: uppercase; letter-spacing: 0.16em; gap: 16px;
+        }
         .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid var(--border); }
         .divider-icon { color: var(--primary); opacity: 0.5; font-size: 15px; }
 
         /* ── STATUS ── */
-        #status { margin-top: 24px; padding: 13px 18px; border-radius: 10px; font-size: 13.5px; font-weight: 600; text-align: center; display: none; animation: fadeInUp 0.3s ease-out; }
+        #status {
+            margin-top: 24px; padding: 13px 18px; border-radius: 10px;
+            font-size: 13.5px; font-weight: 600; text-align: center; display: none;
+            animation: fadeInUp 0.3s ease-out;
+        }
         .status-active  { display: block !important; background: var(--panel-bg); border: 1px solid var(--border); color: var(--text-muted); }
         .status-success { display: block !important; background: rgba(16,185,129,0.07); border: 1px solid rgba(16,185,129,0.18); color: #10b981; }
         .status-error   { display: block !important; background: rgba(239,68,68,0.07); border: 1px solid rgba(239,68,68,0.18); color: #ef4444; }
 
         /* ── HISTORY / SETLIST ── */
-        .history-section { margin-top: 24px; }
-        .history-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
-        .history-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--panel-bg); border: 1px solid var(--border); border-radius: 10px; transition: all 0.2s; position: relative; overflow: hidden; }
-        .history-item::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: linear-gradient(to bottom, #f59e0b, #e8792a); }
-        .history-info { flex: 1; min-width: 0; }
-        .history-name { font-size: 13.5px; font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .history-meta { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
-        .history-clear { font-size: 11px; color: var(--text-muted); cursor: pointer; text-decoration: none; transition: color 0.2s; background: none; border: none; padding: 0; font-family: inherit; width: auto; font-weight: 700; text-transform: uppercase; }
+        .history-section { margin-top: 14px; }
+        .history-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .history-label {
+            font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.14em; color: var(--text-muted);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .history-clear {
+            font-size: 11px; color: var(--text-muted); cursor: pointer;
+            text-decoration: none; transition: color 0.2s; background: none;
+            border: none; padding: 0; font-family: inherit; width: auto;
+        }
         .history-clear:hover { color: #ef4444; }
+        .history-list { display: flex; flex-direction: column; gap: 6px; }
+        .history-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 14px;
+            background: var(--panel-bg); border: 1px solid var(--border);
+            border-radius: 10px; cursor: pointer;
+            transition: all 0.2s; position: relative; overflow: hidden;
+        }
+        .history-item::before {
+            content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+            background: linear-gradient(to bottom, #f59e0b, #e8792a);
+            opacity: 0; transition: opacity 0.2s;
+        }
+        .history-item:hover { border-color: rgba(245,158,11,0.4); background: rgba(245,158,11,0.04); }
+        .history-item:hover::before { opacity: 1; }
+        .history-play {
+            width: 28px; height: 28px; border-radius: 50%;
+            background: var(--border); display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; transition: background 0.2s;
+            color: var(--text-muted);
+        }
+        .history-item:hover .history-play { background: var(--primary); color: #09060a; }
+        .history-info { flex: 1; min-width: 0; }
+        .history-name {
+            font-size: 13.5px; font-weight: 600; color: var(--text-main);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .history-meta { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+        .history-badges { display: flex; gap: 5px; flex-shrink: 0; }
+        .history-badge {
+            font-size: 10px; font-weight: 700; padding: 2px 7px;
+            border-radius: 4px; border: 1px solid var(--border);
+            color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em;
+        }
+        .history-badge.format-pdf { border-color: rgba(16,185,129,0.3); color: #10b981; }
+        .history-badge.format-docx { border-color: rgba(99,102,241,0.3); color: #818cf8; }
+        .history-time { font-size: 10.5px; color: var(--text-muted); flex-shrink: 0; }
 
-        /* ── PREVIEW MODAL & EDITOR ── */
-        .modal-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(4,5,10,0.88); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+        /* ── PREVIEW MODAL ── */
+        .modal-overlay {
+            position: fixed; inset: 0; z-index: 1000;
+            background: rgba(4,5,10,0.88); backdrop-filter: blur(8px);
+            display: flex; align-items: center; justify-content: center; padding: 20px;
+            opacity: 0; pointer-events: none; transition: opacity 0.25s;
+        }
         .modal-overlay.open { opacity: 1; pointer-events: all; }
-        .modal { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 18px; width: 100%; max-width: 800px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 48px 96px rgba(0,0,0,0.7), 0 0 0 1px rgba(245,158,11,0.08); transform: translateY(20px) scale(0.97); transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1); overflow: hidden; }
+        .modal {
+            background: var(--card-bg); border: 1px solid var(--card-border);
+            border-radius: 18px; width: 100%; max-width: 800px; max-height: 90vh;
+            display: flex; flex-direction: column;
+            box-shadow: 0 48px 96px rgba(0,0,0,0.7), 0 0 0 1px rgba(245,158,11,0.08);
+            transform: translateY(20px) scale(0.97); transition: transform 0.28s cubic-bezier(0.34,1.56,0.64,1);
+            overflow: hidden;
+        }
         .modal-overlay.open .modal { transform: translateY(0) scale(1); }
-        .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+        .modal-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 18px 24px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+        }
         .modal-title { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 700; color: var(--primary); }
         .modal-subtitle { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
-        .modal-close { width: 32px; height: 32px; border-radius: 8px; background: var(--input-bg); border: 1px solid var(--border); color: var(--text-muted); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; padding: 0; }
+        .modal-close {
+            width: 32px; height: 32px; border-radius: 8px;
+            background: var(--input-bg); border: 1px solid var(--border);
+            color: var(--text-muted); cursor: pointer; font-size: 16px;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s; padding: 0;
+        }
         .modal-close:hover { border-color: var(--primary); color: var(--primary); }
-        .modal-body { flex: 1; overflow: auto; background: #fff; position: relative; min-height: 480px; display: flex; flex-direction: column; }
-        
-        /* The Live Editor Textarea */
-        #liveEditor { width: 100%; flex: 1; padding: 24px 32px; font-family: 'Courier New', Courier, monospace; font-size: 14.5px; line-height: 1.6; border: none; resize: none; background: #fff; color: #111; outline: none; }
-        
-        .modal-footer { padding: 14px 24px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-shrink: 0; background: var(--card-bg); }
+        .modal-body { flex: 1; overflow: auto; background: #fff; position: relative; min-height: 480px; }
+        .modal-body iframe { width: 100%; height: 100%; min-height: 480px; border: none; display: block; }
+        .modal-docx-preview {
+            padding: 44px 52px; font-family: 'Courier New', Courier, monospace;
+            font-size: 13.5px; line-height: 1.7; color: #111; background: #fff; white-space: pre-wrap;
+        }
+        .modal-loading {
+            position: absolute; inset: 0; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            background: var(--card-bg); gap: 14px;
+        }
+        .spinner {
+            width: 36px; height: 36px; border-radius: 50%;
+            border: 3px solid var(--border); border-top-color: var(--primary);
+            animation: spin 0.75s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .modal-footer {
+            padding: 14px 24px; border-top: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: flex-end;
+            gap: 10px; flex-shrink: 0; background: var(--card-bg);
+        }
         .modal-footer button { width: auto; padding: 9px 20px; font-size: 13px; }
 
         /* ── FOOTER ── */
-        .card-footer { margin-top: 44px; padding-top: 20px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 11.5px; color: var(--text-muted); opacity: 0.5; }
+        .card-footer {
+            margin-top: 44px; padding-top: 20px; border-top: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center;
+            gap: 8px; font-size: 11.5px; color: var(--text-muted); opacity: 0.5;
+        }
 
+        /* ── RESPONSIVE ── */
         @media (max-width: 700px) {
             body { padding: 16px 12px 40px; }
             .hero, .card-body { padding: 28px 22px; }
             .top-bar { flex-direction: column; align-items: flex-start; gap: 14px; }
             .controls-row { width: 100%; justify-content: space-between; }
-            .grid-inputs { grid-template-columns: 1fr; gap: 12px; margin-bottom: 16px; }
+            .grid-inputs { grid-template-columns: 1fr; gap: 12px; margin-bottom: 24px; }
             .grid-buttons { grid-template-columns: 1fr 1fr; gap: 8px; }
             .grid-buttons > select { grid-column: 1 / -1; }
-            .checkbox-wrapper { margin-bottom: 24px; }
             input[type="file"] { height: auto; }
             .helper-text-container { position: static; width: 100%; margin-top: 8px; }
             .feature-strip { gap: 6px; }
+            .modal-docx-preview { padding: 24px 20px; }
             .hero::after { display: none; }
         }
     </style>
@@ -234,6 +467,7 @@
 
 <div class="app-card">
 
+    <!-- ── HERO ── -->
     <div class="hero">
         <div class="top-bar">
             <div class="brand">
@@ -248,7 +482,11 @@
                     <h1>
                         Chord Genius <span class="badge">Studio</span>
                         <span class="eq-bars" aria-hidden="true">
-                            <span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span><span class="eq-bar"></span>
+                            <span class="eq-bar"></span>
+                            <span class="eq-bar"></span>
+                            <span class="eq-bar"></span>
+                            <span class="eq-bar"></span>
+                            <span class="eq-bar"></span>
                         </span>
                     </h1>
                     <div class="brand-tagline">The universal transposer &amp; Nashville Number engine</div>
@@ -267,72 +505,115 @@
         </div>
 
         <div class="feature-strip">
-            <div class="feature-chip"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg> Transpose Any Key</div>
-            <div class="feature-chip"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg> Nashville Numbers</div>
-            <div class="feature-chip"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg> Setlist Binders</div>
+            <div class="feature-chip">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>
+                Transpose Any Key
+            </div>
+            <div class="feature-chip">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>
+                Nashville Numbers
+            </div>
+            <div class="feature-chip">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Stage-Ready Charts
+            </div>
+            <div class="feature-chip">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                Upload Your Charts
+            </div>
         </div>
     </div>
 
+    <!-- ── BODY ── -->
     <div class="card-body">
 
+        <!-- How to use accordion -->
+        <div class="info-accordion" id="infoAccordion">
+            <div class="info-header" id="infoToggle">
+                <div class="info-header-left">
+                    <svg width="16" height="16" fill="none" stroke="var(--primary)" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v4m0 4h.01"/></svg>
+                    <div>
+                        <div class="info-header-title">How to Use Chord Genius</div>
+                        <div class="info-header-sub">Tap to expand the guide</div>
+                    </div>
+                </div>
+                <svg class="info-chevron" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+            </div>
+            <div class="info-body" id="infoBody">
+                <p>Whether you need to shift a song's key to fit a singer's range, or prep a chart for the full band — Chord Genius handles the musical math instantly.</p>
+                <ul>
+                    <li><strong>1. Find Your Chart:</strong> Search by song name to pull from Ultimate Guitar, or upload your own .txt, .docx, or .pdf.</li>
+                    <li><strong>2. Verify the Key:</strong> We auto-detect the original key. Override it with <strong>Orig Key</strong> if needed.</li>
+                    <li><strong>3. Transpose or Convert:</strong> Pick a <strong>To Key</strong> to transpose, or leave it on "Nashville" to generate a number chart. <em>Already in numbers? Set Orig Key to "Nashville Numbers".</em></li>
+                    <li><strong>4. Preview &amp; Download:</strong> Hit Convert, preview the chart in-browser, then grab your .DOCX or .PDF.</li>
+                </ul>
+                <div class="warning-box">&#9835; Charts scraped from the web depend on the original author's accuracy — always verify the starting key!</div>
+            </div>
+        </div>
+
+        <!-- SEARCH -->
         <div class="section-label">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/></svg>
             Search &amp; Convert
         </div>
 
-        <div class="grid-inputs">
+        <div class="grid-inputs" style="margin-bottom: 32px;">
             <input type="text" id="songQuery" placeholder='Song + artist (e.g. "Yellow – Coldplay")'>
             <select id="songKey"></select>
             <select id="targetKeySearch"></select>
         </div>
-        
-        <div class="checkbox-wrapper">
-            <label>
+        <div style="margin-bottom: 24px; padding-left: 4px;">
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-muted); cursor: pointer;">
                 <input type="checkbox" id="simplifyChords" style="width: auto;"> 
                 Simplify Chords (Strip 7ths, extensions, and bass notes)
             </label>
         </div>
-
-        <div class="grid-buttons" style="grid-template-columns: 1fr;">
+        <div class="grid-buttons">
+            <select id="searchFormat">
+                <option value="docx">.DOCX</option>
+                <option value="pdf">.PDF</option>
+            </select>
             <button id="searchBtn">
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                Load Chart into Live Editor
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                Scrape &amp; Convert
             </button>
+            <button id="previewSearchBtn" class="previewBtn" disabled>
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                Preview
+            </button>
+            <button id="downloadSearchBtn" class="downloadBtn" disabled>Download</button>
         </div>
 
-        <div class="history-section">
-            <div class="section-label" style="margin-top: 40px;">
-                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                Setlist Builder
+        <!-- HISTORY -->
+        <div class="history-section" id="historySection" style="display:none">
+            <div class="history-header">
+                <span class="history-label">
+                    <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    Recent Setlist
+                </span>
+                <button class="history-clear" id="historyClear">Clear all</button>
             </div>
-            
-            <div id="emptySetlistMsg" style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 24px; border: 1px dashed var(--border); border-radius: 10px; margin-bottom: 16px;">
-                Your setlist is empty. Search for a song to build your packet.
-            </div>
-
-            <div class="history-list" id="setlistQueueContainer" style="display: none;"></div>
-
-            <div class="grid-buttons" id="setlistActions" style="display: none;">
-                <select id="binderFormat">
-                    <option value="docx">.DOCX Binder</option>
-                    <option value="pdf">.PDF Binder</option>
-                </select>
-                <button id="downloadBinderBtn" class="downloadBtn" style="grid-column: span 2;">
-                    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                    Download Full Setlist Binder
-                </button>
-            </div>
+            <div class="history-list" id="historyList"></div>
         </div>
 
         <div class="divider">
-            <span class="divider-icon">&#9836;</span> Or Upload Your Own <span class="divider-icon">&#9836;</span>
+            <span class="divider-icon">&#9836;</span>
+            Or Upload Your Own Chart
+            <span class="divider-icon">&#9836;</span>
         </div>
 
-        <div class="grid-inputs" style="margin-bottom: 96px;">
+        <!-- UPLOAD -->
+        <div class="section-label">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            Upload &amp; Convert
+        </div>
+
+        <div class="grid-inputs">
             <div class="file-wrapper">
                 <input type="file" id="fileInput" accept=".txt,.docx,.pdf">
                 <div class="helper-text-container">
                     <div class="helper-text">Accepts .txt, .docx, .pdf &mdash; Max 5 MB</div>
+                    <div class="helper-text warning-text"><em>Pro-Tip: PDFs often lose chord spacing. Convert to .DOCX in Word or Google Docs first for best results.</em></div>
                 </div>
             </div>
             <select id="uploadKey"></select>
@@ -343,7 +624,15 @@
                 <option value="docx">.DOCX</option>
                 <option value="pdf">.PDF</option>
             </select>
-            <button id="uploadBtn" style="grid-column: span 2;">Convert File Directly</button>
+            <button id="uploadBtn">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                Convert File
+            </button>
+            <button id="previewUploadBtn" class="previewBtn" disabled>
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                Preview
+            </button>
+            <button id="downloadUploadBtn" class="downloadBtn" disabled>Download</button>
         </div>
 
         <div id="status"></div>
@@ -355,6 +644,7 @@
     </div>
 </div>
 
+<!-- PREVIEW MODAL -->
 <div class="modal-overlay" id="previewOverlay">
     <div class="modal">
         <div class="modal-header">
@@ -364,16 +654,12 @@
             </div>
             <button class="modal-close" id="modalClose">&#x2715;</button>
         </div>
-        <div class="modal-body">
-            <textarea id="liveEditor" spellcheck="false"></textarea>
+        <div class="modal-body" id="modalBody" style="display: flex; flex-direction: column;">
+            <textarea id="liveEditor" spellcheck="false" style="width: 100%; flex: 1; min-height: 500px; padding: 24px; font-family: 'Courier New', Courier, monospace; font-size: 14px; border: none; resize: none; background: #fff; color: #000; outline: none;"></textarea>
         </div>
         <div class="modal-footer">
-            <select id="modalFormat" style="width: 120px; padding: 9px 12px; font-size: 13px;">
-                <option value="docx">.DOCX</option>
-                <option value="pdf">.PDF</option>
-            </select>
-            <button class="previewBtn" id="modalDownloadBtn">Download Current</button>
-            <button class="downloadBtn" id="addSetlistBtn" style="background: var(--primary-glow); color: var(--primary); border-color: var(--primary);">+ Add to Setlist</button>
+            <button class="previewBtn" id="addSetlistBtn" style="background: var(--primary-glow); color: var(--primary); border-color: var(--primary);">+ Add to Setlist</button>
+            <button class="downloadBtn" id="modalDownloadBtn">Download Current</button>
         </div>
     </div>
 </div>
@@ -391,6 +677,11 @@ function applyTheme(t) {
     else { document.documentElement.removeAttribute('data-theme'); moonIcon.style.display='none'; sunIcon.style.display='block'; }
     localStorage.setItem('theme', t);
 }
+
+// ── INFO ACCORDION ──
+document.getElementById('infoToggle').addEventListener('click', () => {
+    document.getElementById('infoAccordion').classList.toggle('open');
+});
 
 // ── KEY DROPDOWNS ──
 const standardKeys = ['C','C#','Db','D','Eb','E','F','F#','Gb','G','Ab','A','Bb','B'];
@@ -411,222 +702,192 @@ function populateKeySelects() {
 }
 populateKeySelects();
 
-// ── STATUS NOTIFIER ──
+// ── STATUS ──
 const statusDiv = document.getElementById('status');
 function showStatus(text, type) {
     statusDiv.className=''; statusDiv.innerText=text;
     statusDiv.classList.add('status-'+type);
 }
 
-// ── GLOBAL STATE ──
-let currentChartData = null;
-let setlistQueue = [];
+// ── SONG HISTORY ──
+const HISTORY_KEY = 'cg_history';
+const MAX_HISTORY = 8;
 
-// ── SETLIST RENDERER ──
-function renderSetlist() {
-    const container = document.getElementById('setlistQueueContainer');
-    const emptyMsg = document.getElementById('emptySetlistMsg');
-    const actions = document.getElementById('setlistActions');
-    
-    if(setlistQueue.length === 0) {
-        container.style.display = 'none';
-        actions.style.display = 'none';
-        emptyMsg.style.display = 'block';
-        return;
-    }
-    
-    emptyMsg.style.display = 'none';
-    container.style.display = 'flex';
-    actions.style.display = 'grid';
-    container.innerHTML = '';
-    
-    setlistQueue.forEach((song, idx) => {
+function loadHistory() { try { return JSON.parse(localStorage.getItem(HISTORY_KEY)||'[]'); } catch(e) { return []; } }
+function saveHistory(h) { localStorage.setItem(HISTORY_KEY, JSON.stringify(h)); }
+function addToHistory(entry) {
+    let h = loadHistory().filter(x => x.query.toLowerCase() !== entry.query.toLowerCase());
+    h.unshift({ ...entry, id: Date.now() });
+    if (h.length > MAX_HISTORY) h = h.slice(0, MAX_HISTORY);
+    saveHistory(h);
+    renderHistory();
+}
+function timeAgo(ts) {
+    const s = Math.floor((Date.now()-ts)/1000);
+    if (s<60) return 'just now';
+    if (s<3600) return Math.floor(s/60)+'m ago';
+    if (s<86400) return Math.floor(s/3600)+'h ago';
+    if (s<604800) return Math.floor(s/86400)+'d ago';
+    return new Date(ts).toLocaleDateString();
+}
+function keyLabel(k, t) {
+    if (!k && !t) return '—';
+    const src = k || 'auto';
+    const dst = t || 'Nashville';
+    return src + ' → ' + dst;
+}
+function renderHistory() {
+    const h = loadHistory();
+    const sec = document.getElementById('historySection');
+    const list = document.getElementById('historyList');
+    if (!h.length) { sec.style.display='none'; return; }
+    sec.style.display='block';
+    list.innerHTML = '';
+    h.forEach(entry => {
         const item = document.createElement('div');
         item.className = 'history-item';
         item.innerHTML = `
-            <div class="history-info">
-                <div class="history-name">${idx + 1}. ${song.title}</div>
-                <div class="history-meta">Original: ${song.originalKey} &rarr; Target: ${song.targetKey}</div>
+            <div class="history-play">
+                <svg width="10" height="10" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
             </div>
-            <button class="history-clear" onclick="removeFromSetlist(${idx})">Remove</button>
-        `;
-        container.appendChild(item);
+            <div class="history-info">
+                <div class="history-name">${entry.query}</div>
+                <div class="history-meta">${keyLabel(entry.key, entry.targetKey)}</div>
+            </div>
+            <div class="history-badges">
+                <span class="history-badge format-${entry.format}">.${entry.format.toUpperCase()}</span>
+            </div>
+            <div class="history-time">${timeAgo(entry.id)}</div>`;
+        item.addEventListener('click', () => rerunHistory(entry));
+        list.appendChild(item);
     });
 }
-window.removeFromSetlist = function(idx) {
-    setlistQueue.splice(idx, 1);
-    renderSetlist();
-};
+function rerunHistory(entry) {
+    document.getElementById('songQuery').value = entry.query;
+    document.getElementById('songKey').value = entry.key || '';
+    document.getElementById('targetKeySearch').value = entry.targetKey || '';
+    document.getElementById('searchFormat').value = entry.format || 'docx';
+    document.getElementById('searchBtn').click();
+}
+document.getElementById('historyClear').addEventListener('click', () => {
+    localStorage.removeItem(HISTORY_KEY); renderHistory();
+});
+renderHistory();
 
+// ── BLOB STATE ──
+let searchBlob=null, searchFilename='', searchFormat_='docx';
+let uploadBlob=null, uploadFilename='', uploadFormat_='docx';
+
+function getFilename(header, fallback) {
+    if (header&&header.includes('filename="')) return header.split('filename="')[1].split('"')[0];
+    return fallback;
+}
 function triggerDownload(blob, filename) {
-    const url = URL.createObjectURL(blob); 
-    const a = document.createElement('a');
-    a.style.display = 'none'; a.href = url; a.download = filename;
+    const url=URL.createObjectURL(blob); const a=document.createElement('a');
+    a.style.display='none'; a.href=url; a.download=filename;
     document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    setTimeout(()=>URL.revokeObjectURL(url),5000);
 }
 
-// ── SEARCH TO LIVE EDITOR (FEATURE 8 & 10) ──
-const searchBtn = document.getElementById('searchBtn');
-searchBtn.addEventListener('click', async () => {
-    const query = document.getElementById('songQuery').value;
-    const key = document.getElementById('songKey').value;
-    const targetKey = document.getElementById('targetKeySearch').value;
-    const isSimplify = document.getElementById('simplifyChords').checked;
+// ── FORMAT RESET ──
+const searchFormat=document.getElementById('searchFormat'), dlSearchBtn=document.getElementById('downloadSearchBtn'), pvSearchBtn=document.getElementById('previewSearchBtn');
+const uploadFormat=document.getElementById('uploadFormat'), dlUploadBtn=document.getElementById('downloadUploadBtn'), pvUploadBtn=document.getElementById('previewUploadBtn');
+searchFormat.addEventListener('change',()=>{ if(!dlSearchBtn.disabled){dlSearchBtn.disabled=true;pvSearchBtn.disabled=true;dlSearchBtn.innerHTML='Download';searchBlob=null;showStatus("Format changed — please convert again.","active");}});
+uploadFormat.addEventListener('change',()=>{ if(!dlUploadBtn.disabled){dlUploadBtn.disabled=true;pvUploadBtn.disabled=true;dlUploadBtn.innerHTML='Download';uploadBlob=null;showStatus("Format changed — please convert again.","active");}});
 
-    if(!query) return showStatus("Please enter a song name!", "error");
-    
-    const orig = searchBtn.innerHTML;
-    searchBtn.innerHTML = '⏳ Processing...'; 
-    searchBtn.disabled = true;
-    showStatus("Fetching data and transposing...", "active");
-    
-    // Hit the new preview endpoint that returns raw text
-    let url = `/api/preview?q=${encodeURIComponent(query)}&simplify=${isSimplify}`;
-    if(key) url += `&key=${encodeURIComponent(key)}`;
-    if(targetKey) url += `&targetKey=${encodeURIComponent(targetKey)}`;
-    
+// ── SEARCH ──
+let setlistQueue = [];
+const searchBtn=document.getElementById('searchBtn');
+searchBtn.addEventListener('click', async ()=>{
+    const query=document.getElementById('songQuery').value;
+    const key=document.getElementById('songKey').value;
+    const targetKey=document.getElementById('targetKeySearch').value;
+    const format=searchFormat.value;
+    if(!query) return showStatus("Please enter a song name!","error");
+    const orig=searchBtn.innerHTML;
+    searchBtn.innerHTML='⏳ Processing…'; searchBtn.disabled=true; dlSearchBtn.disabled=true; pvSearchBtn.disabled=true;
+    showStatus("Searching Ultimate Guitar and processing chart…","active");
     try {
-        const res = await fetch(url);
-        if(!res.ok) throw new Error((await res.json()).error || "Search failed.");
-        const data = await res.json();
-        
-        // Save the raw data object
-        currentChartData = data;
-        
-        // Populate the UI
-        document.getElementById('liveEditor').value = data.text;
-        document.getElementById('modalTitle').textContent = data.title;
-        document.getElementById('modalSubtitle').textContent = `Transposed to: ${data.targetKey}`;
-        
-        document.getElementById('previewOverlay').classList.add('open');
-        document.body.style.overflow = 'hidden';
-        showStatus("Chart loaded into the editor!", "success");
-
-    } catch(e) {
-        showStatus(`Error: ${e.message}`, "error");
-    } finally {
-        searchBtn.innerHTML = orig;
-        searchBtn.disabled = false;
-    }
+        let url=`/api/convert?q=${encodeURIComponent(query)}&format=${format}`;
+        if(key) url+=`&key=${encodeURIComponent(key)}`;
+        if(targetKey) url+=`&targetKey=${encodeURIComponent(targetKey)}`;
+        const res=await fetch(url);
+        if(!res.ok) throw new Error((await res.json()).error||"Conversion failed.");
+        searchBlob=await res.blob(); searchFilename=getFilename(res.headers.get('Content-Disposition'),`Chart.${format}`); searchFormat_=format;
+        dlSearchBtn.innerHTML=`<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg> .${format.toUpperCase()}`;
+        dlSearchBtn.disabled=false; pvSearchBtn.innerHTML=`<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg> Preview`; pvSearchBtn.disabled=false;
+        showStatus("Chart ready — preview or download below.","success");
+        addToHistory({query, key, targetKey, format});
+    } catch(e){ showStatus(`Error: ${e.message}`,"error"); }
+    finally{ searchBtn.innerHTML=orig; searchBtn.disabled=false; }
 });
+dlSearchBtn.addEventListener('click',()=>{ if(searchBlob) triggerDownload(searchBlob,searchFilename); });
+pvSearchBtn.addEventListener('click',()=>{ if(searchBlob) openPreview(searchBlob,searchFormat_,searchFilename,document.getElementById('songQuery').value||'Chart Preview'); });
 
-// ── MODAL ACTIONS ──
-const overlay = document.getElementById('previewOverlay');
-function closePreview() { overlay.classList.remove('open'); document.body.style.overflow=''; }
-document.getElementById('modalClose').addEventListener('click', closePreview);
-
-// Add to Setlist
-document.getElementById('addSetlistBtn').addEventListener('click', () => {
-    const text = document.getElementById('liveEditor').value;
-    
-    setlistQueue.push({
-        title: currentChartData.title,
-        originalKey: currentChartData.originalKey,
-        targetKey: currentChartData.targetKey,
-        text: text
-    });
-    
-    renderSetlist();
-    closePreview();
-    showStatus(`${currentChartData.title} added to your Setlist Binder!`, 'success');
-});
-
-// Download Single Edited Chart via Binder Endpoint
-const modalDownloadBtn = document.getElementById('modalDownloadBtn');
-modalDownloadBtn.addEventListener('click', async () => {
-    const text = document.getElementById('liveEditor').value;
-    const format = document.getElementById('modalFormat').value;
-    
-    // Create a temporary 1-song array to trick the binder endpoint
-    const singleSongQueue = [{
-        title: currentChartData.title,
-        originalKey: currentChartData.originalKey,
-        targetKey: currentChartData.targetKey,
-        text: text
-    }];
-    
-    const orig = modalDownloadBtn.innerHTML;
-    modalDownloadBtn.innerHTML = '⏳ Rendering...';
-    modalDownloadBtn.disabled = true;
-    
-    try {
-        const res = await fetch('/api/binder', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ setlist: singleSongQueue, format })
-        });
-        if(!res.ok) throw new Error((await res.json()).error);
-        const blob = await res.blob();
-        triggerDownload(blob, `${currentChartData.title.replace(/\s+/g, '_')}_Chart.${format}`);
-    } catch(e) {
-        alert("Error rendering chart: " + e.message);
-    } finally {
-        modalDownloadBtn.innerHTML = orig;
-        modalDownloadBtn.disabled = false;
-    }
-});
-
-// ── DOWNLOAD BINDER (FEATURE 9) ──
-const downloadBinderBtn = document.getElementById('downloadBinderBtn');
-downloadBinderBtn.addEventListener('click', async () => {
-    const format = document.getElementById('binderFormat').value;
-    const orig = downloadBinderBtn.innerHTML;
-    
-    downloadBinderBtn.innerHTML = '⏳ Compiling Binder...';
-    downloadBinderBtn.disabled = true;
-    showStatus(`Compiling massive ${format.toUpperCase()} binder...`, "active");
-    
-    try {
-        const res = await fetch('/api/binder', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ setlist: setlistQueue, format })
-        });
-        if(!res.ok) throw new Error((await res.json()).error);
-        const blob = await res.blob();
-        triggerDownload(blob, `Sunday_Setlist_Binder.${format}`);
-        showStatus("Setlist binder downloaded successfully!", "success");
-    } catch(e) {
-        showStatus(`Error: ${e.message}`, "error");
-    } finally {
-        downloadBinderBtn.innerHTML = orig;
-        downloadBinderBtn.disabled = false;
-    }
-});
-
-// ── LEGACY UPLOAD ──
-const uploadBtn = document.getElementById('uploadBtn');
-uploadBtn.addEventListener('click', async () => {
+// ── UPLOAD ──
+const uploadBtn=document.getElementById('uploadBtn');
+uploadBtn.addEventListener('click', async ()=>{
     const fileInput=document.getElementById('fileInput');
     const key=document.getElementById('uploadKey').value;
     const targetKey=document.getElementById('targetKeyUpload').value;
-    const format=document.getElementById('uploadFormat').value; 
-    const file=fileInput.files[0];
-    
+    const format=uploadFormat.value; const file=fileInput.files[0];
     if(!file) return showStatus("Please select a file to upload!","error");
     if(!key) return showStatus("You must provide the original key for uploaded files!","error");
-    
+    if(!['.txt','.docx','.pdf'].some(e=>file.name.toLowerCase().endsWith(e))) return showStatus("Only .txt, .docx, and .pdf files are allowed.","error");
+    if(file.size>5*1024*1024) return showStatus("File too large — max 5 MB.","error");
     const orig=uploadBtn.innerHTML;
-    uploadBtn.innerHTML='⏳ Converting...'; uploadBtn.disabled=true;
-    showStatus("Uploading and processing chart...","active");
-    
+    uploadBtn.innerHTML='⏳ Converting…'; uploadBtn.disabled=true; dlUploadBtn.disabled=true; pvUploadBtn.disabled=true;
+    showStatus("Uploading and processing chart…","active");
     const fd=new FormData(); fd.append('chartFile',file); fd.append('key',key); fd.append('targetKey',targetKey); fd.append('format',format);
-    
     try {
         const res=await fetch('/api/import',{method:'POST',body:fd});
         if(!res.ok) throw new Error((await res.json()).error||"Conversion failed.");
-        const blob=await res.blob();
-        
-        let filename = "Uploaded_Chart." + format;
-        if(res.headers.get('Content-Disposition') && res.headers.get('Content-Disposition').includes('filename="')) {
-            filename = res.headers.get('Content-Disposition').split('filename="')[1].split('"')[0];
-        }
-        triggerDownload(blob, filename);
-        showStatus("File converted and downloaded!","success");
+        uploadBlob=await res.blob(); uploadFilename=getFilename(res.headers.get('Content-Disposition'),`Chart.${format}`); uploadFormat_=format;
+        dlUploadBtn.innerHTML=`<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg> .${format.toUpperCase()}`;
+        dlUploadBtn.disabled=false; pvUploadBtn.innerHTML=`<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg> Preview`; pvUploadBtn.disabled=false;
+        showStatus("File converted — preview or download below.","success");
     } catch(e){ showStatus(`Error: ${e.message}`,"error"); }
     finally{ uploadBtn.innerHTML=orig; uploadBtn.disabled=false; }
 });
+dlUploadBtn.addEventListener('click',()=>{ if(uploadBlob) triggerDownload(uploadBlob,uploadFilename); });
+pvUploadBtn.addEventListener('click',()=>{
+    const fi=document.getElementById('fileInput'); const name=fi.files[0]?fi.files[0].name.replace(/\.[^/.]+$/,''):'Chart';
+    if(uploadBlob) openPreview(uploadBlob,uploadFormat_,uploadFilename,name);
+});
+
+// ── PREVIEW MODAL ──
+const overlay=document.getElementById('previewOverlay'), modalBody=document.getElementById('modalBody');
+const modalTitle=document.getElementById('modalTitle'), modalSubtitle=document.getElementById('modalSubtitle'), modalDownloadBtn=document.getElementById('modalDownloadBtn');
+let activeBlob=null, activeFilename='';
+
+function openPreview(blob, format, filename, title) {
+    activeBlob=blob; activeFilename=filename;
+    modalTitle.textContent=title||'Chart Preview';
+    modalSubtitle.textContent=format.toUpperCase()+' preview';
+    modalBody.innerHTML='';
+    const loading=document.createElement('div'); loading.className='modal-loading';
+    loading.innerHTML='<div class="spinner"></div><span style="font-size:12.5px;color:var(--text-muted)">Rendering preview…</span>';
+    modalBody.appendChild(loading);
+    overlay.classList.add('open'); document.body.style.overflow='hidden';
+    if(format==='pdf') {
+        const url=URL.createObjectURL(blob); const iframe=document.createElement('iframe');
+        iframe.style.cssText='width:100%;height:100%;min-height:520px;border:none;display:block;';
+        iframe.src=url; iframe.onload=()=>loading.remove(); modalBody.appendChild(iframe);
+    } else {
+        blob.arrayBuffer().then(buf=>{
+            mammoth.convertToHtml({arrayBuffer:buf}).then(result=>{
+                loading.remove(); const div=document.createElement('div'); div.className='modal-docx-preview';
+                div.innerHTML=result.value||'<p style="color:#888">No content to preview.</p>'; modalBody.appendChild(div);
+            }).catch(()=>{ loading.remove(); const div=document.createElement('div'); div.className='modal-docx-preview'; div.innerHTML='<p style="color:#888">Could not render preview.</p>'; modalBody.appendChild(div); });
+        });
+    }
+}
+function closePreview() { overlay.classList.remove('open'); document.body.style.overflow=''; }
+document.getElementById('modalClose').addEventListener('click',closePreview);
+document.getElementById('modalCloseBtn').addEventListener('click',closePreview);
+overlay.addEventListener('click',e=>{ if(e.target===overlay) closePreview(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closePreview(); });
+modalDownloadBtn.addEventListener('click',()=>{ if(activeBlob) triggerDownload(activeBlob,activeFilename); });
 </script>
 </body>
 </html>
