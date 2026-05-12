@@ -142,7 +142,20 @@
             background: repeating-linear-gradient(0deg, rgba(245,158,11,0.015) 0px, rgba(245,158,11,0.015) 1px, transparent 1px, transparent 3px);
             pointer-events: none;
         }
-        .metro-bpm { font-family: 'Playfair Display', Georgia, serif; font-size: 88px; font-weight: 800; color: var(--primary); line-height: 1; letter-spacing: -3px; text-shadow: 0 0 30px rgba(245,158,11,0.5), 0 0 60px rgba(245,158,11,0.2); }
+        .metro-bpm { 
+            font-family: 'Playfair Display', Georgia, serif; 
+            font-size: 88px; font-weight: 800; 
+            color: var(--primary); line-height: 1; letter-spacing: -3px; 
+            text-shadow: 0 0 30px rgba(245,158,11,0.5), 0 0 60px rgba(245,158,11,0.2); 
+            background: transparent; border: none; width: 100%; text-align: center; outline: none;
+            appearance: textfield;
+            -moz-appearance: textfield; 
+        }
+        /* Hide the browser's default number arrows */
+        .metro-bpm::-webkit-outer-spin-button,
+        .metro-bpm::-webkit-inner-spin-button {
+            -webkit-appearance: none; margin: 0;
+        }
         .metro-bpm-label { font-size: 11px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-muted); margin-top: 4px; }
         .metro-tempo-name { font-size: 13px; color: var(--primary); font-style: italic; margin-top: 6px; opacity: 0.8; }
 
@@ -350,7 +363,7 @@
 
                 <div class="metro-display">
                     <div class="metro-screen">
-                        <div class="metro-bpm" id="bpmDisplay">120</div>
+                        <div class="metro-bpm" id="bpmDisplay" value="120" min="40" max="240">120</div>
                         <div class="metro-bpm-label">BPM</div>
                         <div class="metro-tempo-name" id="tempoLabel">Allegro</div>
                     </div>
@@ -474,7 +487,17 @@ function sched(){
 }
 function start(){const c=getCtx();if(c.state==='suspended')c.resume();beat=0;nextT=c.currentTime+0.05;sched();playing=true;document.getElementById('playBtn').classList.add('playing');document.getElementById('playLabel').textContent='Stop';document.getElementById('playIcon').style.display='none';document.getElementById('stopIcon').style.display='block';}
 function stop(){clearTimeout(timer);timer=null;playing=false;document.getElementById('playBtn').classList.remove('playing');document.getElementById('playLabel').textContent='Start';document.getElementById('playIcon').style.display='block';document.getElementById('stopIcon').style.display='none';document.querySelectorAll('.beat-dot').forEach(d=>d.classList.remove('on'));}
-function setBpm(v){bpm=Math.max(40,Math.min(240,v));document.getElementById('bpmDisplay').textContent=bpm;document.getElementById('bpmSlider').value=bpm;document.getElementById('tempoLabel').textContent=tempoName(bpm);}
+function setBpm(v){
+    bpm = Math.max(40, Math.min(240, v));
+    document.getElementById('bpmDisplay').value = bpm; // Uses .value for the input
+    document.getElementById('bpmSlider').value = bpm;
+    document.getElementById('tempoLabel').textContent = tempoName(bpm);
+}
+
+// Add this listener directly underneath the setBpm function
+document.getElementById('bpmDisplay').addEventListener('change', e => {
+    setBpm(+e.target.value);
+});
 
 document.getElementById('playBtn').addEventListener('click',()=>playing?stop():start());
 document.getElementById('bpmSlider').addEventListener('input',e=>setBpm(+e.target.value));

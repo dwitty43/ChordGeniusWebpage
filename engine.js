@@ -235,7 +235,20 @@ function isNashvilleLine(line) {
 function isTabLine(line) {
     const trimmed = line.trim();
     if (trimmed === '') return false;
-    return /^([a-gA-G1-6]\s*\||\|).*[-]{2,}/.test(trimmed) || /^[-]{4,}/.test(trimmed);
+
+    // 1. Traditional tabs with pipes (e.g., e|--- or |---)
+    if (/^([a-gA-G1-6]\s*\||\|).*[-]{2,}/.test(trimmed)) return true;
+    
+    // 2. Heavy dash lines (e.g., --------)
+    if (/^[-]{4,}/.test(trimmed)) return true;
+    
+    // 3. THE FIX: Letter followed immediately by dashes/numbers (e.g., G-11-11-11)
+    if (/^[a-gA-G1-6]?\s*[-]+[\d-]+/.test(trimmed)) return true;
+    
+    // 4. THE FIX: Wrapped number/dash lines (e.g., 3-13-13- or -9-9-9-1)
+    if (/^[\d-]{5,}$/.test(trimmed)) return true;
+
+    return false;
 }
 
 function isNoiseLine(line) {
