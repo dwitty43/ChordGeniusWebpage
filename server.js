@@ -49,6 +49,7 @@ app.get('/api/convert', async (req, res) => {
     let songKey = req.query.key;
     const targetKey = req.query.targetKey || ''; 
     const format = req.query.format || 'docx';
+    const simplify = req.query.simplify === 'true';
 
     if (!query) return res.status(400).json({ error: "Please provide a song query." });
 
@@ -66,7 +67,7 @@ app.get('/api/convert', async (req, res) => {
         }
 
         console.log(`[API] Transposing chart...`);
-        const finalChart = processAndAlignTabs(tabData.rawTabText, songKey, targetKey);
+        const finalChart = processAndAlignTabs(tabData.rawTabText, songKey, targetKey, false, simplify);
         
         await deliverFile(res, finalChart, query, songKey, targetKey, format);
 
@@ -82,6 +83,7 @@ app.post('/api/import', upload.single('chartFile'), async (req, res) => {
     const targetKey = req.body.targetKey || ''; 
     const file = req.file;
     const format = req.body.format || 'docx';
+    const simplify = req.body.simplify === 'true';
 
     if (!file) return res.status(400).json({ error: "Please upload a .txt, .docx, or .pdf file." });
     if (!songKey) return res.status(400).json({ error: "Please provide the original key of the song." });
@@ -109,7 +111,7 @@ app.post('/api/import', upload.single('chartFile'), async (req, res) => {
         
         console.log(`[API] Transposing uploaded chart...`);
 
-        const finalChart = processAndAlignTabs(extractedText, songKey, targetKey, isPdf);
+        const finalChart = processAndAlignTabs(extractedText, songKey, targetKey, isPdf, simplify);
         
         await deliverFile(res, finalChart, originalName, songKey, targetKey, format);
 

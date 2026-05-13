@@ -94,6 +94,28 @@ function transposeChord(chordString, originalKey, targetKey) {
 }
 
 
+// --- CHORD SIMPLIFIER ---
+function simplifyChord(chordStr) {
+    const wrap = chordStr.match(/^(\(?)(.+?)(\)?)$/);
+    if (!wrap) return chordStr;
+    const [, open, inner, close] = wrap;
+
+    // Strip bass note
+    const noBass = inner.replace(/\/([A-Ga-g][#b]?|[b#]?[1-7])/, '');
+
+    // Match root + basic quality only (keep m/dim/aug, drop everything else)
+    const m = noBass.match(/^([b#]?[1-7]|[A-Ga-g][#b]?)(m(?:in)?|maj|dim|aug|\+|°|ø)?/i);
+    if (!m) return chordStr;
+
+    let quality = m[2] || '';
+    if (/^min$/i.test(quality)) quality = 'm';
+    if (/^maj$/i.test(quality)) quality = '';
+    if (quality === '°') quality = 'dim';
+    if (quality === 'ø') quality = 'm';
+
+    return open + m[1] + quality + close;
+}
+
 // --- SEARCH SCRAPER LOGIC ---
 async function getFirstSearchResult(query) {
     // Primary: Native Ultimate Guitar Search
@@ -263,7 +285,7 @@ function isNoiseLine(line) {
 }
 
 // --- TEXT PROCESSING ---
-function processAndAlignTabs(rawText, originalKey, targetKey, isPdf = false) {
+function processAndAlignTabs(rawText, originalKey, targetKey, isPdf = false, simplify = false) {
     const lines = rawText.split('\n');
     let processedLines = [];
     let hasStarted = false; 
@@ -289,7 +311,10 @@ function processAndAlignTabs(rawText, originalKey, targetKey, isPdf = false) {
                 }
             }
             let newLine = line.replace(/(\S+)(\s*)/g, (match, chord, spaces) => {
-                const newChord = transposeChord(chord, originalKey, targetKey);
+                let newChord = transposeChord(chord, originalKey, targetKey);
+                if (simplify && !/^[|()\[\]{}:\-~,]+$/.test(chord) && !/^N\.?C\.?$/i.test(chord.replace(/[()]/g, ''))) {
+                    newChord = simplifyChord(newChord);
+                }
                 const lengthDiff = chord.length - newChord.length;
                 let newSpaces = spaces;
                 
