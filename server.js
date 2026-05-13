@@ -77,41 +77,6 @@ app.get('/api/convert', async (req, res) => {
     }
 });
 
-// --- BATCH SETLIST BINDER EXPORT ---
-app.post('/api/binder', async (req, res) => {
-    const { setlist, format } = req.body; 
-    // "setlist" is expected to be an array of objects: { title, originalKey, targetKey, text }
-    
-    if (!setlist || setlist.length === 0) {
-        return res.status(400).json({ error: "Setlist is empty." });
-    }
-
-    try {
-        console.log(`[API] Generating ${format} Binder for ${setlist.length} songs...`);
-        
-        let combinedText = "";
-        
-        // Loop through the array and stitch the text together
-        for (let i = 0; i < setlist.length; i++) {
-            const song = setlist[i];
-            
-            // Add spacing and headers between songs so Mammoth/Puppeteer recognize a new section
-            if (i > 0) combinedText += `\n\n\n\n\n`; 
-            
-            combinedText += `=== SONG ${i + 1}: ${song.title.toUpperCase()} ===\n`;
-            combinedText += `Key: ${song.targetKey}\n\n`;
-            combinedText += song.text;
-        }
-
-        // Send the combined text to your existing delivery function
-        await deliverFile(res, combinedText, "Sunday_Setlist_Binder", "Mixed", "Mixed", format);
-
-    } catch (error) {
-        console.error(`[API Error]`, error.message);
-        res.status(500).json({ error: error.message });
-    }
-});
-
 // --- ROUTE 2: UPLOAD ---
 app.post('/api/import', upload.single('chartFile'), async (req, res) => {
     const songKey = req.body.key;
