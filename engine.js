@@ -117,67 +117,91 @@ function simplifyChord(chordStr) {
 }
 
 // --- SEARCH SCRAPER LOGIC ---
-async function getFirstSearchResult(query) {
-    // Primary: Native Ultimate Guitar Search
-    const searchUrl = `https://www.ultimate-guitar.com/search.php?search_type=title&value=${encodeURIComponent(query)}`;
 
+async function getFirstSearchResult(query) {
+    let tabUrl = null;
+
+    // Primary: Native Ultimate Guitar Search
     try {
+        console.log(`[Engine] Searching native UG...`);
+        const searchUrl = `https://www.ultimate-guitar.com/search.php?search_type=title&value=${encodeURIComponent(query)}`;
         const html = await fetchUGPage(searchUrl, true);
         const cleanHtml = html.replace(/\\/g, '');
 
-        // Try to find a standard chords tab in the raw HTML/JSON
         const regex = /(https:\/\/tabs\.ultimate-guitar\.com\/tab\/[^"'\s>]+-chords-\d+)/i;
         const match = cleanHtml.match(regex);
 
-        if (match && match[1]) return match[1];
+        if (match && match[1]) {
+            return match[1];
+        }
+    } catch (e) {
+        console.log(`[Engine] Native search failed or timed out: ${e.message}`);
+    }
 
-        // Fallback 1: Google Search
-        console.log("[Engine] Native search failed, trying Google fallback...");
-        const googleUrl = `https://www.google.com/search?q=${encodeURIComponent("site:tabs.ultimate-guitar.com/tab/ chords " + query)}`;
-        const googleHtml = await fetchUGPage(googleUrl, true);
-        let $ = cheerio.load(googleHtml);
-        let tabUrl = null;
-
+    // Fallback 1: DuckDuckGo HTML (Highly reliable, no JS captchas)
+    try {
+        console.log("[Engine] Trying DuckDuckGo fallback...");
+        const ddgUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent("site:tabs.ultimate-guitar.com/tab/ chords " + query)}`;
+        const ddgHtml = await fetchUGPage(ddgUrl, true);
+        let $ = cheerio.load(ddgHtml);
+        
         $('a').each((i, el) => {
             let href = $(el).attr('href');
             if (!href) return;
-            // Google sometimes wraps outbound links in a tracking redirect, this unpacks it
-            if (href.startsWith('/url?q=')) {
-                href = decodeURIComponent(href.split('/url?q=')[1].split('&')[0]);
+            
+            // DDG routes links through their own redirector, this unpacks it
+            if (href.includes('uddg=')) {
+                href = decodeURIComponent(href.split('uddg=')[1].split('&')[0]);
             }
+            
             if (href.includes('tabs.ultimate-guitar.com/tab/') && href.includes('chords')) {
                 tabUrl = href;
-                return false; // Break the loop once we find the first valid chart
+                return false; 
             }
         });
 
         if (tabUrl) return tabUrl;
+    } catch (e) {
+        console.log(`[Engine] DuckDuckGo failed: ${e.message}`);
+    }
 
-        // Fallback 2: Yahoo Search (Highly reliable for cloud datacenter IPs)
-        console.log("[Engine] Google failed, trying Yahoo fallback...");
-        const yahooUrl = `https://search.yahoo.com/search?p=${encodeURIComponent("site:tabs.ultimate-guitar.com/tab/ chords " + query)}`;
-        const yahooHtml = await fetchUGPage(yahooUrl, true);
-        $ = cheerio.load(yahooHtml);
+    // Fallback 2: Bing Search
+    try {
+        console.log("[Engine] Trying Bing fallback...");
+        const bingUrl = `https://www.bing.com/search?q=${encodeURIComponent("site:tabs.ultimate-guitar.com/tab/ chords " + query)}`;
+        const bingHtml = await fetchUGPage(bingUrl, true);
+        let $ = cheerio.load(bingHtml);
 
         $('a').each((i, el) => {
             let href = $(el).attr('href');
             if (!href) return;
+            
             if (href.includes('tabs.ultimate-guitar.com/tab/') && href.includes('chords')) {
                 tabUrl = href;
                 return false;
             }
         });
+        
+        // Absolute last resort: Check Bing <cite> tags if the anchor links are masked
+        if (!tabUrl) {
+            $('cite').each((i, el) => {
+                let text = $(el).text();
+                if (text.includes('tabs.ultimate-guitar.com/tab/') && text.includes('chords')) {
+                    tabUrl = "https://" + text.replace(/ /g, '');
+                    return false;
+                }
+            });
+        }
 
         if (tabUrl) return tabUrl;
-
-        throw new Error(`Could not find an Ultimate Guitar chords link for "${query}".`);
-    } catch (error) {
-        throw new Error(`Search engine failed: ${error.message}`);
+    } catch (e) {
+        console.log(`[Engine] Bing failed: ${e.message}`);
     }
+
+    throw new Error(`Could not find an Ultimate Guitar chords link for "${query}".`);
 }
 
 async function fetchUGPage(url, isSearch = false) {
-    // Added an extra stealth argument to hide the automation flag
     const browser = await puppeteer.launch({ 
         headless: "new", 
         args: [
@@ -188,29 +212,28 @@ async function fetchUGPage(url, isSearch = false) {
     });
     const page = await browser.newPage();
     
-    // We REMOVED the hardcoded User-Agent so the Stealth plugin can dynamically generate a perfect match.
-    // We REMOVED the request interception. Cloudflare MUST load CSS/Fonts to pass the Turnstile challenge!
+    // Re-added a modern User Agent so WAFs don't instantly flag the headless browser
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36');
+    await page.setViewport({ width: 1280, height: 800 });
 
     try {
-        // Wait until network is relatively quiet, giving CF time to load its scripts
-        await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+        // CRITICAL FIX: Changed from 'networkidle2' to 'domcontentloaded'
+        // This ensures ad-heavy pages don't cause 30-second timeouts.
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
-        // Defeat Cloudflare "Just a moment..."
         let title = await page.title();
         let cfAttempts = 0;
         
-        // Extended the attempts slightly just in case the datacenter connection is slow
-        while ((title.includes("Just a moment") || title.includes("Cloudflare")) && cfAttempts < 10) {
-            console.log(`[Scraper] Cloudflare detected. Waiting for clearance (Attempt ${cfAttempts + 1}/10)...`);
+        while ((title.includes("Just a moment") || title.includes("Cloudflare") || title.includes("Attention Required!")) && cfAttempts < 10) {
+            console.log(`[Scraper] Challenge detected. Waiting for clearance (Attempt ${cfAttempts + 1}/10)...`);
             await new Promise(r => setTimeout(r, 2000));
             title = await page.title();
             cfAttempts++;
         }
 
         if (!isSearch) {
-            try { await page.waitForSelector('pre', { timeout: 8000 }); } catch (e) {}
+            try { await page.waitForSelector('pre', { timeout: 5000 }); } catch (e) {}
         } else {
-            // Give dynamic search engines a moment to render links
             await new Promise(r => setTimeout(r, 1500));
         }
 
