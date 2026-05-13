@@ -690,6 +690,25 @@
             </button>
             <button id="downloadUploadBtn" class="downloadBtn" disabled>Download</button>
         </div>
+        <div class="history-section">
+            <div class="section-label">Setlist Builder</div>
+            
+            <div id="emptySetlistMsg" style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 24px; border: 1px dashed var(--border); border-radius: 10px; margin-bottom: 16px;">
+                Your setlist is empty. Add a song to build your packet.
+            </div>
+
+            <div class="history-list" id="setlistQueueContainer" style="display: none;"></div>
+
+            <div class="grid-buttons" id="setlistActions" style="display: none;">
+                <select id="binderFormat">
+                    <option value="docx">.DOCX Binder</option>
+                    <option value="pdf">.PDF Binder</option>
+                </select>
+                <button id="downloadBinderBtn" class="downloadBtn" style="grid-column: span 2;">
+                    Download Full Setlist Binder
+                </button>
+            </div>
+        </div>
 
         <div id="status"></div>
 
@@ -926,6 +945,96 @@ dlUploadBtn.addEventListener('click',()=>{ if(uploadBlob) triggerDownload(upload
 pvUploadBtn.addEventListener('click',()=>{
     const fi=document.getElementById('fileInput'); const name=fi.files[0]?fi.files[0].name.replace(/\.[^/.]+$/,''):'Chart';
     if(uploadBlob) openPreview(uploadBlob,uploadFormat_,uploadFilename,name);
+});
+
+// 1. Create the empty array to hold the songs
+let setlistQueue = [];
+
+// 2. The function to draw the array to the screen
+function renderSetlist() {
+    const container = document.getElementById('setlistQueueContainer');
+    const emptyMsg = document.getElementById('emptySetlistMsg');
+    const actions = document.getElementById('setlistActions');
+    
+    // If empty, show the dashed box
+    if(setlistQueue.length === 0) {
+        container.style.display = 'none';
+        actions.style.display = 'none';
+        emptyMsg.style.display = 'block';
+        return;
+    }
+    
+    // If not empty, show the queue
+    emptyMsg.style.display = 'none';
+    container.style.display = 'flex';
+    actions.style.display = 'grid';
+    container.innerHTML = '';
+    
+    setlistQueue.forEach((song, idx) => {
+        const item = document.createElement('div');
+        item.className = 'history-item';
+        item.innerHTML = `
+            <div class="history-info">
+                <div class="history-name">${idx + 1}. ${song.title}</div>
+                <div class="history-meta">Original: ${song.originalKey} &rarr; Target: ${song.targetKey}</div>
+            </div>
+            <button class="history-clear" onclick="removeFromSetlist(${idx})">Remove</button>
+        `;
+        container.appendChild(item);
+    });
+}
+
+// 3. The function to remove a song
+window.removeFromSetlist = function(idx) {
+    setlistQueue.splice(idx, 1);
+    renderSetlist();
+};
+
+// 4. The function to add a song (Attach this to an "Add to Setlist" button)
+// NOTE: Make sure you have the song's title, key, and raw text available when you call this!
+function addSongToSetlist(title, originalKey, targetKey, rawText) {
+    setlistQueue.push({
+        title: title,
+        originalKey: originalKey,
+        targetKey: targetKey,
+        text: rawText
+    });
+    renderSetlist();
+}
+
+// 5. The function to download the compiled binder
+document.getElementById('downloadBinderBtn').addEventListener('click', async () => {
+    const format = document.getElementById('binderFormat').value;
+    const btn = document.getElementById('downloadBinderBtn');
+    const origHTML = btn.innerHTML;
+    
+    btn.innerHTML = '⏳ Compiling Binder...';
+    btn.disabled = true;
+    
+    try {
+        const res = await fetch('/api/binder', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ setlist: setlistQueue, format: format })
+        });
+        
+        if(!res.ok) throw new Error((await res.json()).error);
+        
+        const blob = await res.blob();
+        
+        // Trigger the download in the browser
+        const url = URL.createObjectURL(blob); 
+        const a = document.createElement('a');
+        a.style.display = 'none'; a.href = url; a.download = `Sunday_Setlist_Binder.${format}`;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+        
+    } catch(e) {
+        alert(`Error: ${e.message}`);
+    } finally {
+        btn.innerHTML = origHTML;
+        btn.disabled = false;
+    }
 });
 
 // ── PREVIEW MODAL ──
