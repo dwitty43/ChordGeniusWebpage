@@ -77,37 +77,42 @@ app.get('/api/convert', async (req, res) => {
     }
 });
 
-// --- BATCH SETLIST BINDER EXPORT ---
+// --- ROUTE 4: BATCH SETLIST BINDER EXPORT ---
 app.post('/api/binder', async (req, res) => {
     const { setlist, format } = req.body; 
-    // "setlist" is expected to be an array of objects: { title, originalKey, targetKey, text }
-    
-    if (!setlist || setlist.length === 0) {
-        return res.status(400).json({ error: "Setlist is empty." });
-    }
+    if (!setlist || setlist.length === 0) return res.status(400).json({ error: "Setlist is empty." });
 
     try {
-        console.log(`[API] Generating ${format} Binder for ${setlist.length} songs...`);
-        
         let combinedText = "";
-        
-        // Loop through the array and stitch the text together
         for (let i = 0; i < setlist.length; i++) {
             const song = setlist[i];
-            
-            // Add spacing and headers between songs so Mammoth/Puppeteer recognize a new section
             if (i > 0) combinedText += `\n\n\n\n\n`; 
-            
             combinedText += `=== SONG ${i + 1}: ${song.title.toUpperCase()} ===\n`;
             combinedText += `Key: ${song.targetKey}\n\n`;
             combinedText += song.text;
         }
-
-        // Send the combined text to your existing delivery function
         await deliverFile(res, combinedText, "Sunday_Setlist_Binder", "Mixed", "Mixed", format);
-
     } catch (error) {
-        console.error(`[API Error]`, error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// --- ROUTE 3: RAW TEXT GENERATOR FOR EDITOR ---
+app.get('/api/preview', async (req, res) => {
+    const { q: query, key: songKey, targetKey, simplify } = req.query;
+    try {
+        const tabUrl = await getFirstSearchResult(query); 
+        const html = await fetchUGPage(tabUrl);
+        const tabData = extractTabData(html);
+        
+        const finalKey = songKey || tabData.songKey;
+        if (!finalKey) return res.status(400).json({ error: "No key found." });
+
+        const isSimplify = simplify === 'true';
+        const finalChart = processAndAlignTabs(tabData.rawTabText, finalKey, targetKey || '', false, isSimplify);
+        
+        res.json({ title: query, originalKey: finalKey, targetKey: targetKey || 'Nashville', text: finalChart });
+    } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });

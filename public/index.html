@@ -884,35 +884,53 @@ const uploadFormat=document.getElementById('uploadFormat'), dlUploadBtn=document
 searchFormat.addEventListener('change',()=>{ if(!dlSearchBtn.disabled){dlSearchBtn.disabled=true;pvSearchBtn.disabled=true;dlSearchBtn.innerHTML='Download';searchBlob=null;showStatus("Format changed — please convert again.","active");}});
 uploadFormat.addEventListener('change',()=>{ if(!dlUploadBtn.disabled){dlUploadBtn.disabled=true;pvUploadBtn.disabled=true;dlUploadBtn.innerHTML='Download';uploadBlob=null;showStatus("Format changed — please convert again.","active");}});
 
-// ── SEARCH ──
-const searchBtn=document.getElementById('searchBtn');
-searchBtn.addEventListener('click', async ()=>{
-    const query=document.getElementById('songQuery').value;
-    const key=document.getElementById('songKey').value;
-    const targetKey=document.getElementById('targetKeySearch').value;
-    const format=searchFormat.value;
-    if(!query) return showStatus("Please enter a song name!","error");
-    const orig=searchBtn.innerHTML;
-    searchBtn.innerHTML='⏳ Processing…'; searchBtn.disabled=true; dlSearchBtn.disabled=true; pvSearchBtn.disabled=true;
-    showStatus("Searching Ultimate Guitar and processing chart…","active");
+// ── SEARCH TO LIVE EDITOR ──
+const searchBtn = document.getElementById('searchBtn');
+searchBtn.addEventListener('click', async () => {
+    const query = document.getElementById('songQuery').value;
+    const key = document.getElementById('songKey').value;
+    const targetKey = document.getElementById('targetKeySearch').value;
+    const format = document.getElementById('searchFormat').value;
+    
+    if(!query) return showStatus("Please enter a song name!", "error");
+    
+    const orig = searchBtn.innerHTML;
+    searchBtn.innerHTML = '⏳ Processing...'; 
+    searchBtn.disabled = true;
+    showStatus("Fetching data and loading into editor...", "active");
+    
+    const isSimplify = document.getElementById('simplifyChords').checked;
+    let url = `/api/preview?q=${encodeURIComponent(query)}&simplify=${isSimplify}`;
+    if(key) url += `&key=${encodeURIComponent(key)}`;
+    if(targetKey) url += `&targetKey=${encodeURIComponent(targetKey)}`;
+    
     try {
-        const simplify = document.getElementById('simplifyChords').checked;
-        let url=`/api/convert?q=${encodeURIComponent(query)}&format=${format}`;
-        if (simplify) url += `&simplify=true`;
-        if(key) url+=`&key=${encodeURIComponent(key)}`;
-        if(targetKey) url+=`&targetKey=${encodeURIComponent(targetKey)}`;
-        const res=await fetch(url);
-        if(!res.ok) throw new Error((await res.json()).error||"Conversion failed.");
-        searchBlob=await res.blob(); searchFilename=getFilename(res.headers.get('Content-Disposition'),`Chart.${format}`); searchFormat_=format;
-        dlSearchBtn.innerHTML=`<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg> .${format.toUpperCase()}`;
-        dlSearchBtn.disabled=false; pvSearchBtn.innerHTML=`<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg> Preview`; pvSearchBtn.disabled=false;
-        showStatus("Chart ready — preview or download below.","success");
+        const res = await fetch(url);
+        if(!res.ok) throw new Error((await res.json()).error || "Search failed.");
+        
+        // Save data globally for the Setlist builder & Modal
+        window.currentChartData = await res.json();
+        
+        // Populate the modal textarea
+        document.getElementById('liveEditor').value = window.currentChartData.text;
+        document.getElementById('modalTitle').textContent = window.currentChartData.title;
+        document.getElementById('modalSubtitle').textContent = `Transposed to: ${window.currentChartData.targetKey}`;
+        
+        // Clean up any old mammoth iframes if they exist
+        document.querySelectorAll('.modal-docx-preview, iframe, .modal-loading').forEach(el => el.remove());
+        
+        document.getElementById('previewOverlay').classList.add('open');
+        document.body.style.overflow = 'hidden';
+        showStatus("Chart loaded into the editor! Edit and download.", "success");
+        
         addToHistory({query, key, targetKey, format});
-    } catch(e){ showStatus(`Error: ${e.message}`,"error"); }
-    finally{ searchBtn.innerHTML=orig; searchBtn.disabled=false; }
+    } catch(e) {
+        showStatus(`Error: ${e.message}`, "error");
+    } finally {
+        searchBtn.innerHTML = orig;
+        searchBtn.disabled = false;
+    }
 });
-dlSearchBtn.addEventListener('click',()=>{ if(searchBlob) triggerDownload(searchBlob,searchFilename); });
-pvSearchBtn.addEventListener('click',()=>{ if(searchBlob) openPreview(searchBlob,searchFormat_,searchFilename,document.getElementById('songQuery').value||'Chart Preview'); });
 
 // ── UPLOAD ──
 const uploadBtn=document.getElementById('uploadBtn');
@@ -1036,33 +1054,61 @@ document.getElementById('downloadBinderBtn').addEventListener('click', async () 
     }
 });
 
-// ── PREVIEW MODAL ──
-const overlay=document.getElementById('previewOverlay'), modalBody=document.getElementById('modalBody');
-const modalTitle=document.getElementById('modalTitle'), modalSubtitle=document.getElementById('modalSubtitle'), modalDownloadBtn=document.getElementById('modalDownloadBtn');
-let activeBlob=null, activeFilename='';
+// ── MODAL ACTIONS (DOWNLOAD & SETLIST) ──
+const overlay = document.getElementById('previewOverlay');
+function closePreview() { overlay.classList.remove('open'); document.body.style.overflow=''; }
+document.getElementById('modalClose').addEventListener('click', closePreview);
 
-function openPreview(blob, format, filename, title) {
-    activeBlob=blob; activeFilename=filename;
-    modalTitle.textContent=title||'Chart Preview';
-    modalSubtitle.textContent=format.toUpperCase()+' preview';
-    modalBody.innerHTML='';
-    const loading=document.createElement('div'); loading.className='modal-loading';
-    loading.innerHTML='<div class="spinner"></div><span style="font-size:12.5px;color:var(--text-muted)">Rendering preview…</span>';
-    modalBody.appendChild(loading);
-    overlay.classList.add('open'); document.body.style.overflow='hidden';
-    if(format==='pdf') {
-        const url=URL.createObjectURL(blob); const iframe=document.createElement('iframe');
-        iframe.style.cssText='width:100%;height:100%;min-height:520px;border:none;display:block;';
-        iframe.src=url; iframe.onload=()=>loading.remove(); modalBody.appendChild(iframe);
-    } else {
-        blob.arrayBuffer().then(buf=>{
-            mammoth.convertToHtml({arrayBuffer:buf}).then(result=>{
-                loading.remove(); const div=document.createElement('div'); div.className='modal-docx-preview';
-                div.innerHTML=result.value||'<p style="color:#888">No content to preview.</p>'; modalBody.appendChild(div);
-            }).catch(()=>{ loading.remove(); const div=document.createElement('div'); div.className='modal-docx-preview'; div.innerHTML='<p style="color:#888">Could not render preview.</p>'; modalBody.appendChild(div); });
+// Download Single Edited Chart
+document.getElementById('modalDownloadBtn').addEventListener('click', async () => {
+    const text = document.getElementById('liveEditor').value;
+    const format = document.getElementById('searchFormat').value || 'docx';
+    
+    const singleSongQueue = [{
+        title: window.currentChartData.title,
+        originalKey: window.currentChartData.originalKey,
+        targetKey: window.currentChartData.targetKey,
+        text: text
+    }];
+    
+    const btn = document.getElementById('modalDownloadBtn');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '⏳ Rendering...';
+    btn.disabled = true;
+    
+    try {
+        const res = await fetch('/api/binder', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ setlist: singleSongQueue, format })
         });
+        if(!res.ok) throw new Error((await res.json()).error);
+        const blob = await res.blob();
+        triggerDownload(blob, `${window.currentChartData.title.replace(/\s+/g, '_')}_Chart.${format}`);
+    } catch(e) {
+        showStatus(`Error rendering chart: ${e.message}`, 'error');
+    } finally {
+        btn.innerHTML = orig;
+        btn.disabled = false;
     }
-}
+});
+
+// Add to Setlist Queue
+document.getElementById('addSetlistBtn').addEventListener('click', () => {
+    const text = document.getElementById('liveEditor').value;
+    
+    setlistQueue.push({
+        title: window.currentChartData.title,
+        originalKey: window.currentChartData.originalKey,
+        targetKey: window.currentChartData.targetKey,
+        text: text
+    });
+    
+    if (typeof renderSetlist === 'function') renderSetlist();
+    closePreview();
+    showStatus(`${window.currentChartData.title} added to Setlist! (${setlistQueue.length} charts ready)`, 'success');
+});
+
 function closePreview() { overlay.classList.remove('open'); document.body.style.overflow=''; }
 document.getElementById('modalClose').addEventListener('click',closePreview);
 overlay.addEventListener('click',e=>{ if(e.target===overlay) closePreview(); });
