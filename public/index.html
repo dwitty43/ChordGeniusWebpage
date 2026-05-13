@@ -51,10 +51,6 @@
             --focus-ring: rgba(184, 114, 10, 0.22);
             --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b5738'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
         }
-        /* Light mode status boost */
-        [data-theme="light"] .status-active  { background: var(--panel-bg); border-color: var(--border); color: var(--text-muted); }
-        [data-theme="light"] .status-success { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.35); color: #0a7a56; }
-        [data-theme="light"] .status-error   { background: rgba(220,38,38,0.08); border-color: rgba(220,38,38,0.3); color: #b91c1c; }
         [data-theme="light"] .previewBtn     { background: var(--card-bg); }
         [data-theme="light"] .modal-close    { background: var(--card-bg); }
         [data-theme="light"] .info-accordion { background: var(--panel-bg); }
@@ -352,15 +348,36 @@
         .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid var(--border); }
         .divider-icon { color: var(--primary); opacity: 0.5; font-size: 15px; }
 
-        /* ── STATUS ── */
+        /* ── STATUS TOAST ── */
         #status {
-            margin-top: 24px; padding: 13px 18px; border-radius: 10px;
-            font-size: 13.5px; font-weight: 600; text-align: center; display: none;
-            animation: fadeInUp 0.3s ease-out;
+            position: fixed; top: 22px; left: 50%;
+            transform: translateX(-50%) translateY(-16px);
+            z-index: 9999;
+            display: none; align-items: center; gap: 10px;
+            padding: 13px 22px 13px 18px; border-radius: 40px;
+            font-size: 13.5px; font-weight: 600; white-space: nowrap;
+            max-width: calc(100vw - 48px); overflow: hidden; text-overflow: ellipsis;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.35), 0 2px 10px rgba(0,0,0,0.2);
+            opacity: 0; transition: opacity 0.25s ease, transform 0.28s cubic-bezier(0.34,1.56,0.64,1);
+            pointer-events: none;
         }
-        .status-active  { display: block !important; background: var(--panel-bg); border: 1px solid var(--border); color: var(--text-muted); }
-        .status-success { display: block !important; background: rgba(16,185,129,0.07); border: 1px solid rgba(16,185,129,0.18); color: #10b981; }
-        .status-error   { display: block !important; background: rgba(239,68,68,0.07); border: 1px solid rgba(239,68,68,0.18); color: #ef4444; }
+        #status.toast-visible {
+            opacity: 1; transform: translateX(-50%) translateY(0);
+            pointer-events: auto;
+        }
+        .status-active  { display: flex !important; background: #1a1d2a; border: 1px solid rgba(245,158,11,0.25); color: #c8b882; }
+        .status-success { display: flex !important; background: #0d2018; border: 1px solid rgba(16,185,129,0.4); color: #34d399; }
+        .status-error   { display: flex !important; background: #1f0f0f; border: 1px solid rgba(239,68,68,0.4); color: #f87171; }
+        [data-theme="light"] .status-active  { background: #faf3e0; border-color: rgba(184,114,10,0.35); color: #7a5a18; }
+        [data-theme="light"] .status-success { background: #edfaf4; border-color: rgba(16,185,129,0.4); color: #0a7a56; }
+        [data-theme="light"] .status-error   { background: #fdf0f0; border-color: rgba(220,38,38,0.35); color: #b91c1c; }
+        .toast-spinner {
+            width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
+            border: 2px solid currentColor; border-top-color: transparent;
+            animation: toastSpin 0.75s linear infinite;
+        }
+        .toast-icon { width: 16px; height: 16px; flex-shrink: 0; }
+        @keyframes toastSpin { to { transform: rotate(360deg); } }
 
         /* ── HISTORY / SETLIST ── */
         .history-section { margin-top: 14px; }
@@ -741,11 +758,25 @@ function populateKeySelects() {
 }
 populateKeySelects();
 
-// ── STATUS ──
+// ── STATUS TOAST ──
 const statusDiv = document.getElementById('status');
+let _statusDismiss = null;
 function showStatus(text, type) {
-    statusDiv.className=''; statusDiv.innerText=text;
-    statusDiv.classList.add('status-'+type);
+    clearTimeout(_statusDismiss);
+    const icons = {
+        active:  `<span class="toast-spinner"></span>`,
+        success: `<svg class="toast-icon" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>`,
+        error:   `<svg class="toast-icon" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>`
+    };
+    statusDiv.className = 'status-' + type;
+    statusDiv.innerHTML = (icons[type] || '') + `<span>${text}</span>`;
+    requestAnimationFrame(() => requestAnimationFrame(() => statusDiv.classList.add('toast-visible')));
+    if (type === 'success') {
+        _statusDismiss = setTimeout(() => {
+            statusDiv.classList.remove('toast-visible');
+            setTimeout(() => { statusDiv.className = ''; }, 300);
+        }, 6000);
+    }
 }
 
 // ── SONG HISTORY ──
