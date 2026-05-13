@@ -885,7 +885,6 @@ searchFormat.addEventListener('change',()=>{ if(!dlSearchBtn.disabled){dlSearchB
 uploadFormat.addEventListener('change',()=>{ if(!dlUploadBtn.disabled){dlUploadBtn.disabled=true;pvUploadBtn.disabled=true;dlUploadBtn.innerHTML='Download';uploadBlob=null;showStatus("Format changed — please convert again.","active");}});
 
 // ── SEARCH ──
-let setlistQueue = [];
 const searchBtn=document.getElementById('searchBtn');
 searchBtn.addEventListener('click', async ()=>{
     const query=document.getElementById('songQuery').value;
