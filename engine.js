@@ -177,38 +177,40 @@ async function getFirstSearchResult(query) {
 }
 
 async function fetchUGPage(url, isSearch = false) {
-    const browser = await puppeteer.launch({ headless: "new", args: ['--no-sandbox', '--disable-setuid-sandbox'] });
-    const page = await browser.newPage();
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-
-    await page.setRequestInterception(true);
-    page.on('request', (req) => {
-        const resourceType = req.resourceType();
-        // Allow scripts to run so Cloudflare and React can execute!
-        if (['image', 'stylesheet', 'font', 'media'].includes(resourceType)) {
-            req.abort();
-        } else {
-            req.continue();
-        }
+    // Added an extra stealth argument to hide the automation flag
+    const browser = await puppeteer.launch({ 
+        headless: "new", 
+        args: [
+            '--no-sandbox', 
+            '--disable-setuid-sandbox',
+            '--disable-blink-features=AutomationControlled' 
+        ] 
     });
+    const page = await browser.newPage();
+    
+    // We REMOVED the hardcoded User-Agent so the Stealth plugin can dynamically generate a perfect match.
+    // We REMOVED the request interception. Cloudflare MUST load CSS/Fonts to pass the Turnstile challenge!
 
     try {
-        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        // Wait until network is relatively quiet, giving CF time to load its scripts
+        await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
 
         // Defeat Cloudflare "Just a moment..."
         let title = await page.title();
         let cfAttempts = 0;
-        while ((title.includes("Just a moment") || title.includes("Cloudflare")) && cfAttempts < 8) {
-            console.log(`[Scraper] Cloudflare detected. Waiting for clearance (Attempt ${cfAttempts + 1}/8)...`);
+        
+        // Extended the attempts slightly just in case the datacenter connection is slow
+        while ((title.includes("Just a moment") || title.includes("Cloudflare")) && cfAttempts < 10) {
+            console.log(`[Scraper] Cloudflare detected. Waiting for clearance (Attempt ${cfAttempts + 1}/10)...`);
             await new Promise(r => setTimeout(r, 2000));
             title = await page.title();
             cfAttempts++;
         }
 
         if (!isSearch) {
-            try { await page.waitForSelector('pre', { timeout: 5000 }); } catch (e) {}
+            try { await page.waitForSelector('pre', { timeout: 8000 }); } catch (e) {}
         } else {
-            // Give dynamic search engines (UG React or Bing) a moment to render links
+            // Give dynamic search engines a moment to render links
             await new Promise(r => setTimeout(r, 1500));
         }
 
@@ -216,7 +218,7 @@ async function fetchUGPage(url, isSearch = false) {
         await browser.close();
         return html;
     } catch (error) {
-        await browser.close();
+        if (browser) await browser.close();
         throw new Error(`Puppeteer failed: ${error.message}`);
     }
 }

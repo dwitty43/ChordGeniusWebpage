@@ -1,0 +1,22 @@
+Here is the full list of the ten ideas to elevate Chord Genius Studio into an industry-standard platform:
+0. Allow user to input own bpm
+0. Fix light mode coloring to be more pleasing to the eye
+
+### ⚙️ Core Engine & Conversion Upgrades
+
+1. **ChordPro Format Import/Export:** Add a regex parser to detect ChordPro markup (`[G]Great is Thy [C]faithfulness`) and allow exports to `.cho` or `.pro` files. This instantly makes your app compatible with the professional digital gigging ecosystem (like OnSong).
+2. **Capo-Integrated Chart Generation:** Add a "Capo Fret" dropdown. If a user selects "Target Key: Bb" and "Capo: 3", the engine transposes the printed chords to **G** but automatically generates the stage-ready header: `Key: Bb | Capo: 3 | Play: G`.
+3. **Automatic Modulation (Key Change) Handling:** Update the engine to look for text markers like `[Key Change: A]`. When the engine hits that marker, it dynamically recalculates the transposition interval on the fly for the remainder of the document.
+4. **Spotify API Integration (Metadata Enrichment):** Hook into the Spotify Web API. When a song is searched, grab the exact Studio BPM, Time Signature, and Original Key, automatically stamping that data into the `.DOCX/.PDF` header and auto-filling the Metronome parameters.
+
+### 🎨 Formatting & Export Upgrades
+
+5. **1-Column vs. 2-Column PDF Layouts:** Add a layout toggle. Update your Puppeteer HTML template to use CSS multi-column layouts so longer songs can fit onto a single page, saving musicians from having to turn pages while playing.
+6. **Automated Chord Diagram Glossary:** Create a dictionary of SVG guitar/piano chord diagrams. When generating a PDF, scan the final document for all unique chords and append a beautifully formatted visual glossary at the bottom of the page for beginners.
+7. **"Smart Snap" Lyric/Chord Alignment for PDFs:** Instead of just adding a newline for uploaded PDFs, use a lightweight syllable-matching heuristic to proportionally distribute the chords above the words, recreating the exact horizontal spacing that PDF parsers strip out.
+
+### 💻 Workflow & UI Features (The ones we just implemented!)
+
+8. **Interactive In-Browser Chart Editor:** Instead of a read-only preview, render the scraped chart into a live text editor. Allow the user to fix typos, change a minor chord to a major, or delete a weird tab line *before* they click download.
+9. **Batch "Setlist" Binder Export:** Add an "Add to Setlist" queue. When the user is ready, stitch the entire array of edited charts into a single, massive PDF/DOCX "Binder", complete with page breaks for the whole gig.
+10. **"Simplify Chords" Toggle:** Add a checkbox that strips out complex extensions and bass notes (e.g., turning `Gmaj7sus4/D` into a pure `G` triad) to make charts instantly readable for intermediate players.
