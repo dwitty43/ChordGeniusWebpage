@@ -337,6 +337,10 @@ function processAndAlignTabs(rawText, originalKey, targetKey, isPdf = false, sim
 }
 
 // --- DOCUMENT GENERATORS ---
+function formatKeyDisplay(keyStr) {
+    if (!keyStr) return '';
+    return keyStr.charAt(0).toUpperCase() + keyStr.slice(1).toLowerCase();
+}
 async function createDocxChart(finalChartText, songTitle, originalKey, targetKey) {
     const cleanText = finalChartText.replace(/\x1B\[\d+m/g, ''); 
     const lines = cleanText.split('\n');
@@ -397,10 +401,9 @@ async function createDocxChart(finalChartText, songTitle, originalKey, targetKey
         }
     });
 
-    // THE FIX: Smart Header Logic
-    let headerKeyText = `Key: ${targetKey.toUpperCase()}`;
+    let headerKeyText = `Key: ${formatKeyDisplay(targetKey)}`;
     if (!targetKey || /^nashville$|^1$/i.test(targetKey)) {
-        headerKeyText = /^nashville$/i.test(originalKey) ? 'Nashville Numbers' : `Key: ${originalKey.toUpperCase()}`;
+        headerKeyText = /^nashville$/i.test(originalKey) ? 'Nashville Numbers' : `Key: ${formatKeyDisplay(originalKey)}`;
     }
 
     const titleParagraph = new Paragraph({
@@ -474,10 +477,9 @@ async function createPdfChart(finalChartText, songTitle, originalKey, targetKey)
         }
     });
 
-    // THE FIX: Smart Header Logic
-    let headerKeyText = `Key: ${targetKey.toUpperCase()}`;
+    let headerKeyText = `Key: ${formatKeyDisplay(targetKey)}`;
     if (!targetKey || /^nashville$|^1$/i.test(targetKey)) {
-        headerKeyText = /^nashville$/i.test(originalKey) ? 'Nashville Numbers' : `Key: ${originalKey.toUpperCase()}`;
+        headerKeyText = /^nashville$/i.test(originalKey) ? 'Nashville Numbers' : `Key: ${formatKeyDisplay(originalKey)}`;
     }
 
     const htmlContent = `
