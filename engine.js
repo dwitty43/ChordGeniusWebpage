@@ -121,35 +121,21 @@ function simplifyChord(chordStr) {
 async function getFirstSearchResult(query) {
     let tabUrl = null;
 
-    // Primary: Native Ultimate Guitar Search
+    // We removed Native UG Search completely. It is heavily protected by Turnstile
+    // and causes the API to timeout before it can try the fallbacks.
+
+    // Primary: DuckDuckGo HTML (Highly reliable, no JS captchas)
     try {
-        console.log(`[Engine] Searching native UG...`);
-        const searchUrl = `https://www.ultimate-guitar.com/search.php?search_type=title&value=${encodeURIComponent(query)}`;
-        const html = await fetchUGPage(searchUrl, true);
-        const cleanHtml = html.replace(/\\/g, '');
-
-        const regex = /(https:\/\/tabs\.ultimate-guitar\.com\/tab\/[^"'\s>]+-chords-\d+)/i;
-        const match = cleanHtml.match(regex);
-
-        if (match && match[1]) {
-            return match[1];
-        }
-    } catch (e) {
-        console.log(`[Engine] Native search failed or timed out: ${e.message}`);
-    }
-
-    // Fallback 1: DuckDuckGo HTML (Highly reliable, no JS captchas)
-    try {
-        console.log("[Engine] Trying DuckDuckGo fallback...");
+        console.log("[Engine] Searching via DuckDuckGo...");
         const ddgUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent("site:tabs.ultimate-guitar.com/tab/ chords " + query)}`;
         const ddgHtml = await fetchUGPage(ddgUrl, true);
-        let $ = cheerio.load(ddgHtml);
-        
+        const $ = cheerio.load(ddgHtml);
+
         $('a').each((i, el) => {
             let href = $(el).attr('href');
             if (!href) return;
             
-            // DDG routes links through their own redirector, this unpacks it
+            // DDG routes links through a redirector, this unpacks it
             if (href.includes('uddg=')) {
                 href = decodeURIComponent(href.split('uddg=')[1].split('&')[0]);
             }
@@ -165,12 +151,12 @@ async function getFirstSearchResult(query) {
         console.log(`[Engine] DuckDuckGo failed: ${e.message}`);
     }
 
-    // Fallback 2: Bing Search
+    // Fallback: Yahoo Search (Very datacenter-friendly)
     try {
-        console.log("[Engine] Trying Bing fallback...");
-        const bingUrl = `https://www.bing.com/search?q=${encodeURIComponent("site:tabs.ultimate-guitar.com/tab/ chords " + query)}`;
-        const bingHtml = await fetchUGPage(bingUrl, true);
-        let $ = cheerio.load(bingHtml);
+        console.log("[Engine] Trying Yahoo fallback...");
+        const yahooUrl = `https://search.yahoo.com/search?p=${encodeURIComponent("site:tabs.ultimate-guitar.com/tab/ chords " + query)}`;
+        const yahooHtml = await fetchUGPage(yahooUrl, true);
+        const $ = cheerio.load(yahooHtml);
 
         $('a').each((i, el) => {
             let href = $(el).attr('href');
@@ -181,21 +167,10 @@ async function getFirstSearchResult(query) {
                 return false;
             }
         });
-        
-        // Absolute last resort: Check Bing <cite> tags if the anchor links are masked
-        if (!tabUrl) {
-            $('cite').each((i, el) => {
-                let text = $(el).text();
-                if (text.includes('tabs.ultimate-guitar.com/tab/') && text.includes('chords')) {
-                    tabUrl = "https://" + text.replace(/ /g, '');
-                    return false;
-                }
-            });
-        }
 
         if (tabUrl) return tabUrl;
     } catch (e) {
-        console.log(`[Engine] Bing failed: ${e.message}`);
+        console.log(`[Engine] Yahoo failed: ${e.message}`);
     }
 
     throw new Error(`Could not find an Ultimate Guitar chords link for "${query}".`);
@@ -203,56 +178,28 @@ async function getFirstSearchResult(query) {
 
 async function fetchUGPage(url, isSearch = false) {
     const browser = await puppeteer.launch({ 
-        headless: "new", // "new" is critical for avoiding legacy bot detection in modern Chrome
+        headless: "new", 
         args: [
             '--no-sandbox', 
             '--disable-setuid-sandbox',
-            '--disable-blink-features=AutomationControlled',
-            '--window-size=1920,1080' // Standard desktop resolution prevents mobile-view flags
-        ]
+            '--disable-blink-features=AutomationControlled' 
+        ] 
     });
     
     const page = await browser.newPage();
-    
-    // 1. CRITICAL: We DO NOT set the User-Agent or Headers manually. 
-    // We let the Stealth Plugin dynamically generate them to perfectly match the browser engine!
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36');
 
     try {
-        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
-
-        let title = await page.title();
-        let cfAttempts = 0;
-        
-        // Wait for Cloudflare to clear
-        while ((title.includes("Just a moment") || title.includes("Cloudflare") || title.includes("Attention Required!")) && cfAttempts < 15) {
-            console.log(`[Scraper] Cloudflare detected. Simulating human mouse movements (Attempt ${cfAttempts + 1}/15)...`);
-            
-            // 2. THE GHOST MOUSE: Cloudflare Turnstile analyzes mouse trajectory.
-            // We sweep the mouse randomly across the screen in multiple steps to simulate a real human.
-            const targetX = 200 + Math.random() * 800;
-            const targetY = 200 + Math.random() * 600;
-            
-            try {
-                await page.mouse.move(targetX, targetY, { steps: 15 });
-                
-                // Occasionally click to trigger the invisible checkbox if one rendered
-                if (cfAttempts % 3 === 0) {
-                    await page.mouse.down();
-                    await new Promise(r => setTimeout(r, 50));
-                    await page.mouse.up();
-                }
-            } catch (e) {}
-
-            await new Promise(r => setTimeout(r, 2000));
-            title = await page.title();
-            cfAttempts++;
-        }
+        // Fast load: Removed the massive 30-second loop to prevent API timeouts.
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
 
         if (!isSearch) {
+            // The Stealth Plugin will handle the background check naturally.
+            // waitForSelector automatically waits across redirects if Cloudflare clears us.
             try { await page.waitForSelector('pre', { timeout: 8000 }); } catch (e) {}
         } else {
-            // Give search engine DOMs a second to paint their anchor tags
-            await new Promise(r => setTimeout(r, 1500));
+            // Give search engine DOMs a brief moment to paint their anchor tags
+            await new Promise(r => setTimeout(r, 1000));
         }
 
         const html = await page.content();
