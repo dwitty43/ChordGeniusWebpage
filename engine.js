@@ -120,54 +120,53 @@ function simplifyChord(chordStr) {
 
 async function getFirstSearchResult(query) {
     let tabUrl = null;
+    const encodedQuery = encodeURIComponent("site:tabs.ultimate-guitar.com/tab/ chords " + query);
 
-    // We removed Native UG Search completely. It is heavily protected by Turnstile
-    // and causes the API to timeout before it can try the fallbacks.
-
-    // Primary: DuckDuckGo HTML (Highly reliable, no JS captchas)
-    try {
-        console.log("[Engine] Searching via DuckDuckGo...");
-        const ddgUrl = `https://html.duckduckgo.com/html/?q=${encodeURIComponent("site:tabs.ultimate-guitar.com/tab/ chords " + query)}`;
-        const ddgHtml = await fetchUGPage(ddgUrl, true);
-        const $ = cheerio.load(ddgHtml);
-
+    // A universal link extractor that decodes tracking URLs from Google/Bing/Yahoo/DDG
+    function extractUGLink($) {
+        let found = null;
         $('a').each((i, el) => {
             let href = $(el).attr('href');
             if (!href) return;
             
-            // DDG routes links through a redirector, this unpacks it
-            if (href.includes('uddg=')) {
-                href = decodeURIComponent(href.split('uddg=')[1].split('&')[0]);
-            }
+            // 1. Decode URL-encoded tracking links (e.g. %3A%2F%2F becomes ://)
+            try { href = decodeURIComponent(href); } catch(e) {}
             
-            if (href.includes('tabs.ultimate-guitar.com/tab/') && href.includes('chords')) {
-                tabUrl = href;
-                return false; 
+            // 2. Use Regex to pull the exact clean UG link out of the tracking garbage
+            const match = href.match(/(https:\/\/tabs\.ultimate-guitar\.com\/tab\/[^"'\s&?]+-chords-\d+)/i);
+            if (match) {
+                found = match[1];
+                return false; // Break the cheerio loop once we find it
             }
         });
+        return found;
+    }
 
+    // Primary: DuckDuckGo Lite (Extremely fast, text-only, no JS captchas)
+    try {
+        console.log("[Engine] Searching via DuckDuckGo Lite...");
+        const html = await fetchUGPage(`https://lite.duckduckgo.com/lite/?q=${encodedQuery}`, true);
+        tabUrl = extractUGLink(cheerio.load(html));
         if (tabUrl) return tabUrl;
     } catch (e) {
         console.log(`[Engine] DuckDuckGo failed: ${e.message}`);
     }
 
-    // Fallback: Yahoo Search (Very datacenter-friendly)
+    // Fallback 1: Bing Search
+    try {
+        console.log("[Engine] Trying Bing fallback...");
+        const html = await fetchUGPage(`https://www.bing.com/search?q=${encodedQuery}`, true);
+        tabUrl = extractUGLink(cheerio.load(html));
+        if (tabUrl) return tabUrl;
+    } catch (e) {
+        console.log(`[Engine] Bing failed: ${e.message}`);
+    }
+
+    // Fallback 2: Yahoo Search
     try {
         console.log("[Engine] Trying Yahoo fallback...");
-        const yahooUrl = `https://search.yahoo.com/search?p=${encodeURIComponent("site:tabs.ultimate-guitar.com/tab/ chords " + query)}`;
-        const yahooHtml = await fetchUGPage(yahooUrl, true);
-        const $ = cheerio.load(yahooHtml);
-
-        $('a').each((i, el) => {
-            let href = $(el).attr('href');
-            if (!href) return;
-            
-            if (href.includes('tabs.ultimate-guitar.com/tab/') && href.includes('chords')) {
-                tabUrl = href;
-                return false;
-            }
-        });
-
+        const html = await fetchUGPage(`https://search.yahoo.com/search?p=${encodedQuery}`, true);
+        tabUrl = extractUGLink(cheerio.load(html));
         if (tabUrl) return tabUrl;
     } catch (e) {
         console.log(`[Engine] Yahoo failed: ${e.message}`);
