@@ -203,29 +203,19 @@ async function getFirstSearchResult(query) {
 
 async function fetchUGPage(url, isSearch = false) {
     const browser = await puppeteer.launch({ 
-        // 1. THE FIX: Use legacy headless. "new" currently breaks the Stealth plugin!
-        headless: true, 
+        headless: "new", // "new" is critical for avoiding legacy bot detection in modern Chrome
         args: [
             '--no-sandbox', 
             '--disable-setuid-sandbox',
             '--disable-blink-features=AutomationControlled',
-            '--disable-web-security',
-            '--disable-features=IsolateOrigins,site-per-process',
-            '--window-size=1280,800'
-        ],
-        ignoreHTTPSErrors: true
+            '--window-size=1920,1080' // Standard desktop resolution prevents mobile-view flags
+        ]
     });
     
     const page = await browser.newPage();
     
-    // 2. THE FIX: Spoof a Google Search click-through to lower the Cloudflare Threat Score
-    await page.setExtraHTTPHeaders({
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Referer': 'https://www.google.com/'
-    });
-
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36');
-    await page.setViewport({ width: 1280, height: 800 });
+    // 1. CRITICAL: We DO NOT set the User-Agent or Headers manually. 
+    // We let the Stealth Plugin dynamically generate them to perfectly match the browser engine!
 
     try {
         await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
@@ -233,15 +223,25 @@ async function fetchUGPage(url, isSearch = false) {
         let title = await page.title();
         let cfAttempts = 0;
         
-        // Increased attempts to give the Ghost Click time to process
+        // Wait for Cloudflare to clear
         while ((title.includes("Just a moment") || title.includes("Cloudflare") || title.includes("Attention Required!")) && cfAttempts < 15) {
-            console.log(`[Scraper] Cloudflare Turnstile detected. Waiting for clearance (Attempt ${cfAttempts + 1}/15)...`);
+            console.log(`[Scraper] Cloudflare detected. Simulating human mouse movements (Attempt ${cfAttempts + 1}/15)...`);
             
-            // 3. THE GHOST CLICK: Cloudflare is waiting for a human click.
-            // This blindly clicks the center of the screen where the widget typically renders.
+            // 2. THE GHOST MOUSE: Cloudflare Turnstile analyzes mouse trajectory.
+            // We sweep the mouse randomly across the screen in multiple steps to simulate a real human.
+            const targetX = 200 + Math.random() * 800;
+            const targetY = 200 + Math.random() * 600;
+            
             try {
-                await page.mouse.click(640, 400);
-            } catch(e) {}
+                await page.mouse.move(targetX, targetY, { steps: 15 });
+                
+                // Occasionally click to trigger the invisible checkbox if one rendered
+                if (cfAttempts % 3 === 0) {
+                    await page.mouse.down();
+                    await new Promise(r => setTimeout(r, 50));
+                    await page.mouse.up();
+                }
+            } catch (e) {}
 
             await new Promise(r => setTimeout(r, 2000));
             title = await page.title();
@@ -251,6 +251,7 @@ async function fetchUGPage(url, isSearch = false) {
         if (!isSearch) {
             try { await page.waitForSelector('pre', { timeout: 8000 }); } catch (e) {}
         } else {
+            // Give search engine DOMs a second to paint their anchor tags
             await new Promise(r => setTimeout(r, 1500));
         }
 

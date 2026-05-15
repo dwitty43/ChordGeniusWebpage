@@ -1042,7 +1042,7 @@ document.getElementById('downloadBinderBtn').addEventListener('click', async () 
         // Trigger the download in the browser
         const url = URL.createObjectURL(blob); 
         const a = document.createElement('a');
-        a.style.display = 'none'; a.href = url; a.download = `Sunday_Setlist_Binder.${format}`;
+        a.style.display = 'none'; a.href = url; a.download = `Chord_Chart_Binder.${format}`;
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 5000);
         
