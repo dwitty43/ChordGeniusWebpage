@@ -911,7 +911,7 @@ searchBtn.addEventListener('click', async () => {
         // Save data globally for the Setlist builder & Modal
         window.currentChartData = await res.json();
         
-        // Populate the modal textarea
+        // Populate the modal textarea in the background
         document.getElementById('liveEditor').value = window.currentChartData.text;
         document.getElementById('modalTitle').textContent = window.currentChartData.title;
         document.getElementById('modalSubtitle').textContent = `Transposed to: ${window.currentChartData.targetKey}`;
@@ -919,9 +919,10 @@ searchBtn.addEventListener('click', async () => {
         // Clean up any old mammoth iframes if they exist
         document.querySelectorAll('.modal-docx-preview, iframe, .modal-loading').forEach(el => el.remove());
         
-        document.getElementById('previewOverlay').classList.add('open');
-        document.body.style.overflow = 'hidden';
-        showStatus("Chart loaded into the editor! Edit and download.", "success");
+        // THE FIX: Do not open the modal automatically. Just enable the buttons!
+        document.getElementById('previewSearchBtn').disabled = false;
+        document.getElementById('downloadSearchBtn').disabled = false;
+        showStatus("Chart generated! Ready to preview or download.", "success");
         
         addToHistory({query, key, targetKey, format});
     } catch(e) {
@@ -929,6 +930,49 @@ searchBtn.addEventListener('click', async () => {
     } finally {
         searchBtn.innerHTML = orig;
         searchBtn.disabled = false;
+    }
+});
+
+// ── SEARCH BUTTON ACTIONS ──
+document.getElementById('previewSearchBtn').addEventListener('click', () => {
+    if (!window.currentChartData) return;
+    document.getElementById('previewOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+});
+
+document.getElementById('downloadSearchBtn').addEventListener('click', async () => {
+    if (!window.currentChartData) return;
+    
+    // Grab the text from the hidden editor in case they made edits before closing it
+    const text = document.getElementById('liveEditor').value;
+    const format = document.getElementById('searchFormat').value || 'docx';
+    
+    const singleSongQueue = [{
+        title: window.currentChartData.title,
+        originalKey: window.currentChartData.originalKey,
+        targetKey: window.currentChartData.targetKey,
+        text: text
+    }];
+    
+    const btn = document.getElementById('downloadSearchBtn');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '⏳ Downloading...';
+    btn.disabled = true;
+    
+    try {
+        const res = await fetch('/api/binder', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ setlist: singleSongQueue, format })
+        });
+        if(!res.ok) throw new Error((await res.json()).error);
+        const blob = await res.blob();
+        triggerDownload(blob, `${window.currentChartData.title.replace(/\s+/g, '_')}_Chart.${format}`);
+    } catch(e) {
+        showStatus(`Error rendering chart: ${e.message}`, 'error');
+    } finally {
+        btn.innerHTML = orig;
+        btn.disabled = false;
     }
 });
 
@@ -1109,11 +1153,6 @@ document.getElementById('addSetlistBtn').addEventListener('click', () => {
     showStatus(`${window.currentChartData.title} added to Setlist! (${setlistQueue.length} charts ready)`, 'success');
 });
 
-function closePreview() { overlay.classList.remove('open'); document.body.style.overflow=''; }
-document.getElementById('modalClose').addEventListener('click',closePreview);
-overlay.addEventListener('click',e=>{ if(e.target===overlay) closePreview(); });
-document.addEventListener('keydown',e=>{ if(e.key==='Escape') closePreview(); });
-modalDownloadBtn.addEventListener('click',()=>{ if(activeBlob) triggerDownload(activeBlob,activeFilename); });
 </script>
 </body>
 </html>

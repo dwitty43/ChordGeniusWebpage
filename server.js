@@ -91,7 +91,7 @@ app.post('/api/binder', async (req, res) => {
             combinedText += `Key: ${song.targetKey}\n\n`;
             combinedText += song.text;
         }
-        await deliverFile(res, combinedText, "Sunday_Setlist_Binder", "Mixed", "Mixed", format);
+        await deliverFile(res, combinedText, "Setlist_Binder", "Mixed", "Mixed", format);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
