@@ -337,8 +337,12 @@
 
         /* ── GRIDS ── */
         .grid-inputs {
-            display: grid; grid-template-columns: 1fr 145px 145px 105px 95px 110px;
-            gap: 10px; margin-bottom: 96px;
+            display: grid; grid-template-columns: repeat(5, 1fr);
+            gap: 12px; margin-bottom: 24px;
+        }
+        .grid-inputs > input[type="text"],
+        .grid-inputs > .file-wrapper {
+            grid-column: 1 / -1;
         }
         .grid-buttons {
             display: grid; grid-template-columns: 105px 115px 1fr 1fr 1fr;
@@ -377,8 +381,7 @@
         input[type="file"]::file-selector-button:hover { border-color: var(--primary); color: var(--primary); }
         input[type="file"]:focus { border-color: var(--upload); box-shadow: 0 0 0 3px rgba(232,121,42,0.18); }
         .helper-text-container {
-            position: absolute; top: 100%; left: 4px;
-            width: calc(100% + 340px); max-width: 560px; margin-top: 6px; pointer-events: none;
+            position: static; width: 100%; margin-top: 8px;
         }
         .helper-text { font-size: 11.5px; color: var(--text-muted); white-space: normal; line-height: 1.4; }
         .warning-text { color: #a07820; margin-top: 4px; }

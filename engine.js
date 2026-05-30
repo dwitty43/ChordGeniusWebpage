@@ -369,7 +369,32 @@ function haveLostAlignment(chordLine) {
 
 // --- TEXT PROCESSING ---
 function processAndAlignTabs(rawText, originalKey, targetKey, isPdf = false, simplify = false, capo = 0) {
-    const lines = rawText.split('\n');
+    let lines = rawText.split('\n');
+
+    // PDF Preprocessor: Rejoin split Y-axis superscript chord extensions
+    if (isPdf) {
+        const mergedLines = [];
+        const extensionOnlyRegex = /^(?:[0-9m]|maj|min|dim|aug|sus|add|M|b|#|\+|\-|\/|b5|NC|\s)+$/i;
+        for (let k = 0; k < lines.length; k++) {
+            const line = lines[k];
+            const nextLine = lines[k + 1];
+            if (nextLine !== undefined && (isChordLine(line) || isNashvilleLine(line))) {
+                const nextTrimmed = nextLine.trim();
+                if (nextTrimmed !== '' && extensionOnlyRegex.test(nextTrimmed) && !isChordLine(nextLine) && !isNashvilleLine(nextLine)) {
+                    mergedLines.push(line + nextTrimmed);
+                    k++;
+                    continue;
+                } else if (nextTrimmed === '7' || nextTrimmed === '7b5' || nextTrimmed === 'maj7' || nextTrimmed === 'sus4') {
+                    mergedLines.push(line + nextTrimmed);
+                    k++;
+                    continue;
+                }
+            }
+            mergedLines.push(line);
+        }
+        lines = mergedLines;
+    }
+
     let processedLines = [];
     let hasStarted = false; 
 
