@@ -88,7 +88,7 @@ function transposeChord(chordString, originalKey, targetKey, capoFret = 0) {
     }
 
     const targetScale = isTargetNashville ? null : getPreferredAccidentals(finalTargetKey.trim());
-    const targetKeyIndex = isTargetNashville ? 0 : getNoteIndex(finalTargetKey.trim());
+    const targetKeyIndex = isTargetNashville ? 0 : getNoteIndex(finalTargetKey.trim().replace(/m|min|minor$/i, ''));
 
     const parsedParts = parseChord(rawChord);
     
@@ -311,8 +311,56 @@ function processAndAlignTabs(rawText, originalKey, targetKey, isPdf = false, sim
     let processedLines = [];
     let hasStarted = false; 
 
+    let currentOriginalKey = originalKey;
+    let currentTargetKey = targetKey;
+    const isTargetNashville = !targetKey || /^nashville$|^1$/i.test(targetKey.trim());
+    
+    let userTranspositionInterval = 0;
+    if (!isTargetNashville && originalKey && targetKey) {
+        const cleanOriginalStartingKey = originalKey.trim().replace(/m|min|minor$/i, '');
+        const cleanTargetKey = targetKey.trim().replace(/m|min|minor$/i, '');
+        const indexOrig = getNoteIndex(cleanOriginalStartingKey);
+        const indexTarget = getNoteIndex(cleanTargetKey);
+        if (indexOrig !== -1 && indexTarget !== -1) {
+            userTranspositionInterval = (indexTarget - indexOrig + 12) % 12;
+        }
+    }
+
+    const keyChangeRegex = /\[Key(?: Change)?:?\s*([A-G][#b]?(?:m)?)\]/i;
+
     for (let line of lines) {
         const trimmed = line.trim();
+
+        const keyChangeMatch = trimmed.match(keyChangeRegex);
+        if (keyChangeMatch) {
+            hasStarted = true;
+            const newKey = keyChangeMatch[1];
+            currentOriginalKey = newKey;
+            
+            if (!isTargetNashville) {
+                const isNewKeyMinor = /[m|min|minor]$/i.test(newKey.trim());
+                const cleanNewKey = newKey.trim().replace(/m|min|minor$/i, '');
+                const cleanNewKeyIndex = getNoteIndex(cleanNewKey);
+                if (cleanNewKeyIndex !== -1) {
+                    const newTargetKeyIndex = (cleanNewKeyIndex + userTranspositionInterval) % 12;
+                    const targetScale = getPreferredAccidentals(targetKey.trim());
+                    currentTargetKey = targetScale[newTargetKeyIndex] + (isNewKeyMinor ? 'm' : '');
+                }
+            } else {
+                currentTargetKey = targetKey;
+            }
+
+            let transposedLine = line.replace(/(\[Key(?: Change)?:?\s*)([A-G][#b]?(?:m)?)(\])/i, (match, p1, p2, p3) => {
+                if (isTargetNashville) {
+                    return `${p1}1${p3}`;
+                } else {
+                    return `${p1}${currentTargetKey}${p3}`;
+                }
+            });
+
+            processedLines.push(transposedLine);
+            continue;
+        }
 
         if (!hasStarted && /^\[?(Intro|Verse|Chorus|Pre-Chorus|Bridge|Outro|Solo|Instrumental)[^\]]*\]?$/i.test(trimmed)) hasStarted = true;
         if (!hasStarted) continue;
@@ -332,7 +380,7 @@ function processAndAlignTabs(rawText, originalKey, targetKey, isPdf = false, sim
                 }
             }
             let newLine = line.replace(/(\S+)(\s*)/g, (match, chord, spaces) => {
-                let newChord = transposeChord(chord, originalKey, targetKey, capo);
+                let newChord = transposeChord(chord, currentOriginalKey, currentTargetKey, capo);
                 if (simplify && !/^[|()\[\]{}:\-~,]+$/.test(chord) && !/^N\.?C\.?$/i.test(chord.replace(/[()]/g, ''))) {
                     newChord = simplifyChord(newChord);
                 }
