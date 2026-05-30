@@ -6,6 +6,14 @@ puppeteer.use(StealthPlugin());
 const cheerio = require('cheerio');
 const { Document, Packer, Paragraph, TextRun } = require('docx');
 
+const USER_AGENTS = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36 Edg/123.0.0.0'
+];
+
 // --- THE UNIVERSAL MATH ENGINE ---
 
 const sharps = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -147,43 +155,148 @@ function simplifyChord(chordStr) {
 
 // --- SEARCH SCRAPER LOGIC ---
 
+// A fast, HTTP-only search function that queries DuckDuckGo Lite without launching Puppeteer
+async function fastSearchDDGLite(query) {
+    try {
+        console.log("[Engine] Performing fast DuckDuckGo Lite fetch search...");
+        const encodedQuery = encodeURIComponent("site:tabs.ultimate-guitar.com/tab/ chords " + query);
+        const url = `https://lite.duckduckgo.com/lite/?q=${encodedQuery}`;
+        const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+        
+        const res = await fetch(url, {
+            headers: {
+                'User-Agent': userAgent,
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.9'
+            }
+        });
+        
+        if (!res.ok) {
+            console.log(`[Engine] DuckDuckGo Lite fetch returned status ${res.status}`);
+            return null;
+        }
+        
+        const html = await res.text();
+        const $ = cheerio.load(html);
+        let found = null;
+        
+        $('a').each((i, el) => {
+            let href = $(el).attr('href');
+            if (!href) return;
+            
+            try { href = decodeURIComponent(href); } catch(e) {}
+            
+            const match = href.match(/(https:\/\/tabs\.ultimate-guitar\.com\/tab\/[^"'\s&?]+-chords-\d+)/i);
+            if (match) {
+                found = match[1];
+                return false; // Break cheerio loop
+            }
+        });
+        
+        if (found) {
+            console.log(`[Engine] Fast DDG Lite fetch found tab URL: ${found}`);
+        }
+        return found;
+    } catch (e) {
+        console.log(`[Engine] DuckDuckGo Lite fast fetch failed: ${e.message}`);
+        return null;
+    }
+}
+
+// A highly accurate fallback that queries Ultimate Guitar's internal search catalog directly
+async function fastSearchUGDirect(query) {
+    let browser = null;
+    try {
+        console.log("[Engine] Searching Ultimate Guitar direct catalog...");
+        browser = await puppeteer.launch({ 
+            headless: "new", 
+            args: [
+                '--no-sandbox', 
+                '--disable-setuid-sandbox',
+                '--disable-blink-features=AutomationControlled' 
+            ] 
+        });
+        
+        const page = await browser.newPage();
+        const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+        await page.setUserAgent(userAgent);
+        
+        const url = `https://www.ultimate-guitar.com/search.php?search_type=title&value=${encodeURIComponent(query)}`;
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
+        
+        const storeData = await page.evaluate(() => {
+            const el = document.querySelector('.js-store');
+            return el ? el.getAttribute('data-content') : null;
+        });
+        
+        await browser.close();
+        browser = null;
+        
+        if (storeData) {
+            const data = JSON.parse(storeData);
+            const results = data.store?.page?.data?.results || [];
+            // Filter for exact "Chords" type results that have a valid URL
+            const chordsResults = results.filter(r => r.type === 'Chords' && r.tab_url);
+            if (chordsResults.length > 0) {
+                const foundUrl = chordsResults[0].tab_url;
+                console.log(`[Engine] Ultimate Guitar direct catalog found: ${foundUrl}`);
+                return foundUrl;
+            }
+        }
+        return null;
+    } catch (e) {
+        if (browser) {
+            try { await browser.close(); } catch(err) {}
+        }
+        console.log(`[Engine] Ultimate Guitar direct catalog search failed: ${e.message}`);
+        return null;
+    }
+}
+
 async function getFirstSearchResult(query) {
     let tabUrl = null;
+
+    // Attempt 1: Extremely fast HTTP fetch to DuckDuckGo Lite (takes < 200ms, bypasses Puppeteer completely)
+    tabUrl = await fastSearchDDGLite(query);
+    if (tabUrl) return tabUrl;
+
+    // Attempt 2: Ultimate Guitar's internal catalog search via Puppeteer (highly resilient, captcha-immune catalog lookup)
+    tabUrl = await fastSearchUGDirect(query);
+    if (tabUrl) return tabUrl;
+
+    // Attempt 3: Legacy search engine scraper fallbacks using Puppeteer
     const encodedQuery = encodeURIComponent("site:tabs.ultimate-guitar.com/tab/ chords " + query);
 
-    // A universal link extractor that decodes tracking URLs from Google/Bing/Yahoo/DDG
     function extractUGLink($) {
         let found = null;
         $('a').each((i, el) => {
             let href = $(el).attr('href');
             if (!href) return;
             
-            // 1. Decode URL-encoded tracking links (e.g. %3A%2F%2F becomes ://)
             try { href = decodeURIComponent(href); } catch(e) {}
             
-            // 2. Use Regex to pull the exact clean UG link out of the tracking garbage
             const match = href.match(/(https:\/\/tabs\.ultimate-guitar\.com\/tab\/[^"'\s&?]+-chords-\d+)/i);
             if (match) {
                 found = match[1];
-                return false; // Break the cheerio loop once we find it
+                return false;
             }
         });
         return found;
     }
 
-    // Primary: DuckDuckGo Lite (Extremely fast, text-only, no JS captchas)
+    // Fallback A: DuckDuckGo Lite via Puppeteer
     try {
-        console.log("[Engine] Searching via DuckDuckGo Lite...");
+        console.log("[Engine] Trying DuckDuckGo Lite fallback via Puppeteer...");
         const html = await fetchUGPage(`https://lite.duckduckgo.com/lite/?q=${encodedQuery}`, true);
         tabUrl = extractUGLink(cheerio.load(html));
         if (tabUrl) return tabUrl;
     } catch (e) {
-        console.log(`[Engine] DuckDuckGo failed: ${e.message}`);
+        console.log(`[Engine] DuckDuckGo Puppeteer fallback failed: ${e.message}`);
     }
 
-    // Fallback 1: Bing Search
+    // Fallback B: Bing Search via Puppeteer
     try {
-        console.log("[Engine] Trying Bing fallback...");
+        console.log("[Engine] Trying Bing fallback via Puppeteer...");
         const html = await fetchUGPage(`https://www.bing.com/search?q=${encodedQuery}`, true);
         tabUrl = extractUGLink(cheerio.load(html));
         if (tabUrl) return tabUrl;
@@ -191,9 +304,9 @@ async function getFirstSearchResult(query) {
         console.log(`[Engine] Bing failed: ${e.message}`);
     }
 
-    // Fallback 2: Yahoo Search
+    // Fallback C: Yahoo Search via Puppeteer
     try {
-        console.log("[Engine] Trying Yahoo fallback...");
+        console.log("[Engine] Trying Yahoo fallback via Puppeteer...");
         const html = await fetchUGPage(`https://search.yahoo.com/search?p=${encodedQuery}`, true);
         tabUrl = extractUGLink(cheerio.load(html));
         if (tabUrl) return tabUrl;
@@ -204,13 +317,7 @@ async function getFirstSearchResult(query) {
     throw new Error(`Could not find an Ultimate Guitar chords link for "${query}".`);
 }
 
-const USER_AGENTS = [
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36 Edg/123.0.0.0'
-];
+// Removed duplicate USER_AGENTS declaration from here (now at the top of the file)
 
 async function delay(min = 800, max = 2000) {
     const ms = Math.floor(Math.random() * (max - min + 1)) + min;
@@ -246,7 +353,8 @@ async function fetchUGPage(url, isSearch = false) {
         let html = await page.content();
         
         // If Cloudflare blocks us on direct UG fetch, try Google Cache fallback
-        if (!isSearch && (html.includes("Just a moment...") || html.includes("cf-browser-verification") || !html.includes("<pre>"))) {
+        const hasPreTag = html.toLowerCase().includes('<pre');
+        if (!isSearch && (html.includes("Just a moment...") || html.includes("cf-browser-verification") || !hasPreTag)) {
             console.log("[Engine] Direct page blocked by Cloudflare or missing pre tag. Trying Google Web Cache...");
             const cacheUrl = `https://webcache.googleusercontent.com/search?q=cache:${encodeURIComponent(url)}&strip=0`;
             await page.goto(cacheUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
