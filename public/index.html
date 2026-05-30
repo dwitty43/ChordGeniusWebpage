@@ -337,7 +337,11 @@
 
         /* ── GRIDS ── */
         .grid-inputs {
+<<<<<<< HEAD
             display: grid; grid-template-columns: 1fr 130px 150px 120px 120px;
+=======
+            display: grid; grid-template-columns: 1fr 150px 150px 110px 110px;
+>>>>>>> subagent-Spotify-Integrator-chordgenius-developer-b2353aa8
             gap: 10px; margin-bottom: 96px;
         }
         .grid-buttons {
@@ -712,6 +716,13 @@
                 <option value="11">Capo 11</option>
             </select>
             <input type="number" id="songBpm" placeholder="BPM (Optional)" min="40" max="240">
+            <select id="songTimeSignature">
+                <option value="" disabled selected>Time Sig (Auto)</option>
+                <option value="4">4/4</option>
+                <option value="3">3/4</option>
+                <option value="2">2/4</option>
+                <option value="6">6/8</option>
+            </select>
         </div>
         <div class="toggle-row">
             <label class="toggle-label" for="simplifyChords">
@@ -791,6 +802,13 @@
                 <option value="11">Capo 11</option>
             </select>
             <input type="number" id="uploadBpm" placeholder="BPM (Optional)" min="40" max="240">
+            <select id="uploadTimeSignature">
+                <option value="" disabled selected>Time Sig (Auto)</option>
+                <option value="4">4/4</option>
+                <option value="3">3/4</option>
+                <option value="2">2/4</option>
+                <option value="6">6/8</option>
+            </select>
         </div>
         <div class="grid-buttons">
             <select id="uploadFormat">
@@ -966,7 +984,7 @@ function renderHistory() {
             </div>
             <div class="history-info">
                 <div class="history-name">${entry.query}</div>
-                <div class="history-meta">${keyLabel(entry.key, entry.targetKey, entry.bpm, entry.capo)}</div>
+                <div class="history-meta">${keyLabel(entry.key, entry.targetKey, entry.bpm, entry.capo)}${entry.timeSignature ? ' | Sig: ' + (entry.timeSignature === 4 ? '4/4' : entry.timeSignature === 3 ? '3/4' : entry.timeSignature === 2 ? '2/4' : entry.timeSignature === 6 ? '6/8' : entry.timeSignature + '/4') : ''}</div>
             </div>
             <div class="history-badges">
                 <span class="history-badge format-${entry.format}">.${entry.format.toUpperCase()}</span>
@@ -976,12 +994,15 @@ function renderHistory() {
         if (playBtn) {
             playBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if (entry.bpm) {
-                    localStorage.setItem('cg_last_bpm', entry.bpm);
-                    window.location.href = `/rehearse.html?bpm=${entry.bpm}`;
-                } else {
-                    window.location.href = `/rehearse.html`;
-                }
+                if (entry.bpm) localStorage.setItem('cg_last_bpm', entry.bpm);
+                if (entry.timeSignature) localStorage.setItem('cg_last_beats', entry.timeSignature);
+                
+                let url = '/rehearse.html';
+                const params = [];
+                if (entry.bpm) params.push(`bpm=${entry.bpm}`);
+                if (entry.timeSignature) params.push(`beats=${entry.timeSignature}`);
+                if (params.length > 0) url += '?' + params.join('&');
+                window.location.href = url;
             });
         }
         item.addEventListener('click', () => rerunHistory(entry));
@@ -997,10 +1018,16 @@ function rerunHistory(entry) {
     if (entry.bpm) {
         document.getElementById('songBpm').value = entry.bpm;
         localStorage.setItem('cg_last_bpm', entry.bpm);
-        updateRehearseTabLink(entry.bpm);
     } else {
         document.getElementById('songBpm').value = '';
     }
+    if (entry.timeSignature) {
+        document.getElementById('songTimeSignature').value = entry.timeSignature;
+        localStorage.setItem('cg_last_beats', entry.timeSignature);
+    } else {
+        document.getElementById('songTimeSignature').value = '';
+    }
+    updateRehearseTabLink(entry.bpm || '', entry.timeSignature || '');
     document.getElementById('searchBtn').click();
 }
 document.getElementById('historyClear').addEventListener('click', () => {
@@ -1049,6 +1076,10 @@ searchBtn.addEventListener('click', async () => {
     let url = `/api/preview?q=${encodeURIComponent(query)}&simplify=${isSimplify}&capo=${encodeURIComponent(capo)}`;
     if(key) url += `&key=${encodeURIComponent(key)}`;
     if(targetKey) url += `&targetKey=${encodeURIComponent(targetKey)}`;
+    const inputBpm = document.getElementById('songBpm').value;
+    if(inputBpm) url += `&bpm=${encodeURIComponent(inputBpm)}`;
+    const inputTimeSig = document.getElementById('songTimeSignature').value;
+    if(inputTimeSig) url += `&timeSignature=${encodeURIComponent(inputTimeSig)}`;
     
     try {
         const res = await fetch(url);
@@ -1057,6 +1088,20 @@ searchBtn.addEventListener('click', async () => {
         // Save data globally for the Setlist builder & Modal
         window.currentChartData = await res.json();
         
+        // Auto-fill inputs in the browser automatically
+        if (window.currentChartData.bpm) {
+            document.getElementById('songBpm').value = window.currentChartData.bpm;
+            localStorage.setItem('cg_last_bpm', window.currentChartData.bpm);
+        }
+        if (window.currentChartData.timeSignature) {
+            document.getElementById('songTimeSignature').value = window.currentChartData.timeSignature;
+            localStorage.setItem('cg_last_beats', window.currentChartData.timeSignature);
+        }
+        if (window.currentChartData.originalKey) {
+            document.getElementById('songKey').value = window.currentChartData.originalKey;
+        }
+        updateRehearseTabLink(window.currentChartData.bpm || '', window.currentChartData.timeSignature || '');
+
         // Populate the modal textarea in the background
         document.getElementById('liveEditor').value = window.currentChartData.text;
         document.getElementById('modalTitle').textContent = window.currentChartData.title;
@@ -1076,7 +1121,15 @@ searchBtn.addEventListener('click', async () => {
         showStatus("Chart generated! Ready to preview or download.", "success");
         
         const capoSearchVal = document.getElementById('capoSearch').value;
-        addToHistory({query, key, targetKey, format, capo: capoSearchVal});
+        addToHistory({
+            query, 
+            key, 
+            targetKey, 
+            format, 
+            capo: capoSearchVal, 
+            bpm: window.currentChartData.bpm, 
+            timeSignature: window.currentChartData.timeSignature
+        });
     } catch(e) {
         showStatus(`Error: ${e.message}`, "error");
     } finally {
@@ -1099,14 +1152,16 @@ document.getElementById('downloadSearchBtn').addEventListener('click', async () 
     const text = document.getElementById('liveEditor').value;
     const format = document.getElementById('searchFormat').value || 'docx';
     
-    const bpmVal = window.currentChartData.bpm || '';
+    const bpmVal = document.getElementById('songBpm').value || window.currentChartData.bpm || '';
+    const timeSigVal = document.getElementById('songTimeSignature').value || window.currentChartData.timeSignature || '';
     const singleSongQueue = [{
         title: window.currentChartData.title,
         originalKey: window.currentChartData.originalKey,
         targetKey: window.currentChartData.targetKey,
         text: text,
         bpm: bpmVal,
-        capo: window.currentChartData.capo || '0'
+        capo: window.currentChartData.capo || '0',
+        timeSignature: timeSigVal
     }];
     
     const btn = document.getElementById('downloadSearchBtn');
@@ -1118,7 +1173,7 @@ document.getElementById('downloadSearchBtn').addEventListener('click', async () 
         const res = await fetch('/api/binder', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ setlist: singleSongQueue, format, bpm: bpmVal })
+            body: JSON.stringify({ setlist: singleSongQueue, format, bpm: bpmVal, timeSignature: timeSigVal })
         });
         if(!res.ok) throw new Error((await res.json()).error);
         const blob = await res.blob();
@@ -1150,12 +1205,24 @@ uploadBtn.addEventListener('click', async ()=>{
     showStatus("Uploading and processing chart…","active");
     const simplifyUp = document.getElementById('simplifyChords').checked;
     const bpmVal = document.getElementById('uploadBpm').value || '';
+    const timeSigVal = document.getElementById('uploadTimeSignature').value || '';
     if (bpmVal) {
         localStorage.setItem('cg_last_bpm', bpmVal);
-        updateRehearseTabLink(bpmVal);
     }
+    if (timeSigVal) {
+        localStorage.setItem('cg_last_beats', timeSigVal);
+    }
+    updateRehearseTabLink(bpmVal, timeSigVal);
     const capo = document.getElementById('capoUpload').value;
-    const fd=new FormData(); fd.append('chartFile',file); fd.append('key',key); fd.append('targetKey',targetKey); fd.append('format',format); fd.append('simplify', simplifyUp ? 'true' : 'false'); fd.append('bpm', bpmVal); fd.append('capo', capo);
+    const fd=new FormData(); 
+    fd.append('chartFile',file); 
+    fd.append('key',key); 
+    fd.append('targetKey',targetKey); 
+    fd.append('format',format); 
+    fd.append('simplify', simplifyUp ? 'true' : 'false'); 
+    fd.append('bpm', bpmVal); 
+    fd.append('capo', capo);
+    fd.append('timeSignature', timeSigVal);
     try {
         const res=await fetch('/api/import',{method:'POST',body:fd});
         if(!res.ok) throw new Error((await res.json()).error||"Conversion failed.");
@@ -1176,7 +1243,16 @@ pvUploadBtn.addEventListener('click', async ()=>{
     
     const capo = document.getElementById('capoUpload').value;
     const isSimplify = document.getElementById('simplifyChords').checked;
-    const fd=new FormData(); fd.append('chartFile',file); fd.append('key',key); fd.append('targetKey',targetKey); fd.append('simplify', isSimplify ? 'true' : 'false'); fd.append('capo', capo);
+    const inputBpm = document.getElementById('uploadBpm').value;
+    const inputTimeSig = document.getElementById('uploadTimeSignature').value;
+    const fd=new FormData(); 
+    fd.append('chartFile',file); 
+    fd.append('key',key); 
+    fd.append('targetKey',targetKey); 
+    fd.append('simplify', isSimplify ? 'true' : 'false'); 
+    fd.append('capo', capo);
+    if (inputBpm) fd.append('bpm', inputBpm);
+    if (inputTimeSig) fd.append('timeSignature', inputTimeSig);
     
     const orig=pvUploadBtn.innerHTML;
     pvUploadBtn.innerHTML='⏳ Loading...'; pvUploadBtn.disabled=true;
@@ -1186,12 +1262,19 @@ pvUploadBtn.addEventListener('click', async ()=>{
         if(!res.ok) throw new Error((await res.json()).error||"Preview failed.");
         
         window.currentChartData=await res.json();
-        const bpmVal = document.getElementById('uploadBpm').value || '';
-        window.currentChartData.bpm = bpmVal;
-        if (bpmVal) {
-            localStorage.setItem('cg_last_bpm', bpmVal);
-            updateRehearseTabLink(bpmVal);
+        
+        if (window.currentChartData.bpm) {
+            document.getElementById('uploadBpm').value = window.currentChartData.bpm;
+            localStorage.setItem('cg_last_bpm', window.currentChartData.bpm);
         }
+        if (window.currentChartData.timeSignature) {
+            document.getElementById('uploadTimeSignature').value = window.currentChartData.timeSignature;
+            localStorage.setItem('cg_last_beats', window.currentChartData.timeSignature);
+        }
+        if (window.currentChartData.originalKey) {
+            document.getElementById('uploadKey').value = window.currentChartData.originalKey;
+        }
+        updateRehearseTabLink(window.currentChartData.bpm || '', window.currentChartData.timeSignature || '');
         
         document.getElementById('liveEditor').value = window.currentChartData.text;
         document.getElementById('modalTitle').textContent = window.currentChartData.title;
@@ -1245,13 +1328,25 @@ function renderSetlist() {
         if (song.bpm) {
             metaText += ` | BPM: ${song.bpm}`;
         }
+        if (song.timeSignature) {
+            let formattedTimeSig = song.timeSignature;
+            if (!isNaN(Number(song.timeSignature))) {
+                const num = Number(song.timeSignature);
+                if (num === 4) formattedTimeSig = '4/4';
+                else if (num === 3) formattedTimeSig = '3/4';
+                else if (num === 2) formattedTimeSig = '2/4';
+                else if (num === 6) formattedTimeSig = '6/8';
+                else formattedTimeSig = `${num}/4`;
+            }
+            metaText += ` | Time Sig: ${formattedTimeSig}`;
+        }
         item.innerHTML = `
             <div class="history-info">
                 <div class="history-name">${idx + 1}. ${song.title}</div>
                 <div class="history-meta">${metaText}</div>
             </div>
             <div style="display: flex; gap: 8px;">
-                ${song.bpm ? `<button class="history-clear" style="color: var(--primary);" onclick="playFromSetlist(${idx})">Play</button>` : ''}
+                ${(song.bpm || song.timeSignature) ? `<button class="history-clear" style="color: var(--primary);" onclick="playFromSetlist(${idx})">Play</button>` : ''}
                 <button class="history-clear" onclick="removeFromSetlist(${idx})">Remove</button>
             </div>
         `;
@@ -1267,14 +1362,15 @@ window.removeFromSetlist = function(idx) {
 
 // 4. The function to add a song (Attach this to an "Add to Setlist" button)
 // NOTE: Make sure you have the song's title, key, and raw text available when you call this!
-function addSongToSetlist(title, originalKey, targetKey, rawText, bpm, capo) {
+function addSongToSetlist(title, originalKey, targetKey, rawText, bpm, capo, timeSignature) {
     setlistQueue.push({
         title: title,
         originalKey: originalKey,
         targetKey: targetKey,
         text: rawText,
         bpm: bpm,
-        capo: capo || '0'
+        capo: capo || '0',
+        timeSignature: timeSignature
     });
     renderSetlist();
 }
@@ -1323,14 +1419,16 @@ document.getElementById('modalClose').addEventListener('click', closePreview);
 document.getElementById('modalDownloadBtn').addEventListener('click', async () => {
     const text = document.getElementById('liveEditor').value;
     const format = document.getElementById('searchFormat').value || 'docx';
-    const bpmVal = window.currentChartData.bpm || '';
+    const bpmVal = document.getElementById('songBpm').value || document.getElementById('uploadBpm').value || window.currentChartData.bpm || '';
+    const timeSigVal = document.getElementById('songTimeSignature').value || document.getElementById('uploadTimeSignature').value || window.currentChartData.timeSignature || '';
     
     const singleSongQueue = [{
         title: window.currentChartData.title,
         originalKey: window.currentChartData.originalKey,
         targetKey: window.currentChartData.targetKey,
         text: text,
-        bpm: bpmVal
+        bpm: bpmVal,
+        timeSignature: timeSigVal
     }];
     
     const btn = document.getElementById('modalDownloadBtn');
@@ -1342,7 +1440,7 @@ document.getElementById('modalDownloadBtn').addEventListener('click', async () =
         const res = await fetch('/api/binder', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ setlist: singleSongQueue, format, bpm: bpmVal })
+            body: JSON.stringify({ setlist: singleSongQueue, format, bpm: bpmVal, timeSignature: timeSigVal })
         });
         if(!res.ok) throw new Error((await res.json()).error);
         const blob = await res.blob();
@@ -1358,18 +1456,23 @@ document.getElementById('modalDownloadBtn').addEventListener('click', async () =
 // Add to Setlist Queue
 document.getElementById('addSetlistBtn').addEventListener('click', () => {
     const text = document.getElementById('liveEditor').value;
-    const bpmVal = window.currentChartData.bpm || '';
+    const bpmVal = document.getElementById('songBpm').value || document.getElementById('uploadBpm').value || window.currentChartData.bpm || '';
+    const timeSigVal = document.getElementById('songTimeSignature').value || document.getElementById('uploadTimeSignature').value || window.currentChartData.timeSignature || '';
     if (bpmVal) {
         localStorage.setItem('cg_last_bpm', bpmVal);
-        updateRehearseTabLink(bpmVal);
     }
+    if (timeSigVal) {
+        localStorage.setItem('cg_last_beats', timeSigVal);
+    }
+    updateRehearseTabLink(bpmVal, timeSigVal);
     setlistQueue.push({
         title: window.currentChartData.title,
         originalKey: window.currentChartData.originalKey,
         targetKey: window.currentChartData.targetKey,
         text: text,
         bpm: bpmVal,
-        capo: window.currentChartData.capo || '0'
+        capo: window.currentChartData.capo || '0',
+        timeSignature: timeSigVal
     });
     
     if (typeof renderSetlist === 'function') renderSetlist();
@@ -1378,26 +1481,39 @@ document.getElementById('addSetlistBtn').addEventListener('click', () => {
 });
 
 // Helper functions for BPM / metronome sync
-function updateRehearseTabLink(bpm) {
-    if (bpm) {
-        const rehearseTab = document.querySelector('a[href^="/rehearse.html"], a[href^="rehearse.html"]');
-        if (rehearseTab) {
-            rehearseTab.href = `/rehearse.html?bpm=${bpm}`;
+function updateRehearseTabLink(bpm, beats) {
+    const rehearseTab = document.querySelector('a[href^="/rehearse.html"], a[href^="rehearse.html"]');
+    if (rehearseTab) {
+        let href = '/rehearse.html';
+        const params = [];
+        if (bpm) params.push(`bpm=${bpm}`);
+        if (beats) params.push(`beats=${beats}`);
+        if (params.length > 0) {
+            href += '?' + params.join('&');
         }
+        rehearseTab.href = href;
     }
 }
 window.playFromSetlist = function(idx) {
     const song = setlistQueue[idx];
-    if (song && song.bpm) {
-        localStorage.setItem('cg_last_bpm', song.bpm);
-        window.location.href = `/rehearse.html?bpm=${song.bpm}`;
+    if (song) {
+        if (song.bpm) localStorage.setItem('cg_last_bpm', song.bpm);
+        if (song.timeSignature) localStorage.setItem('cg_last_beats', song.timeSignature);
+        
+        let url = '/rehearse.html';
+        const params = [];
+        if (song.bpm) params.push(`bpm=${song.bpm}`);
+        if (song.timeSignature) params.push(`beats=${song.timeSignature}`);
+        if (params.length > 0) url += '?' + params.join('&');
+        window.location.href = url;
     }
 };
 
-// Initialize last bpm on page load
+// Initialize last bpm/beats on page load
 const storedBpm = localStorage.getItem('cg_last_bpm');
-if (storedBpm) {
-    updateRehearseTabLink(storedBpm);
+const storedBeats = localStorage.getItem('cg_last_beats');
+if (storedBpm || storedBeats) {
+    updateRehearseTabLink(storedBpm || '', storedBeats || '');
 }
 
 </script>

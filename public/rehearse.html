@@ -622,11 +622,20 @@ document.addEventListener('keydown',e=>{
 
 buildDots();
 const urlParams = new URLSearchParams(window.location.search);
-const initialBpm = parseInt(urlParams.get('bpm'), 10);
+const initialBpm = parseInt(urlParams.get('bpm'), 10) || parseInt(localStorage.getItem('cg_last_bpm'), 10);
 if (!isNaN(initialBpm) && initialBpm >= 40 && initialBpm <= 240) {
     setBpm(initialBpm);
 } else {
     setBpm(120);
+}
+
+const initialBeats = parseInt(urlParams.get('beats'), 10) || parseInt(localStorage.getItem('cg_last_beats'), 10);
+if (!isNaN(initialBeats) && [2, 3, 4, 6].includes(initialBeats)) {
+    beats = initialBeats;
+    document.querySelectorAll('.sig-btn').forEach(x => {
+        x.classList.toggle('active', parseInt(x.dataset.beats, 10) === beats);
+    });
+    buildDots();
 }
 
 // ── BPM CLICK-TO-EDIT ──

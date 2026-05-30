@@ -16,6 +16,113 @@ const {
     getPlayKey
 } = require('./engine'); 
 
+// --- SPOTIFY WEB API INTEGRATION ---
+let spotifyAccessToken = null;
+let spotifyTokenExpiry = 0;
+
+async function getSpotifyToken() {
+    const clientId = process.env.SPOTIFY_CLIENT_ID;
+    const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+    
+    if (!clientId || !clientSecret) {
+        console.warn("[Spotify] SPOTIFY_CLIENT_ID or SPOTIFY_CLIENT_SECRET not configured. Spotify API features will be bypassed.");
+        return null;
+    }
+    
+    if (spotifyAccessToken && Date.now() < spotifyTokenExpiry) {
+        return spotifyAccessToken;
+    }
+    
+    try {
+        const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+        const res = await fetch('https://accounts.spotify.com/api/token', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Basic ${credentials}`,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: 'grant_type=client_credentials'
+        });
+        
+        if (!res.ok) {
+            const errBody = await res.text();
+            throw new Error(`Spotify Auth failed: ${res.statusText} - ${errBody}`);
+        }
+        
+        const data = await res.json();
+        spotifyAccessToken = data.access_token;
+        spotifyTokenExpiry = Date.now() + (data.expires_in - 60) * 1000;
+        console.log("[Spotify] Successfully retrieved new Access Token");
+        return spotifyAccessToken;
+    } catch (e) {
+        console.error("[Spotify Error] Auth failed:", e.message);
+        return null;
+    }
+}
+
+async function getSpotifyTrackMetadata(query) {
+    const token = await getSpotifyToken();
+    if (!token) return null;
+    
+    try {
+        console.log(`[Spotify] Searching track for query: "${query}"`);
+        const searchRes = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=1`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!searchRes.ok) {
+            console.error(`[Spotify Error] Search failed: ${searchRes.statusText}`);
+            return null;
+        }
+        
+        const searchData = await searchRes.json();
+        const track = searchData.tracks?.items?.[0];
+        if (!track) {
+            console.log(`[Spotify] No track found for: "${query}"`);
+            return null;
+        }
+        
+        const trackId = track.id;
+        console.log(`[Spotify] Found track ID: ${trackId} (${track.name} by ${track.artists?.[0]?.name})`);
+        
+        const featuresRes = await fetch(`https://api.spotify.com/v1/audio-features/${trackId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!featuresRes.ok) {
+            console.error(`[Spotify Error] Audio features fetch failed: ${featuresRes.statusText}`);
+            return null;
+        }
+        
+        const featuresData = await featuresRes.json();
+        
+        const spotifyKeys = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+        const keyVal = featuresData.key;
+        const modeVal = featuresData.mode;
+        
+        let detectedKey = '';
+        if (keyVal >= 0 && keyVal < 12) {
+            detectedKey = spotifyKeys[keyVal];
+            if (modeVal === 0) {
+                detectedKey += 'm';
+            }
+        }
+        
+        const bpm = Math.round(featuresData.tempo);
+        const timeSignature = featuresData.time_signature;
+        
+        console.log(`[Spotify] Metadata retrieved: BPM=${bpm}, TimeSignature=${timeSignature}, Key=${detectedKey}`);
+        return {
+            bpm,
+            timeSignature,
+            spotifyKey: detectedKey
+        };
+    } catch (e) {
+        console.error("[Spotify Error] Metadata retrieval failed:", e.message);
+        return null;
+    }
+} 
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -23,13 +130,13 @@ app.use(express.static('public'));
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-async function deliverFile(res, finalChart, originalName, originalKey, targetKey, format, bpm, capo = 0) {
+async function deliverFile(res, finalChart, originalName, originalKey, targetKey, format, bpm, capo = 0, timeSignature = '') {
     let fileBuffer;
     let contentType;
     let extension;
 
     if (format === 'pdf') {
-        fileBuffer = await createPdfChart(finalChart, originalName, originalKey, targetKey, bpm, capo);
+        fileBuffer = await createPdfChart(finalChart, originalName, originalKey, targetKey, bpm, capo, timeSignature);
         contentType = 'application/pdf';
         extension = 'pdf';
     } else if (format === 'pro') {
@@ -38,7 +145,7 @@ async function deliverFile(res, finalChart, originalName, originalKey, targetKey
         contentType = 'text/plain';
         extension = 'pro';
     } else {
-        fileBuffer = await createDocxChart(finalChart, originalName, originalKey, targetKey, bpm, capo);
+        fileBuffer = await createDocxChart(finalChart, originalName, originalKey, targetKey, bpm, capo, timeSignature);
         contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
         extension = 'docx';
     }
@@ -60,6 +167,7 @@ app.get('/api/convert', async (req, res) => {
     const simplify = req.query.simplify === 'true';
     const bpm = req.query.bpm || '';
     const capo = parseInt(req.query.capo, 10) || 0;
+    const timeSignature = req.query.timeSignature || '';
 
     if (!query) return res.status(400).json({ error: "Please provide a song query." });
 
@@ -70,16 +178,24 @@ app.get('/api/convert', async (req, res) => {
         const html = await fetchUGPage(tabUrl);
         const tabData = extractTabData(html);
         
-        if (!songKey) songKey = tabData.songKey;
+        let spotifyMeta = null;
+        if (!songKey || !bpm || !timeSignature) {
+            spotifyMeta = await getSpotifyTrackMetadata(query);
+        }
+
+        if (!songKey) songKey = tabData.songKey || (spotifyMeta ? spotifyMeta.spotifyKey : null);
 
         if (!songKey) {
             return res.status(400).json({ error: "No key found on UG. Please provide a manual key.", needsManualKey: true });
         }
 
+        const finalBpm = bpm || (spotifyMeta ? spotifyMeta.bpm : '');
+        const finalTimeSig = timeSignature || (spotifyMeta ? spotifyMeta.timeSignature : '');
+
         console.log(`[API] Transposing chart...`);
         const finalChart = processAndAlignTabs(tabData.rawTabText, songKey, targetKey, false, simplify, capo);
         
-        await deliverFile(res, finalChart, query, songKey, targetKey, format, bpm, capo);
+        await deliverFile(res, finalChart, query, songKey, targetKey, format, finalBpm, capo, finalTimeSig);
 
     } catch (error) {
         console.error(`[API Error]`, error.message);
@@ -89,7 +205,7 @@ app.get('/api/convert', async (req, res) => {
 
 // --- ROUTE 4: BATCH SETLIST BINDER EXPORT ---
 app.post('/api/binder', async (req, res) => {
-    const { setlist, format, bpm } = req.body; 
+    const { setlist, format, bpm, timeSignature } = req.body; 
     if (!setlist || setlist.length === 0) return res.status(400).json({ error: "Setlist is empty." });
 
     try {
@@ -109,10 +225,22 @@ app.post('/api/binder', async (req, res) => {
             if (song.bpm) {
                 keyText += ` | BPM: ${song.bpm}`;
             }
+            if (song.timeSignature) {
+                let formattedTimeSig = song.timeSignature;
+                if (!isNaN(Number(song.timeSignature))) {
+                    const num = Number(song.timeSignature);
+                    if (num === 4) formattedTimeSig = '4/4';
+                    else if (num === 3) formattedTimeSig = '3/4';
+                    else if (num === 2) formattedTimeSig = '2/4';
+                    else if (num === 6) formattedTimeSig = '6/8';
+                    else formattedTimeSig = `${num}/4`;
+                }
+                keyText += ` | Time Sig: ${formattedTimeSig}`;
+            }
             combinedText += `Key: ${keyText}\n\n`;
             combinedText += song.text;
         }
-        await deliverFile(res, combinedText, "Setlist_Binder", "Mixed", "Mixed", format, bpm);
+        await deliverFile(res, combinedText, "Setlist_Binder", "Mixed", "Mixed", format, bpm, 0, timeSignature || '');
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -126,7 +254,14 @@ app.get('/api/preview', async (req, res) => {
         const html = await fetchUGPage(tabUrl);
         const tabData = extractTabData(html);
         
-        const finalKey = songKey || tabData.songKey;
+        let spotifyMeta = null;
+        try {
+            spotifyMeta = await getSpotifyTrackMetadata(query);
+        } catch (e) {
+            console.log(`[Spotify] Preview metadata fetch failed: ${e.message}`);
+        }
+
+        const finalKey = songKey || tabData.songKey || (spotifyMeta ? spotifyMeta.spotifyKey : null);
         if (!finalKey) return res.status(400).json({ error: "No key found." });
 
         const isSimplify = simplify === 'true';
@@ -134,7 +269,17 @@ app.get('/api/preview', async (req, res) => {
         const finalChart = processAndAlignTabs(tabData.rawTabText, finalKey, targetKey || '', false, isSimplify, capo);
         const playKey = capo > 0 ? getPlayKey(targetKey || finalKey, capo) : '';
         
-        res.json({ title: query, originalKey: finalKey, targetKey: targetKey || 'Nashville', text: finalChart, capo: capo, playKey: playKey });
+        res.json({ 
+            title: query, 
+            originalKey: finalKey, 
+            targetKey: targetKey || 'Nashville', 
+            text: finalChart, 
+            capo: capo, 
+            playKey: playKey,
+            bpm: spotifyMeta ? spotifyMeta.bpm : '',
+            timeSignature: spotifyMeta ? spotifyMeta.timeSignature : '',
+            spotifyKey: spotifyMeta ? spotifyMeta.spotifyKey : ''
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -149,6 +294,7 @@ app.post('/api/import', upload.single('chartFile'), async (req, res) => {
     const simplify = req.body.simplify === 'true';
     const bpm = req.body.bpm || '';
     const capo = parseInt(req.body.capo, 10) || 0;
+    const timeSignature = req.body.timeSignature || '';
 
     if (!file) return res.status(400).json({ error: "Please upload a .txt, .docx, .pdf, .pro, or .cho file." });
 
@@ -186,18 +332,29 @@ app.post('/api/import', upload.single('chartFile'), async (req, res) => {
             return res.status(400).json({ error: "Unsupported file type. Use .txt, .docx, .pdf, .pro, or .cho" });
         }
 
-        const finalSongKey = songKey || detectedKey;
+        let spotifyMeta = null;
+        if (!songKey || !bpm || !timeSignature) {
+            try {
+                spotifyMeta = await getSpotifyTrackMetadata(originalName);
+            } catch (e) {
+                console.log(`[Spotify] Upload metadata retrieval failed: ${e.message}`);
+            }
+        }
+
+        const finalSongKey = songKey || detectedKey || (spotifyMeta ? spotifyMeta.spotifyKey : null);
         if (!finalSongKey || finalSongKey === 'auto' || finalSongKey === 'nashville') {
-            // Keep Nashville as a valid key string, but throw if no key is supplied
             if (!finalSongKey) {
                 return res.status(400).json({ error: "Could not auto-detect original key from file directives. Please select it manually.", needsManualKey: true });
             }
         }
 
+        const finalBpm = bpm || (spotifyMeta ? spotifyMeta.bpm : '');
+        const finalTimeSig = timeSignature || (spotifyMeta ? spotifyMeta.timeSignature : '');
+
         console.log(`[API] Transposing uploaded chart...`);
         const finalChart = processAndAlignTabs(extractedText, finalSongKey, targetKey, isPdf, simplify, capo);
         
-        await deliverFile(res, finalChart, originalName, finalSongKey, targetKey, format, bpm, capo);
+        await deliverFile(res, finalChart, originalName, finalSongKey, targetKey, format, finalBpm, capo, finalTimeSig);
 
     } catch (error) {
         console.error(`[API Error]`, error.message);
@@ -248,7 +405,14 @@ app.post('/api/import-preview', upload.single('chartFile'), async (req, res) => 
             return res.status(400).json({ error: "Unsupported file type. Use .txt, .docx, .pdf, .pro, or .cho" });
         }
 
-        const finalSongKey = songKey || detectedKey;
+        let spotifyMeta = null;
+        try {
+            spotifyMeta = await getSpotifyTrackMetadata(originalName);
+        } catch (e) {
+            console.log(`[Spotify] Upload preview metadata retrieval failed: ${e.message}`);
+        }
+
+        const finalSongKey = songKey || detectedKey || (spotifyMeta ? spotifyMeta.spotifyKey : null);
         if (!finalSongKey || finalSongKey === 'auto') {
             return res.status(400).json({ error: "Could not auto-detect original key from file directives. Please select it manually.", needsManualKey: true });
         }
@@ -263,7 +427,10 @@ app.post('/api/import-preview', upload.single('chartFile'), async (req, res) => 
             targetKey: targetKey || 'Nashville',
             text: finalChart,
             capo: capo,
-            playKey: playKey
+            playKey: playKey,
+            bpm: spotifyMeta ? spotifyMeta.bpm : '',
+            timeSignature: spotifyMeta ? spotifyMeta.timeSignature : '',
+            spotifyKey: spotifyMeta ? spotifyMeta.spotifyKey : ''
         });
 
     } catch (error) {
