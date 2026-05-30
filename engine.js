@@ -882,7 +882,7 @@ async function createPdfChart(finalChartText, songTitle, originalKey, targetKey,
                         const extMatch = rawExtension.match(/^(\D*)(\d.*)?$/);
                         if (extMatch) {
                             if (extMatch[1]) htmlLine += `<b>${extMatch[1]}</b>`;
-                            if (extMatch[2]) htmlLine += `sup><b>${extMatch[2]}</b></sup>`;
+                            if (extMatch[2]) htmlLine += `<sup><b>${extMatch[2]}</b></sup>`;
                         }
                     }
                     if (bassNote) htmlLine += `<b>/${bassNote}</b>`;
