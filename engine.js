@@ -517,8 +517,211 @@ async function createDocxChart(finalChartText, songTitle, originalKey, targetKey
     return await Packer.toBuffer(doc);
 }
 
+// --- CHORD SVG DICTIONARY & GENERATOR ---
+
+const chordDictionary = {
+    // Major chords
+    'C': { frets: [-1, 3, 2, 0, 1, 0], fingers: [0, 3, 2, 0, 1, 0] },
+    'C#': { frets: [-1, 4, 6, 6, 6, 4], fingers: [0, 1, 3, 3, 3, 1], baseFret: 4 },
+    'Db': { frets: [-1, 4, 6, 6, 6, 4], fingers: [0, 1, 3, 3, 3, 1], baseFret: 4 },
+    'D': { frets: [-1, -1, 0, 2, 3, 2], fingers: [0, 0, 0, 1, 3, 2] },
+    'D#': { frets: [-1, 6, 8, 8, 8, 6], fingers: [0, 1, 3, 3, 3, 1], baseFret: 6 },
+    'Eb': { frets: [-1, 6, 8, 8, 8, 6], fingers: [0, 1, 3, 3, 3, 1], baseFret: 6 },
+    'E': { frets: [0, 2, 2, 1, 0, 0], fingers: [0, 2, 3, 1, 0, 0] },
+    'F': { frets: [1, 3, 3, 2, 1, 1], fingers: [1, 3, 4, 2, 1, 1], baseFret: 1 },
+    'F#': { frets: [2, 4, 4, 3, 2, 2], fingers: [1, 3, 4, 2, 1, 1], baseFret: 2 },
+    'Gb': { frets: [2, 4, 4, 3, 2, 2], fingers: [1, 3, 4, 2, 1, 1], baseFret: 2 },
+    'G': { frets: [3, 2, 0, 0, 0, 3], fingers: [3, 2, 0, 0, 0, 4] },
+    'G#': { frets: [4, 6, 6, 5, 4, 4], fingers: [1, 3, 4, 2, 1, 1], baseFret: 4 },
+    'Ab': { frets: [4, 6, 6, 5, 4, 4], fingers: [1, 3, 4, 2, 1, 1], baseFret: 4 },
+    'A': { frets: [-1, 0, 2, 2, 2, 0], fingers: [0, 0, 1, 2, 3, 0] },
+    'A#': { frets: [-1, 1, 3, 3, 3, 1], fingers: [0, 1, 3, 3, 3, 1], baseFret: 1 },
+    'Bb': { frets: [-1, 1, 3, 3, 3, 1], fingers: [0, 1, 3, 3, 3, 1], baseFret: 1 },
+    'B': { frets: [-1, 2, 4, 4, 4, 2], fingers: [0, 1, 3, 3, 3, 1], baseFret: 2 },
+
+    // Minor chords
+    'Cm': { frets: [-1, 3, 5, 5, 4, 3], fingers: [0, 1, 3, 4, 2, 1], baseFret: 3 },
+    'C#m': { frets: [-1, 4, 6, 6, 5, 4], fingers: [0, 1, 3, 4, 2, 1], baseFret: 4 },
+    'Dbm': { frets: [-1, 4, 6, 6, 5, 4], fingers: [0, 1, 3, 4, 2, 1], baseFret: 4 },
+    'Dm': { frets: [-1, -1, 0, 2, 3, 1], fingers: [0, 0, 0, 2, 3, 1] },
+    'D#m': { frets: [-1, 6, 8, 8, 7, 6], fingers: [0, 1, 3, 4, 2, 1], baseFret: 6 },
+    'Ebm': { frets: [-1, 6, 8, 8, 7, 6], fingers: [0, 1, 3, 4, 2, 1], baseFret: 6 },
+    'Em': { frets: [0, 2, 2, 0, 0, 0], fingers: [0, 2, 3, 0, 0, 0] },
+    'Fm': { frets: [1, 3, 3, 1, 1, 1], fingers: [1, 3, 4, 1, 1, 1], baseFret: 1 },
+    'F#m': { frets: [2, 4, 4, 2, 2, 2], fingers: [1, 3, 4, 1, 1, 1], baseFret: 2 },
+    'Gbm': { frets: [2, 4, 4, 2, 2, 2], fingers: [1, 3, 4, 1, 1, 1], baseFret: 2 },
+    'Gm': { frets: [3, 5, 5, 3, 3, 3], fingers: [1, 3, 4, 1, 1, 1], baseFret: 3 },
+    'G#m': { frets: [4, 6, 6, 4, 4, 4], fingers: [1, 3, 4, 1, 1, 1], baseFret: 4 },
+    'Abm': { frets: [4, 6, 6, 4, 4, 4], fingers: [1, 3, 4, 1, 1, 1], baseFret: 4 },
+    'Am': { frets: [-1, 0, 2, 2, 1, 0], fingers: [0, 0, 2, 3, 1, 0] },
+    'A#m': { frets: [-1, 1, 3, 3, 2, 1], fingers: [0, 1, 3, 4, 2, 1], baseFret: 1 },
+    'Bbm': { frets: [-1, 1, 3, 3, 2, 1], fingers: [0, 1, 3, 4, 2, 1], baseFret: 1 },
+    'Bm': { frets: [-1, 2, 4, 4, 3, 2], fingers: [0, 1, 3, 4, 2, 1], baseFret: 2 },
+
+    // Dominant 7th
+    'C7': { frets: [-1, 3, 2, 3, 1, 0], fingers: [0, 3, 2, 4, 1, 0] },
+    'C#7': { frets: [-1, 4, 6, 4, 6, 4], fingers: [0, 1, 3, 1, 4, 1], baseFret: 4 },
+    'Db7': { frets: [-1, 4, 6, 4, 6, 4], fingers: [0, 1, 3, 1, 4, 1], baseFret: 4 },
+    'D7': { frets: [-1, -1, 0, 2, 1, 2], fingers: [0, 0, 0, 2, 1, 3] },
+    'D#7': { frets: [-1, 6, 8, 6, 8, 6], fingers: [0, 1, 3, 1, 4, 1], baseFret: 6 },
+    'Eb7': { frets: [-1, 6, 8, 6, 8, 6], fingers: [0, 1, 3, 1, 4, 1], baseFret: 6 },
+    'E7': { frets: [0, 2, 0, 1, 0, 0], fingers: [0, 2, 0, 1, 0, 0] },
+    'F7': { frets: [1, 3, 1, 2, 1, 1], fingers: [1, 3, 1, 2, 1, 1], baseFret: 1 },
+    'F#7': { frets: [2, 4, 2, 3, 2, 2], fingers: [1, 3, 1, 2, 1, 1], baseFret: 2 },
+    'Gb7': { frets: [2, 4, 2, 3, 2, 2], fingers: [1, 3, 1, 2, 1, 1], baseFret: 2 },
+    'G7': { frets: [3, 2, 0, 0, 0, 1], fingers: [3, 2, 0, 0, 0, 1] },
+    'G#7': { frets: [4, 6, 4, 5, 4, 4], fingers: [1, 3, 1, 2, 1, 1], baseFret: 4 },
+    'Ab7': { frets: [4, 6, 4, 5, 4, 4], fingers: [1, 3, 1, 2, 1, 1], baseFret: 4 },
+    'A7': { frets: [-1, 0, 2, 0, 2, 0], fingers: [0, 0, 1, 0, 2, 0] },
+    'A#7': { frets: [-1, 1, 3, 1, 3, 1], fingers: [0, 1, 3, 1, 4, 1], baseFret: 1 },
+    'Bb7': { frets: [-1, 1, 3, 1, 3, 1], fingers: [0, 1, 3, 1, 4, 1], baseFret: 1 },
+    'B7': { frets: [-1, 2, 1, 2, 0, 2], fingers: [0, 2, 1, 3, 0, 4] },
+
+    // Major 7th
+    'Cmaj7': { frets: [-1, 3, 2, 0, 0, 0], fingers: [0, 3, 2, 0, 0, 0] },
+    'Dmaj7': { frets: [-1, -1, 0, 2, 2, 2], fingers: [0, 0, 0, 1, 1, 1] },
+    'Emaj7': { frets: [0, 2, 1, 1, 0, 0], fingers: [0, 2, 1, 1, 0, 0] },
+    'Fmaj7': { frets: [-1, 3, 3, 2, 1, 0], fingers: [0, 3, 4, 2, 1, 0] },
+    'Gmaj7': { frets: [3, 2, 0, 0, 0, 2], fingers: [3, 1, 0, 0, 0, 2] },
+    'Amaj7': { frets: [-1, 0, 2, 1, 2, 0], fingers: [0, 0, 2, 1, 3, 0] },
+    'Bmaj7': { frets: [-1, 2, 4, 3, 4, 2], fingers: [0, 1, 3, 2, 4, 1], baseFret: 2 },
+
+    // Minor 7th
+    'Cm7': { frets: [-1, 3, 5, 3, 4, 3], fingers: [0, 1, 3, 1, 2, 1], baseFret: 3 },
+    'C#m7': { frets: [-1, 4, 6, 4, 5, 4], fingers: [0, 1, 3, 1, 2, 1], baseFret: 4 },
+    'Dm7': { frets: [-1, -1, 0, 2, 1, 1], fingers: [0, 0, 0, 2, 1, 1] },
+    'Em7': { frets: [0, 2, 0, 0, 0, 0], fingers: [0, 1, 0, 0, 0, 0] },
+    'Fm7': { frets: [1, 3, 1, 1, 1, 1], fingers: [1, 3, 1, 1, 1, 1], baseFret: 1 },
+    'Gm7': { frets: [3, 5, 3, 3, 3, 3], fingers: [1, 3, 1, 1, 1, 1], baseFret: 3 },
+    'Am7': { frets: [-1, 0, 2, 0, 1, 0], fingers: [0, 0, 2, 0, 1, 0] },
+    'Bm7': { frets: [-1, 2, 4, 2, 3, 2], fingers: [0, 1, 3, 1, 2, 1], baseFret: 2 },
+
+    // Suspended
+    'Csus4': { frets: [-1, 3, 3, 0, 1, 1], fingers: [0, 3, 4, 0, 1, 1] },
+    'Dsus4': { frets: [-1, -1, 0, 2, 3, 3], fingers: [0, 0, 0, 1, 2, 3] },
+    'Esus4': { frets: [0, 2, 2, 2, 0, 0], fingers: [0, 2, 3, 4, 0, 0] },
+    'Gsus4': { frets: [3, -1, 0, 0, 1, 3], fingers: [3, 0, 0, 0, 1, 4] },
+    'Asus4': { frets: [-1, 0, 2, 2, 3, 0], fingers: [0, 0, 1, 2, 4, 0] },
+    'Csus2': { frets: [-1, 3, 0, 0, 3, 3], fingers: [0, 1, 0, 0, 3, 4] },
+    'Dsus2': { frets: [-1, -1, 0, 2, 3, 0], fingers: [0, 0, 0, 1, 2, 0] },
+    'Asus2': { frets: [-1, 0, 2, 2, 0, 0], fingers: [0, 0, 1, 2, 0, 0] },
+
+    // Cadd9, Gadd9
+    'Cadd9': { frets: [-1, 3, 2, 0, 3, 0], fingers: [0, 2, 1, 0, 3, 0] },
+    'Gadd9': { frets: [3, 2, 0, 0, 0, 5], fingers: [1, 2, 0, 0, 0, 4], baseFret: 1 }
+};
+
+function getChordSvg(chordName) {
+    let chord = chordDictionary[chordName];
+    if (!chord) {
+        let rootOnly = chordName.split('/')[0];
+        chord = chordDictionary[rootOnly];
+        if (!chord) {
+            const match = chordName.match(/^([A-G][#b]?m?)/);
+            if (match) {
+                chord = chordDictionary[match[1]];
+            }
+        }
+    }
+    if (!chord) return null;
+
+    const frets = chord.frets;
+    const fingers = chord.fingers || [0, 0, 0, 0, 0, 0];
+    const baseFret = chord.baseFret || 1;
+
+    const width = 80;
+    const height = 90;
+    const topMargin = 20;
+    const leftMargin = 15;
+    const stringSpacing = 10;
+    const fretSpacing = 12;
+
+    let stringsHtml = '';
+    for (let i = 0; i < 6; i++) {
+        const x = leftMargin + i * stringSpacing;
+        stringsHtml += `<line x1="${x}" y1="${topMargin}" x2="${x}" y2="${topMargin + 4 * fretSpacing}" stroke="#000000" stroke-width="1" />`;
+    }
+
+    let fretsHtml = '';
+    for (let i = 0; i < 5; i++) {
+        const y = topMargin + i * fretSpacing;
+        const strokeWidth = (i === 0 && baseFret === 1) ? 3 : 1;
+        fretsHtml += `<line x1="${leftMargin}" y1="${y}" x2="${leftMargin + 5 * stringSpacing}" y2="${y}" stroke="#000000" stroke-width="${strokeWidth}" />`;
+    }
+
+    let fretNumHtml = '';
+    if (baseFret > 1) {
+        fretNumHtml = `<text x="${leftMargin - 8}" y="${topMargin + fretSpacing / 2 + 3}" font-family="Arial, sans-serif" font-size="8px" text-anchor="middle" font-weight="bold">${baseFret}fr</text>`;
+    }
+
+    let markersHtml = '';
+    for (let s = 0; s < 6; s++) {
+        const fret = frets[s];
+        const x = leftMargin + s * stringSpacing;
+        if (fret === -1) {
+            markersHtml += `<text x="${x}" y="${topMargin - 5}" font-family="Arial, sans-serif" font-size="8px" text-anchor="middle" font-weight="bold" fill="#000000">X</text>`;
+        } else if (fret === 0) {
+            markersHtml += `<circle cx="${x}" cy="${topMargin - 6}" r="2" fill="none" stroke="#000000" stroke-width="1" />`;
+        }
+    }
+
+    let fingersHtml = '';
+    for (let s = 0; s < 6; s++) {
+        const fret = frets[s];
+        if (fret > 0) {
+            const visualFret = fret - baseFret + 1;
+            if (visualFret >= 1 && visualFret <= 4) {
+                const x = leftMargin + s * stringSpacing;
+                const y = topMargin + (visualFret - 1) * fretSpacing + fretSpacing / 2;
+                fingersHtml += `<circle cx="${x}" cy="${y}" r="3.5" fill="#000000" />`;
+                const fingerNum = fingers[s];
+                if (fingerNum > 0) {
+                    fingersHtml += `<text x="${x}" y="${y + 2}" font-family="Arial, sans-serif" font-size="6px" text-anchor="middle" fill="#FFFFFF">${fingerNum}</text>`;
+                }
+            }
+        }
+    }
+
+    return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">` +
+        `<text x="${width / 2}" y="10" font-family="Arial, sans-serif" font-size="11px" font-weight="bold" text-anchor="middle" fill="#000000">${chordName}</text>` +
+        stringsHtml +
+        fretsHtml +
+        fretNumHtml +
+        markersHtml +
+        fingersHtml +
+        `</svg>`;
+}
+
 async function createPdfChart(finalChartText, songTitle, originalKey, targetKey, bpm, capo = 0, timeSignature = '', columns = '1') {
     const lines = finalChartText.split('\n');
+    
+    // Scan for unique chords
+    const uniqueChords = new Set();
+    for (const line of lines) {
+        if (isChordLine(line)) {
+            const tokens = line.trim().split(/\s+/);
+            for (const token of tokens) {
+                const cleaned = token.replace(/[()\[\]{}*]/g, '');
+                if (/^[A-G][#b]?(?:m|min|maj|M|dim|aug|sus|add|o|\+|\-|\d|[#b])*(?:\/[A-G][#b]?)?$/.test(cleaned)) {
+                    uniqueChords.add(cleaned);
+                }
+            }
+        }
+    }
+
+    const svgCards = [];
+    const sortedChords = Array.from(uniqueChords).sort();
+    for (const chord of sortedChords) {
+        const svg = getChordSvg(chord);
+        if (svg) {
+            svgCards.push(`<div class="chord-diagram-card">${svg}</div>`);
+        }
+    }
+
+    let glossaryHtml = '';
+    if (svgCards.length > 0) {
+        glossaryHtml = `<div class="chord-diagram-container">${svgCards.join('')}</div>`;
+    }
     
     let htmlLines = lines.map(line => {
         const isHeader = /^\[?(Intro|Verse|Chorus|Pre-Chorus|Bridge|Outro|Solo|Instrumental)[^\]]*\]?$/i.test(line.trim());
@@ -635,6 +838,8 @@ async function createPdfChart(finalChartText, songTitle, originalKey, targetKey,
             sup { font-size: 75%; }
             ${containerStyle}
             ${headerStyle}
+            .chord-diagram-container { display: flex; flex-wrap: wrap; gap: 15px; border-top: 1px solid #ccc; padding-top: 20px; margin-top: 40px; page-break-inside: avoid; break-inside: avoid; }
+            .chord-diagram-card { text-align: center; font-size: 12px; }
         </style>
     </head>
     <body>
@@ -643,6 +848,7 @@ async function createPdfChart(finalChartText, songTitle, originalKey, targetKey,
         <div class="chart-container">
             ${htmlLines.join('')}
         </div>
+        ${glossaryHtml}
     </body>
     </html>`;
 
@@ -654,6 +860,7 @@ async function createPdfChart(finalChartText, songTitle, originalKey, targetKey,
     await browser.close();
     return pdfBuffer;
 }
+
 
 // --- CHORDPRO CONVERSION UTILITIES ---
 
