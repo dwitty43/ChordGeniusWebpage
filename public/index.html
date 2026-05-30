@@ -560,7 +560,7 @@
             transition: all 0.2s; padding: 0;
         }
         .modal-close:hover { border-color: var(--primary); color: var(--primary); }
-        .modal-body { flex: 1; overflow: auto; background: #fff; position: relative; min-height: 480px; }
+        .modal-body { flex: 1; overflow: auto; background: var(--input-bg); position: relative; min-height: 480px; }
         .modal-body iframe { width: 100%; height: 100%; min-height: 480px; border: none; display: block; }
         .modal-docx-preview {
             padding: 44px 52px; font-family: 'Courier New', Courier, monospace;
@@ -704,6 +704,15 @@
         @keyframes premiumGlow {
             0% { box-shadow: 0 0 8px rgba(245, 158, 11, 0.4); }
             100% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.8); }
+        }
+        #liveEditor, #interactivePreview {
+            background: var(--input-bg);
+            color: var(--text-main);
+            border: none;
+            outline: none;
+            padding: 24px;
+            font-family: monospace;
+            font-size: 14px;
         }
     </style>
 </head>
@@ -1006,8 +1015,8 @@
             <button id="modalTabEdit" class="nav-tab" style="width: auto; padding: 6px 16px; border: none; background: none;">✏️ Edit Chart</button>
         </div>
         <div class="modal-body" id="modalBody" style="display: flex; flex-direction: column;">
-            <textarea id="liveEditor" spellcheck="false" style="width: 100%; flex: 1; min-height: 500px; padding: 24px; font-family: 'Courier New', Courier, monospace; font-size: 14px; border: none; resize: none; background: #fff; color: #000; outline: none;"></textarea>
-            <div id="interactivePreview" style="display: none; width: 100%; flex: 1; min-height: 500px; padding: 24px; font-family: 'Courier New', Courier, monospace; font-size: 14px; border: none; background: #fff; color: #000; outline: none; overflow: auto; white-space: pre-wrap;"></div>
+            <textarea id="liveEditor" spellcheck="false" style="width: 100%; flex: 1; min-height: 500px; padding: 24px; font-family: 'Courier New', Courier, monospace; font-size: 14px; border: none; resize: none; outline: none;"></textarea>
+            <div id="interactivePreview" style="display: none; width: 100%; flex: 1; min-height: 500px; padding: 24px; font-family: 'Courier New', Courier, monospace; font-size: 14px; border: none; outline: none; overflow: auto; white-space: pre-wrap;"></div>
         </div>
         <div class="modal-footer">
             <button class="previewBtn" id="addSetlistBtn" style="background: var(--primary-glow); color: var(--primary); border-color: var(--primary);">+ Add to Setlist</button>
@@ -1919,7 +1928,7 @@ function removeActiveTooltip() {
 }
 
 function resetModalPreviewState() {
-    switchModalTab('edit');
+    switchModalTab('preview');
     removeActiveTooltip();
 }
 
