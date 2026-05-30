@@ -203,8 +203,61 @@ async function fastSearchDDGLite(query) {
     }
 }
 
+// A fast fetch to external Scraping APIs (ZenRows/ScrapingBee) to bypass Cloudflare
+async function fetchUGPageViaAPI(targetUrl) {
+    const zenrowsKey = process.env.ZENROWS_API_KEY;
+    const scrapingbeeKey = process.env.SCRAPINGBEE_API_KEY;
+    
+    let apiGatewayUrl = "";
+    if (zenrowsKey) {
+        console.log("[Engine] Fetching target page via ZenRows Scraping API...");
+        apiGatewayUrl = `https://api.zenrows.com/v1/?apikey=${zenrowsKey}&url=${encodeURIComponent(targetUrl)}&js_render=true&premium_proxy=true`;
+    } else if (scrapingbeeKey) {
+        console.log("[Engine] Fetching target page via ScrapingBee API...");
+        apiGatewayUrl = `https://app.scrapingbee.com/api/v1/?api_key=${scrapingbeeKey}&url=${encodeURIComponent(targetUrl)}&render_js=true&premium_proxy=true`;
+    } else {
+        throw new Error("No third-party Scraping API Key configured in environment variables.");
+    }
+    
+    const response = await fetch(apiGatewayUrl, {
+        method: 'GET',
+        headers: { 'Accept-Encoding': 'gzip, deflate, br' }
+    });
+    
+    if (!response.ok) {
+        throw new Error(`Scraping API returned status ${response.status}: ${response.statusText}`);
+    }
+    
+    return await response.text();
+}
+
 // A highly accurate fallback that queries Ultimate Guitar's internal search catalog directly
 async function fastSearchUGDirect(query) {
+    const useApi = process.env.USE_SCRAPING_API !== 'false';
+    const hasKey = process.env.ZENROWS_API_KEY || process.env.SCRAPINGBEE_API_KEY;
+    const url = `https://www.ultimate-guitar.com/search.php?search_type=title&value=${encodeURIComponent(query)}`;
+
+    if (useApi && hasKey) {
+        try {
+            console.log(`[Engine] Querying Ultimate Guitar search catalog via Scraping API: ${query}`);
+            const html = await fetchUGPageViaAPI(url);
+            const $ = cheerio.load(html);
+            const storeData = $('.js-store').first().attr('data-content');
+            if (storeData) {
+                const data = JSON.parse(storeData);
+                const results = data.store?.page?.data?.results || [];
+                const chordsResults = results.filter(r => r.type === 'Chords' && r.tab_url);
+                if (chordsResults.length > 0) {
+                    const foundUrl = chordsResults[0].tab_url;
+                    console.log(`[Engine] Ultimate Guitar direct catalog found (API): ${foundUrl}`);
+                    return foundUrl;
+                }
+            }
+        } catch (apiError) {
+            console.warn(`[Engine] Direct search catalog query via API failed: ${apiError.message}. Falling back to standard Puppeteer...`);
+        }
+    }
+
     let browser = null;
     try {
         console.log("[Engine] Searching Ultimate Guitar direct catalog...");
@@ -221,7 +274,6 @@ async function fastSearchUGDirect(query) {
         const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
         await page.setUserAgent(userAgent);
         
-        const url = `https://www.ultimate-guitar.com/search.php?search_type=title&value=${encodeURIComponent(query)}`;
         await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
         
         const storeData = await page.evaluate(() => {
@@ -325,6 +377,18 @@ async function delay(min = 800, max = 2000) {
 }
 
 async function fetchUGPage(url, isSearch = false) {
+    // Check if Scraping API is enabled
+    const useApi = process.env.USE_SCRAPING_API !== 'false';
+    const hasKey = process.env.ZENROWS_API_KEY || process.env.SCRAPINGBEE_API_KEY;
+    
+    if (useApi && hasKey) {
+        try {
+            return await fetchUGPageViaAPI(url);
+        } catch (apiError) {
+            console.warn(`[Engine] Scraping API failed: ${apiError.message}. Falling back to standard Puppeteer...`);
+        }
+    }
+
     // Mimic human delays
     await delay(1000, 2500);
 

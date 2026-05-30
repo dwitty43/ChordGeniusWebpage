@@ -4,7 +4,7 @@
   "description": "The universal transposer and Nashville Number engine.",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node --env-file=.env server.js"
   },
   "dependencies": {
     "cheerio": "^1.2.0",
