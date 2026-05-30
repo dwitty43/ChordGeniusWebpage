@@ -827,6 +827,16 @@
                     <span class="toggle-desc">Strip 7ths, extensions &amp; bass notes — great for beginners</span>
                 </span>
             </label>
+            <label class="toggle-label" for="enableTooltips">
+                <div class="toggle-switch">
+                    <input type="checkbox" id="enableTooltips" checked>
+                    <span class="toggle-slider"></span>
+                </div>
+                <span class="toggle-text">
+                    <span class="toggle-title">Chord Hover Diagrams</span>
+                    <span class="toggle-desc">Hover over chords in preview to see visual voicing tooltips</span>
+                </span>
+            </label>
         </div>
         <div class="grid-buttons">
             <select id="searchFormat">
@@ -1766,6 +1776,7 @@ function resetModalPreviewState() {
 }
 
 interactivePreview.addEventListener('mouseover', (e) => {
+    if (!document.getElementById('enableTooltips').checked) return;
     const target = e.target.closest('.chord-hoverable');
     if (!target) return;
 
@@ -1775,6 +1786,7 @@ interactivePreview.addEventListener('mouseover', (e) => {
     if (hoverTimeout) clearTimeout(hoverTimeout);
 
     hoverTimeout = setTimeout(async () => {
+        if (!document.getElementById('enableTooltips').checked) return;
         try {
             const res = await fetch(`/api/chord-svg?chord=${encodeURIComponent(chord)}`);
             if (!res.ok) return;
@@ -1813,6 +1825,18 @@ interactivePreview.addEventListener('mouseout', (e) => {
     const target = e.target.closest('.chord-hoverable');
     if (!target) return;
     removeActiveTooltip();
+});
+
+// Initialize Chord Hover Diagrams settings
+const enableTooltipsCheckbox = document.getElementById('enableTooltips');
+const storedEnableTooltips = localStorage.getItem('cg_enable_tooltips');
+if (storedEnableTooltips !== null) {
+    enableTooltipsCheckbox.checked = storedEnableTooltips === 'true';
+} else {
+    enableTooltipsCheckbox.checked = true;
+}
+enableTooltipsCheckbox.addEventListener('change', () => {
+    localStorage.setItem('cg_enable_tooltips', enableTooltipsCheckbox.checked);
 });
 
 // Initialize last bpm/beats on page load
