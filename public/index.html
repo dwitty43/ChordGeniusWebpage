@@ -606,6 +606,93 @@
             .modal-docx-preview { padding: 24px 20px; }
             .hero::after { display: none; }
         }
+        /* ── INTERACTIVE PREVIEW & TOOLTIP ── */
+        #interactivePreview b.chord-hoverable {
+            color: #e8792a;
+            cursor: pointer;
+            border-bottom: 1px dashed transparent;
+            transition: color 0.15s ease, border-color 0.15s ease;
+        }
+        #interactivePreview b.chord-hoverable:hover {
+            color: #f59e0b;
+            border-bottom-color: #f59e0b;
+        }
+        .chord-tooltip {
+            position: absolute;
+            z-index: 10000;
+            pointer-events: none;
+            opacity: 0;
+            transform: scale(0.9) translateY(10px);
+            transition: opacity 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            background: rgba(16, 19, 28, 0.85);
+            backdrop-filter: blur(12px) saturate(180%);
+            -webkit-backdrop-filter: blur(12px) saturate(180%);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            border-radius: 12px;
+            padding: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100px;
+            height: 110px;
+        }
+        [data-theme="light"] .chord-tooltip {
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(138, 94, 16, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+        .chord-tooltip svg {
+            width: 80px;
+            height: 90px;
+            display: block;
+        }
+        .chord-tooltip svg line {
+            stroke: #ede8dc !important;
+        }
+        .chord-tooltip svg text {
+            fill: #ede8dc !important;
+        }
+        .chord-tooltip svg circle {
+            stroke: #ede8dc !important;
+        }
+        .chord-tooltip svg circle[fill="#000000"], .chord-tooltip svg circle:not([fill]) {
+            fill: #ede8dc !important;
+        }
+        .chord-tooltip svg circle[fill="none"] {
+            fill: none !important;
+        }
+        .chord-tooltip svg text[fill="#FFFFFF"] {
+            fill: #0c0800 !important;
+        }
+        [data-theme="light"] .chord-tooltip svg line {
+            stroke: #000000 !important;
+        }
+        [data-theme="light"] .chord-tooltip svg text {
+            fill: #000000 !important;
+        }
+        [data-theme="light"] .chord-tooltip svg circle {
+            stroke: #000000 !important;
+        }
+        [data-theme="light"] .chord-tooltip svg circle[fill="#000000"] {
+            fill: #000000 !important;
+        }
+        [data-theme="light"] .chord-tooltip svg circle[fill="none"] {
+            fill: none !important;
+        }
+        [data-theme="light"] .chord-tooltip svg text[fill="#FFFFFF"] {
+            fill: #FFFFFF !important;
+        }
+        #interactivePreview .line {
+            line-height: 1.4;
+            min-height: 1.4em;
+        }
+        #interactivePreview .line.header {
+            font-weight: bold;
+            color: var(--primary);
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -887,8 +974,13 @@
             </div>
             <button class="modal-close" id="modalClose">&#x2715;</button>
         </div>
+        <div class="modal-tabs" style="display: flex; background: var(--panel-bg); border-bottom: 1px solid var(--border); padding: 8px 24px; gap: 8px;">
+            <button id="modalTabPreview" class="nav-tab active" style="width: auto; padding: 6px 16px; border: none; background: none;">👁️ Interactive Preview</button>
+            <button id="modalTabEdit" class="nav-tab" style="width: auto; padding: 6px 16px; border: none; background: none;">✏️ Edit Chart</button>
+        </div>
         <div class="modal-body" id="modalBody" style="display: flex; flex-direction: column;">
             <textarea id="liveEditor" spellcheck="false" style="width: 100%; flex: 1; min-height: 500px; padding: 24px; font-family: 'Courier New', Courier, monospace; font-size: 14px; border: none; resize: none; background: #fff; color: #000; outline: none;"></textarea>
+            <div id="interactivePreview" style="display: none; width: 100%; flex: 1; min-height: 500px; padding: 24px; font-family: 'Courier New', Courier, monospace; font-size: 14px; border: none; background: #fff; color: #000; outline: none; overflow: auto; white-space: pre-wrap;"></div>
         </div>
         <div class="modal-footer">
             <button class="previewBtn" id="addSetlistBtn" style="background: var(--primary-glow); color: var(--primary); border-color: var(--primary);">+ Add to Setlist</button>
@@ -1164,6 +1256,7 @@ searchBtn.addEventListener('click', async () => {
 // ── SEARCH BUTTON ACTIONS ──
 document.getElementById('previewSearchBtn').addEventListener('click', () => {
     if (!window.currentChartData) return;
+    if (typeof resetModalPreviewState === 'function') resetModalPreviewState();
     document.getElementById('previewOverlay').classList.add('open');
     document.body.style.overflow = 'hidden';
 });
@@ -1311,6 +1404,7 @@ pvUploadBtn.addEventListener('click', async ()=>{
         document.getElementById('modalSubtitle').textContent = subtitleText;
         
         document.querySelectorAll('.modal-docx-preview, iframe, .modal-loading').forEach(el=>el.remove());
+        if (typeof resetModalPreviewState === 'function') resetModalPreviewState();
         document.getElementById('previewOverlay').classList.add('open');
         document.body.style.overflow='hidden';
         
@@ -1446,7 +1540,11 @@ document.getElementById('downloadBinderBtn').addEventListener('click', async () 
 
 // ── MODAL ACTIONS (DOWNLOAD & SETLIST) ──
 const overlay = document.getElementById('previewOverlay');
-function closePreview() { overlay.classList.remove('open'); document.body.style.overflow=''; }
+function closePreview() { 
+    overlay.classList.remove('open'); 
+    document.body.style.overflow=''; 
+    if (typeof resetModalPreviewState === 'function') resetModalPreviewState();
+}
 document.getElementById('modalClose').addEventListener('click', closePreview);
 
 // Download Single Edited Chart
@@ -1545,6 +1643,177 @@ window.playFromSetlist = function(idx) {
         window.location.href = url;
     }
 };
+
+// ── INTERACTIVE CHORD PREVIEW & TOOLTIPS ──
+function isChordLineFrontend(line) {
+    const trimmed = line.trim();
+    if (trimmed === '') return false;
+    const tokens = trimmed.split(/\s+/);
+    const chordCharRegex = /^([|()\[\]{}:\-~,]+|\(?([A-G][#b]?(m|min|maj|M|dim|aug|sus|add|o|\+|-|\d|[#b])*(?:\/[A-G][#b]?)?\*?|N\.?C\.?)\)?)$/i;
+    return tokens.every(token => chordCharRegex.test(token));
+}
+
+function isNashvilleLineFrontend(line) {
+    const trimmed = line.trim();
+    if (trimmed === '') return false;
+    const tokens = trimmed.split(/\s+/);
+    const nashvilleRegex = /^([|()\[\]{}:\-~,]+|\(?([b#]?[1-7](m|min|maj|M|dim|aug|sus|add|o|\+|-|\d|[#b])*(?:\/[b#]?[1-7])?\*?|N\.?C\.?)\)?)$/i;
+    return tokens.every(token => nashvilleRegex.test(token));
+}
+
+function renderInteractivePreview(text) {
+    const lines = text.split(/\r?\n/);
+    const htmlLines = lines.map(line => {
+        const trimmed = line.trim();
+        const isHeader = /^\[?(Intro|Verse|Chorus|Pre-Chorus|Bridge|Outro|Solo|Instrumental)[^\]]*\]?$/i.test(trimmed);
+        const extraClass = isHeader ? ' header' : '';
+        if (isChordLineFrontend(line) || isNashvilleLineFrontend(line)) {
+            let htmlLine = '';
+            const regex = /(\S+)(\s*)/g;
+            let match;
+            
+            while ((match = regex.exec(line)) !== null) {
+                const chord = match[1];
+                const spaces = match[2].replace(/ /g, '&nbsp;'); 
+
+                if (/^[|()\[\]{}:\-~,]+$/.test(chord)) {
+                    htmlLine += `<b>${chord}</b>${spaces}`;
+                    continue;
+                }
+
+                const fixMatch = chord.match(/^(\(?)(.*?)(\)?)$/);
+                const prefix = fixMatch[1] || '';
+                const rawChord = fixMatch[2];
+                const suffix = fixMatch[3] || '';
+
+                if (prefix) htmlLine += `<b>${prefix}</b>`;
+
+                const chordParts = rawChord.split('/');
+                const mainChord = chordParts[0];
+                const bassNote = chordParts[1]; 
+
+                const rootMatch = mainChord.match(/^([b#]?[1-7]|[A-Ga-g][b#]?)(.*)$/);
+                if (rootMatch) {
+                    htmlLine += `<b class="chord-hoverable" data-chord="${rawChord}">${rootMatch[1]}</b>`;
+                    const rawExtension = rootMatch[2];
+                    if (rawExtension) {
+                        const extMatch = rawExtension.match(/^(\D*)(\d.*)?$/);
+                        if (extMatch) {
+                            if (extMatch[1]) htmlLine += `<b class="chord-hoverable" data-chord="${rawChord}">${extMatch[1]}</b>`;
+                            if (extMatch[2]) htmlLine += `<sup><b class="chord-hoverable" data-chord="${rawChord}">${extMatch[2]}</b></sup>`;
+                        }
+                    }
+                    if (bassNote) htmlLine += `<b class="chord-hoverable" data-chord="${rawChord}">/${bassNote}</b>`;
+                } else {
+                    htmlLine += `<b class="chord-hoverable" data-chord="${rawChord}">${rawChord}</b>`;
+                }
+
+                if (suffix) htmlLine += `<b>${suffix}</b>`;
+                htmlLine += spaces;
+            }
+            return `<div class="line${extraClass}">${htmlLine || '&nbsp;'}</div>`;
+        } else {
+            return `<div class="line${extraClass}">${line.replace(/ /g, '&nbsp;') || '&nbsp;'}</div>`;
+        }
+    });
+    return htmlLines.join('');
+}
+
+const modalTabEdit = document.getElementById('modalTabEdit');
+const modalTabPreview = document.getElementById('modalTabPreview');
+const liveEditor = document.getElementById('liveEditor');
+const interactivePreview = document.getElementById('interactivePreview');
+
+function switchModalTab(mode) {
+    if (mode === 'edit') {
+        modalTabEdit.classList.add('active');
+        modalTabPreview.classList.remove('active');
+        liveEditor.style.display = 'block';
+        interactivePreview.style.display = 'none';
+    } else {
+        modalTabPreview.classList.add('active');
+        modalTabEdit.classList.remove('active');
+        liveEditor.style.display = 'none';
+        interactivePreview.style.display = 'block';
+        interactivePreview.innerHTML = renderInteractivePreview(liveEditor.value);
+    }
+}
+
+modalTabEdit.addEventListener('click', () => switchModalTab('edit'));
+modalTabPreview.addEventListener('click', () => switchModalTab('preview'));
+
+let hoverTimeout = null;
+let activeTooltip = null;
+
+function removeActiveTooltip() {
+    if (hoverTimeout) clearTimeout(hoverTimeout);
+    if (activeTooltip) {
+        activeTooltip.style.opacity = '0';
+        activeTooltip.style.transform = 'scale(0.9) translateY(10px)';
+        const tooltipRef = activeTooltip;
+        activeTooltip = null;
+        setTimeout(() => {
+            if (tooltipRef && tooltipRef.parentNode) {
+                tooltipRef.parentNode.removeChild(tooltipRef);
+            }
+        }, 200);
+    }
+}
+
+function resetModalPreviewState() {
+    switchModalTab('edit');
+    removeActiveTooltip();
+}
+
+interactivePreview.addEventListener('mouseover', (e) => {
+    const target = e.target.closest('.chord-hoverable');
+    if (!target) return;
+
+    const chord = target.getAttribute('data-chord');
+    if (!chord) return;
+
+    if (hoverTimeout) clearTimeout(hoverTimeout);
+
+    hoverTimeout = setTimeout(async () => {
+        try {
+            const res = await fetch(`/api/chord-svg?chord=${encodeURIComponent(chord)}`);
+            if (!res.ok) return;
+            const svgText = await res.text();
+
+            if (!activeTooltip) {
+                activeTooltip = document.createElement('div');
+                activeTooltip.className = 'chord-tooltip';
+                document.body.appendChild(activeTooltip);
+            }
+
+            activeTooltip.innerHTML = svgText;
+
+            const rect = target.getBoundingClientRect();
+            const tooltipWidth = 100;
+            const tooltipHeight = 110;
+
+            const left = rect.left + window.scrollX + (rect.width - tooltipWidth) / 2;
+            let top = rect.top + window.scrollY - tooltipHeight - 8;
+
+            if (rect.top - tooltipHeight - 8 < 0) {
+                top = rect.bottom + window.scrollY + 8;
+            }
+
+            activeTooltip.style.left = `${left}px`;
+            activeTooltip.style.top = `${top}px`;
+            activeTooltip.style.opacity = '1';
+            activeTooltip.style.transform = 'scale(1) translateY(0)';
+        } catch (err) {
+            console.error(err);
+        }
+    }, 200);
+});
+
+interactivePreview.addEventListener('mouseout', (e) => {
+    const target = e.target.closest('.chord-hoverable');
+    if (!target) return;
+    removeActiveTooltip();
+});
 
 // Initialize last bpm/beats on page load
 const storedBpm = localStorage.getItem('cg_last_bpm');

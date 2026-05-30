@@ -1557,5 +1557,6 @@ module.exports = {
     createPdfChart,
     chordProToLineBased,
     lineBasedToChordPro,
-    getPlayKey
+    getPlayKey,
+    getChordSvg
 }

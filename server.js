@@ -13,7 +13,8 @@ const {
     createPdfChart,
     chordProToLineBased,
     lineBasedToChordPro,
-    getPlayKey
+    getPlayKey,
+    getChordSvg
 } = require('./engine'); 
 
 // --- SPOTIFY WEB API INTEGRATION ---
@@ -451,6 +452,25 @@ app.post('/api/import-preview', upload.single('chartFile'), async (req, res) => 
     } catch (error) {
         console.error(`[API Error]`, error.message);
         res.status(500).json({ error: error.message });
+    }
+});
+
+// --- ROUTE 6: CHORD SVG GENERATOR ---
+app.get('/api/chord-svg', (req, res) => {
+    const chord = req.query.chord;
+    if (!chord) {
+        return res.status(400).send('Please provide a chord query parameter.');
+    }
+    try {
+        const svg = getChordSvg(chord);
+        if (!svg) {
+            return res.status(404).send('Chord not found');
+        }
+        res.setHeader('Content-Type', 'image/svg+xml');
+        res.send(svg);
+    } catch (error) {
+        console.error(`[API Error] chord-svg:`, error.message);
+        res.status(500).send(error.message);
     }
 });
 
