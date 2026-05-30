@@ -24,7 +24,7 @@ This document serves as the high-fidelity handoff record for the **Chord Genius 
 
 ## 📊 Key Data & Metrics
 
-*   **Scraper Evasions:** Success rate elevated to **~100%** using a multi-tiered pipeline:
+*   **Scraper Evasions:** Success rate elevated to **~100% locally** (when running from a residential/clean developer IP address), but remains lower when running from the hosted production server (due to hosting provider IP reputation and aggressive Cloudflare blocks). We use a multi-tiered pipeline:
     1.  *DuckDuckGo Lite fast fetch* (<200ms HTTP fetch).
     2.  *Yahoo Search fast fetch* (<200ms HTTP fetch).
     3.  *Ultimate Guitar Direct catalog search* (Puppeteer Eva-JSON block parser).
