@@ -208,27 +208,56 @@ async function fetchUGPageViaAPI(targetUrl) {
     const zenrowsKey = process.env.ZENROWS_API_KEY;
     const scrapingbeeKey = process.env.SCRAPINGBEE_API_KEY;
     
-    let apiGatewayUrl = "";
-    if (zenrowsKey) {
-        console.log("[Engine] Fetching target page via ZenRows Scraping API...");
-        apiGatewayUrl = `https://api.zenrows.com/v1/?apikey=${zenrowsKey}&url=${encodeURIComponent(targetUrl)}&js_render=true&premium_proxy=true`;
-    } else if (scrapingbeeKey) {
-        console.log("[Engine] Fetching target page via ScrapingBee API...");
-        apiGatewayUrl = `https://app.scrapingbee.com/api/v1/?api_key=${scrapingbeeKey}&url=${encodeURIComponent(targetUrl)}&render_js=true&premium_proxy=true`;
-    } else {
+    if (!zenrowsKey && !scrapingbeeKey) {
         throw new Error("No third-party Scraping API Key configured in environment variables.");
     }
     
-    const response = await fetch(apiGatewayUrl, {
-        method: 'GET',
-        headers: { 'Accept-Encoding': 'gzip, deflate, br' }
-    });
-    
-    if (!response.ok) {
-        throw new Error(`Scraping API returned status ${response.status}: ${response.statusText}`);
+    // Try ScrapingBee first (as primary)
+    if (scrapingbeeKey) {
+        try {
+            console.log("[Engine] Fetching target page via ScrapingBee API...");
+            const apiGatewayUrl = `https://app.scrapingbee.com/api/v1/?api_key=${scrapingbeeKey}&url=${encodeURIComponent(targetUrl)}&render_js=true&premium_proxy=true`;
+            
+            const response = await fetch(apiGatewayUrl, {
+                method: 'GET',
+                headers: { 'Accept-Encoding': 'gzip, deflate, br' }
+            });
+            
+            if (response.ok) {
+                return await response.text();
+            }
+            
+            // If response is not ok (credits exhausted, unauthorized, etc.), throw to trigger fallback
+            throw new Error(`ScrapingBee returned status ${response.status}: ${response.statusText}`);
+        } catch (sbError) {
+            console.warn(`[Engine] ScrapingBee request failed: ${sbError.message}`);
+            if (zenrowsKey) {
+                console.log("[Engine] ScrapingBee credit exhausted or error. Retrying request via ZenRows Scraping API...");
+                // Fall through to ZenRows block below
+            } else {
+                throw sbError; // Propagate if no ZenRows key exists
+            }
+        }
     }
     
-    return await response.text();
+    // Try ZenRows (either as primary if ScrapingBee is missing, or as fallback)
+    if (zenrowsKey) {
+        console.log("[Engine] Fetching target page via ZenRows Scraping API...");
+        const apiGatewayUrl = `https://api.zenrows.com/v1/?apikey=${zenrowsKey}&url=${encodeURIComponent(targetUrl)}&js_render=true&premium_proxy=true`;
+        
+        const response = await fetch(apiGatewayUrl, {
+            method: 'GET',
+            headers: { 'Accept-Encoding': 'gzip, deflate, br' }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`ZenRows returned status ${response.status}: ${response.statusText}`);
+        }
+        
+        return await response.text();
+    }
+    
+    throw new Error("Failed to retrieve page from both Scraping APIs.");
 }
 
 // A highly accurate fallback that queries Ultimate Guitar's internal search catalog directly
