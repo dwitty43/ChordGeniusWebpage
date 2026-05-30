@@ -214,6 +214,9 @@ function extractTabData(html) {
     if (html.includes("Just a moment...") || html.includes("cf-browser-verification")) {
         throw new Error("Cloudflare intercepted the browser.");
     }
+    if (html.includes("Sorry, this artist has told us we can't show this tab") || html.includes("has told us we can't show this tab")) {
+        throw new Error("This artist has blocked public access to their chords on Ultimate Guitar due to licensing restrictions.");
+    }
     const $ = cheerio.load(html);
     let songKey = null;
     $('span').each((i, el) => {
@@ -497,4 +500,188 @@ async function createPdfChart(finalChartText, songTitle, originalKey, targetKey)
     return pdfBuffer;
 }
 
-module.exports = { getFirstSearchResult, fetchUGPage, extractTabData, processAndAlignTabs, createDocxChart, createPdfChart }
+// --- CHORDPRO CONVERSION UTILITIES ---
+
+function chordProToLineBased(chordProText) {
+    const lines = chordProText.split(/\r?\n/);
+    let title = '';
+    let key = '';
+    let processedLines = [];
+
+    for (let line of lines) {
+        let trimmed = line.trim();
+        
+        // 1. Directives
+        if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+            const directive = trimmed.slice(1, -1).trim();
+            const colonIndex = directive.indexOf(':');
+            
+            let name = directive;
+            let value = '';
+            if (colonIndex !== -1) {
+                name = directive.slice(0, colonIndex).trim().toLowerCase();
+                value = directive.slice(colonIndex + 1).trim();
+            } else {
+                name = directive.toLowerCase();
+            }
+
+            if (name === 'title' || name === 't') {
+                title = value;
+            } else if (name === 'key' || name === 'k') {
+                key = value;
+            } else if (name === 'comment' || name === 'c') {
+                processedLines.push(`[${value}]`);
+            } else if (name === 'soc') {
+                processedLines.push('[Chorus]');
+            } else if (name === 'eoc') {
+                processedLines.push('');
+            } else if (name === 'sot' || name === 'eot') {
+                // Ignore start/end of tab
+            }
+            continue;
+        }
+
+        // 2. Standard ChordPro line containing chords inside brackets like [C]
+        if (line.includes('[') && line.includes(']')) {
+            let chordLine = '';
+            let lyricLine = '';
+            
+            const regex = /\[([^\]]+)\]/g;
+            let match;
+            let lastIndex = 0;
+            
+            while ((match = regex.exec(line)) !== null) {
+                const chord = match[1];
+                const matchIndex = match.index;
+                
+                // Add the text before the chord to lyricLine
+                const textBefore = line.slice(lastIndex, matchIndex);
+                lyricLine += textBefore;
+                
+                // Position where chord should be in chordLine
+                const targetPos = lyricLine.length;
+                
+                // Pad chordLine with spaces up to targetPos
+                if (chordLine.length < targetPos) {
+                    chordLine += ' '.repeat(targetPos - chordLine.length);
+                }
+                
+                chordLine += chord;
+                lastIndex = regex.lastIndex;
+            }
+            
+            // Append any remaining text after the last chord
+            lyricLine += line.slice(lastIndex);
+            
+            // If the lyricLine is just spaces, we only output the chordLine
+            if (lyricLine.trim() === '') {
+                processedLines.push(chordLine);
+            } else {
+                processedLines.push(chordLine);
+                processedLines.push(lyricLine);
+            }
+        } else {
+            // Normal lyric or text line without chords
+            processedLines.push(line);
+        }
+    }
+    
+    return {
+        title: title || 'Untitled',
+        key: key || '',
+        text: processedLines.join('\n')
+    };
+}
+
+function lineBasedToChordPro(lineBasedText, title = '', key = '') {
+    const lines = lineBasedText.split(/\r?\n/);
+    const chordProLines = [];
+
+    // Prepend title and key if provided
+    if (title) chordProLines.push(`{title: ${title}}`);
+    if (key) chordProLines.push(`{key: ${key}}`);
+    if (title || key) chordProLines.push(''); // blank line after metadata
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        
+        // 1. Bracketed section headers like [Verse 1]
+        const headerMatch = line.trim().match(/^\[([^\]]+)\]$/);
+        if (headerMatch) {
+            chordProLines.push(`{c: ${headerMatch[1]}}`);
+            continue;
+        }
+
+        // 2. Check if this is a chord/Nashville line
+        if (isChordLine(line) || isNashvilleLine(line)) {
+            const nextLine = lines[i + 1];
+            
+            const hasLyricLine = nextLine !== undefined && 
+                                 nextLine.trim() !== '' && 
+                                 !isChordLine(nextLine) && 
+                                 !isNashvilleLine(nextLine) && 
+                                 !isTabLine(nextLine) && 
+                                 !isNoiseLine(nextLine) &&
+                                 !/^\[([^\]]+)\]$/.test(nextLine.trim());
+            
+            if (hasLyricLine) {
+                // Find all chord tokens and their starting indices in line
+                const regex = /\S+/g;
+                const chords = [];
+                let match;
+                while ((match = regex.exec(line)) !== null) {
+                    chords.push({
+                        chord: match[0],
+                        index: match.index
+                    });
+                }
+
+                // Construct the merged ChordPro line
+                let mergedLine = '';
+                const lyricText = nextLine;
+                const maxLen = Math.max(lyricText.length, chords.length > 0 ? chords[chords.length - 1].index : 0);
+                
+                let chordIndex = 0;
+                for (let j = 0; j <= maxLen; j++) {
+                    if (chordIndex < chords.length && chords[chordIndex].index === j) {
+                        mergedLine += `[${chords[chordIndex].chord}]`;
+                        chordIndex++;
+                    }
+                    if (j < lyricText.length) {
+                        mergedLine += lyricText[j];
+                    } else if (chordIndex < chords.length) {
+                        mergedLine += ' ';
+                    }
+                }
+                
+                chordProLines.push(mergedLine);
+                i++; // Skip the next line as it was merged
+            } else {
+                // Standalone chord line with no lyric line underneath it
+                const regex = /(\S+)(\s*)/g;
+                let match;
+                let standaloneLine = '';
+                while ((match = regex.exec(line)) !== null) {
+                    standaloneLine += `[${match[1]}]${match[2]}`;
+                }
+                chordProLines.push(standaloneLine);
+            }
+        } else {
+            // Normal lyric line, blank line, or other text
+            chordProLines.push(line);
+        }
+    }
+
+    return chordProLines.join('\n');
+}
+
+module.exports = { 
+    getFirstSearchResult, 
+    fetchUGPage, 
+    extractTabData, 
+    processAndAlignTabs, 
+    createDocxChart, 
+    createPdfChart,
+    chordProToLineBased,
+    lineBasedToChordPro
+}

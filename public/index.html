@@ -628,6 +628,7 @@
             <select id="searchFormat">
                 <option value="docx">.DOCX</option>
                 <option value="pdf">.PDF</option>
+                <option value="pro">ChordPro (.pro)</option>
             </select>
             <button id="searchBtn">
                 <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
@@ -666,9 +667,9 @@
 
         <div class="grid-inputs">
             <div class="file-wrapper">
-                <input type="file" id="fileInput" accept=".txt,.docx,.pdf">
+                <input type="file" id="fileInput" accept=".txt,.docx,.pdf,.pro,.cho">
                 <div class="helper-text-container">
-                    <div class="helper-text">Accepts .txt, .docx, .pdf &mdash; Max 5 MB</div>
+                    <div class="helper-text">Accepts .txt, .docx, .pdf, .pro, .cho &mdash; Max 5 MB</div>
                     <div class="helper-text warning-text"><em>Pro-Tip: PDFs often lose chord spacing. Convert to .DOCX in Word or Google Docs first for best results.</em></div>
                 </div>
             </div>
@@ -679,6 +680,7 @@
             <select id="uploadFormat">
                 <option value="docx">.DOCX</option>
                 <option value="pdf">.PDF</option>
+                <option value="pro">ChordPro (.pro)</option>
             </select>
             <button id="uploadBtn">
                 <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
@@ -703,6 +705,7 @@
             <select id="binderFormat">
                 <option value="docx">.DOCX Binder</option>
                 <option value="pdf">.PDF Binder</option>
+                <option value="pro">ChordPro Binder (.pro)</option>
             </select>
             <button id="downloadBinderBtn" class="downloadBtn">
                 Download Full Setlist Binder
@@ -773,7 +776,7 @@ function populateKeySelects() {
         minorKeys.forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=k;ming.appendChild(o);}); s.appendChild(ming);
     };
     mk('songKey','Orig Key (Auto)',false); mk('targetKeySearch','To Key (Nashville)',false);
-    mk('uploadKey','Orig Key (Required)',true); mk('targetKeyUpload','To Key (Nashville)',false);
+    mk('uploadKey','Orig Key (Auto / Required)',false); mk('targetKeyUpload','To Key (Nashville)',false);
 }
 populateKeySelects();
 
@@ -984,9 +987,12 @@ uploadBtn.addEventListener('click', async ()=>{
     const targetKey=document.getElementById('targetKeyUpload').value;
     const format=uploadFormat.value; const file=fileInput.files[0];
     if(!file) return showStatus("Please select a file to upload!","error");
-    if(!key) return showStatus("You must provide the original key for uploaded files!","error");
-    if(!['.txt','.docx','.pdf'].some(e=>file.name.toLowerCase().endsWith(e))) return showStatus("Only .txt, .docx, and .pdf files are allowed.","error");
+    
+    const isCP = file.name.toLowerCase().endsWith('.pro') || file.name.toLowerCase().endsWith('.cho');
+    if(!key && !isCP) return showStatus("Please provide the original key, or upload a ChordPro file to auto-detect.","error");
+    if(!['.txt','.docx','.pdf','.pro','.cho'].some(e=>file.name.toLowerCase().endsWith(e))) return showStatus("Only .txt, .docx, .pdf, .pro, and .cho files are allowed.","error");
     if(file.size>5*1024*1024) return showStatus("File too large — max 5 MB.","error");
+    
     const orig=uploadBtn.innerHTML;
     uploadBtn.innerHTML='⏳ Converting…'; uploadBtn.disabled=true; dlUploadBtn.disabled=true; pvUploadBtn.disabled=true;
     showStatus("Uploading and processing chart…","active");
@@ -1003,9 +1009,36 @@ uploadBtn.addEventListener('click', async ()=>{
     finally{ uploadBtn.innerHTML=orig; uploadBtn.disabled=false; }
 });
 dlUploadBtn.addEventListener('click',()=>{ if(uploadBlob) triggerDownload(uploadBlob,uploadFilename); });
-pvUploadBtn.addEventListener('click',()=>{
-    const fi=document.getElementById('fileInput'); const name=fi.files[0]?fi.files[0].name.replace(/\.[^/.]+$/,''):'Chart';
-    if(uploadBlob) openPreview(uploadBlob,uploadFormat_,uploadFilename,name);
+pvUploadBtn.addEventListener('click', async ()=>{
+    const fileInput=document.getElementById('fileInput');
+    const key=document.getElementById('uploadKey').value;
+    const targetKey=document.getElementById('targetKeyUpload').value;
+    const file=fileInput.files[0];
+    if(!file) return showStatus("Please select a file to upload!","error");
+    
+    const isSimplify = document.getElementById('simplifyChords').checked;
+    const fd=new FormData(); fd.append('chartFile',file); fd.append('key',key); fd.append('targetKey',targetKey); fd.append('simplify', isSimplify ? 'true' : 'false');
+    
+    const orig=pvUploadBtn.innerHTML;
+    pvUploadBtn.innerHTML='⏳ Loading...'; pvUploadBtn.disabled=true;
+    showStatus("Generating preview inside editor…","active");
+    try {
+        const res=await fetch('/api/import-preview',{method:'POST',body:fd});
+        if(!res.ok) throw new Error((await res.json()).error||"Preview failed.");
+        
+        window.currentChartData=await res.json();
+        
+        document.getElementById('liveEditor').value = window.currentChartData.text;
+        document.getElementById('modalTitle').textContent = window.currentChartData.title;
+        document.getElementById('modalSubtitle').textContent = `Transposed to: ${window.currentChartData.targetKey}`;
+        
+        document.querySelectorAll('.modal-docx-preview, iframe, .modal-loading').forEach(el=>el.remove());
+        document.getElementById('previewOverlay').classList.add('open');
+        document.body.style.overflow='hidden';
+        
+        showStatus("Preview loaded successfully!","success");
+    } catch(e){ showStatus(`Error: ${e.message}`,"error"); }
+    finally{ pvUploadBtn.innerHTML=orig; pvUploadBtn.disabled=false; }
 });
 
 // 1. Create the empty array to hold the songs

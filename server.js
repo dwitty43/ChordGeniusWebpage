@@ -10,7 +10,9 @@ const {
     extractTabData, 
     processAndAlignTabs, 
     createDocxChart,
-    createPdfChart
+    createPdfChart,
+    chordProToLineBased,
+    lineBasedToChordPro
 } = require('./engine'); 
 
 const app = express();
@@ -29,6 +31,11 @@ async function deliverFile(res, finalChart, originalName, originalKey, targetKey
         fileBuffer = await createPdfChart(finalChart, originalName, originalKey, targetKey);
         contentType = 'application/pdf';
         extension = 'pdf';
+    } else if (format === 'pro') {
+        const chordProText = lineBasedToChordPro(finalChart, originalName, targetKey || originalKey);
+        fileBuffer = Buffer.from(chordProText, 'utf-8');
+        contentType = 'text/plain';
+        extension = 'pro';
     } else {
         fileBuffer = await createDocxChart(finalChart, originalName, originalKey, targetKey);
         contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -125,17 +132,31 @@ app.post('/api/import', upload.single('chartFile'), async (req, res) => {
     const format = req.body.format || 'docx';
     const simplify = req.body.simplify === 'true';
 
-    if (!file) return res.status(400).json({ error: "Please upload a .txt, .docx, or .pdf file." });
-    if (!songKey) return res.status(400).json({ error: "Please provide the original key of the song." });
+    if (!file) return res.status(400).json({ error: "Please upload a .txt, .docx, .pdf, .pro, or .cho file." });
 
     try {
         console.log(`[API] Processing upload: ${file.originalname}`);
         let extractedText = "";
         let isPdf = false;
+        let originalName = file.originalname.replace(/\.[^/.]+$/, ""); 
+        let detectedKey = "";
 
-        // --- NEW: Multi-Format Extraction Logic ---
-        if (file.mimetype === 'text/plain') {
-            extractedText = file.buffer.toString('utf-8');
+        const lowerName = file.originalname.toLowerCase();
+        const isChordPro = lowerName.endsWith('.pro') || lowerName.endsWith('.cho');
+
+        // --- Multi-Format Extraction Logic ---
+        if (isChordPro || file.mimetype === 'text/plain') {
+            const rawText = file.buffer.toString('utf-8');
+            if (isChordPro || rawText.includes('{title:') || rawText.includes('{t:') || (rawText.includes('[') && rawText.includes(']'))) {
+                const parsed = chordProToLineBased(rawText);
+                extractedText = parsed.text;
+                detectedKey = parsed.key;
+                if (parsed.title && parsed.title !== 'Untitled') {
+                    originalName = parsed.title;
+                }
+            } else {
+                extractedText = rawText;
+            }
         } else if (file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
             const result = await mammoth.extractRawText({ buffer: file.buffer });
             extractedText = result.value;
@@ -144,20 +165,88 @@ app.post('/api/import', upload.single('chartFile'), async (req, res) => {
             extractedText = pdfData.text;
             isPdf = true;
         } else {
-            return res.status(400).json({ error: "Unsupported file type. Use .txt, .docx, or .pdf" });
+            return res.status(400).json({ error: "Unsupported file type. Use .txt, .docx, .pdf, .pro, or .cho" });
         }
 
-        const originalName = file.originalname.replace(/\.[^/.]+$/, ""); 
-        
-        console.log(`[API] Transposing uploaded chart...`);
+        const finalSongKey = songKey || detectedKey;
+        if (!finalSongKey || finalSongKey === 'auto' || finalSongKey === 'nashville') {
+            // Keep Nashville as a valid key string, but throw if no key is supplied
+            if (!finalSongKey) {
+                return res.status(400).json({ error: "Could not auto-detect original key from file directives. Please select it manually.", needsManualKey: true });
+            }
+        }
 
-        const finalChart = processAndAlignTabs(extractedText, songKey, targetKey, isPdf, simplify);
+        console.log(`[API] Transposing uploaded chart...`);
+        const finalChart = processAndAlignTabs(extractedText, finalSongKey, targetKey, isPdf, simplify);
         
-        await deliverFile(res, finalChart, originalName, songKey, targetKey, format);
+        await deliverFile(res, finalChart, originalName, finalSongKey, targetKey, format);
 
     } catch (error) {
         console.error(`[API Error]`, error.message);
         if (!res.headersSent) res.status(500).json({ error: error.message });
+    }
+});
+
+// --- ROUTE 5: UPLOAD PREVIEW (JSON) ---
+app.post('/api/import-preview', upload.single('chartFile'), async (req, res) => {
+    const songKey = req.body.key;
+    const file = req.file;
+    const targetKey = req.body.targetKey || ''; 
+    const simplify = req.body.simplify === 'true';
+
+    if (!file) return res.status(400).json({ error: "Please upload a file." });
+
+    try {
+        let extractedText = "";
+        let isPdf = false;
+        let originalName = file.originalname.replace(/\.[^/.]+$/, ""); 
+        let detectedKey = "";
+
+        const lowerName = file.originalname.toLowerCase();
+        const isChordPro = lowerName.endsWith('.pro') || lowerName.endsWith('.cho');
+
+        // --- Multi-Format Extraction Logic ---
+        if (isChordPro || file.mimetype === 'text/plain') {
+            const rawText = file.buffer.toString('utf-8');
+            if (isChordPro || rawText.includes('{title:') || rawText.includes('{t:') || (rawText.includes('[') && rawText.includes(']'))) {
+                const parsed = chordProToLineBased(rawText);
+                extractedText = parsed.text;
+                detectedKey = parsed.key;
+                if (parsed.title && parsed.title !== 'Untitled') {
+                    originalName = parsed.title;
+                }
+            } else {
+                extractedText = rawText;
+            }
+        } else if (file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+            const result = await mammoth.extractRawText({ buffer: file.buffer });
+            extractedText = result.value;
+        } else if (file.mimetype === 'application/pdf') {
+            const pdfData = await pdfParse(file.buffer);
+            extractedText = pdfData.text;
+            isPdf = true;
+        } else {
+            return res.status(400).json({ error: "Unsupported file type. Use .txt, .docx, .pdf, .pro, or .cho" });
+        }
+
+        const finalSongKey = songKey || detectedKey;
+        if (!finalSongKey || finalSongKey === 'auto') {
+            return res.status(400).json({ error: "Could not auto-detect original key from file directives. Please select it manually.", needsManualKey: true });
+        }
+
+        console.log(`[API] Previewing uploaded chart...`);
+        const finalChart = processAndAlignTabs(extractedText, finalSongKey, targetKey, isPdf, simplify);
+
+        res.json({
+            title: originalName,
+            originalKey: finalSongKey,
+            targetKey: targetKey || 'Nashville',
+            text: finalChart
+        });
+
+    } catch (error) {
+        console.error(`[API Error]`, error.message);
+        res.status(500).json({ error: error.message });
     }
 });
 
