@@ -963,7 +963,7 @@
             <input type="text" id="setlistTitleInput" placeholder="Setlist Title (e.g. 'Sunday Morning Worship Setlist')" value="Setlist Binder">
         </div>
 
-        <div class="grid-buttons" id="setlistActions" style="display: none; grid-template-columns: 165px 125px 1fr; margin-top: 16px;">
+        <div class="grid-buttons" id="setlistActions" style="display: none; grid-template-columns: 165px 125px 1.3fr 0.7fr; margin-top: 16px;">
             <select id="binderFormat">
                 <option value="docx">.DOCX Binder</option>
                 <option value="pdf">.PDF Binder</option>
@@ -975,6 +975,9 @@
             </select>
             <button id="downloadBinderBtn" class="downloadBtn">
                 Download Full Setlist Binder
+            </button>
+            <button id="clearBinderBtn" class="previewBtn" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.2);">
+                Clear Setlist
             </button>
         </div>
     </div>
@@ -1501,8 +1504,18 @@ pvUploadBtn.addEventListener('click', async ()=>{
     finally{ pvUploadBtn.innerHTML=orig; pvUploadBtn.disabled=false; }
 });
 
-// 1. Create the empty array to hold the songs
+// 1. Create the empty array to hold the songs, loaded from localStorage if present
 let setlistQueue = [];
+try {
+    setlistQueue = JSON.parse(localStorage.getItem('cg_setlist') || '[]');
+} catch (e) {
+    setlistQueue = [];
+}
+
+// Helper to save setlistQueue to localStorage
+function saveSetlistQueue() {
+    localStorage.setItem('cg_setlist', JSON.stringify(setlistQueue));
+}
 
 // 2. The function to draw the array to the screen
 function renderSetlist() {
@@ -1564,9 +1577,13 @@ function renderSetlist() {
     });
 }
 
+// Immediately call renderSetlist on load
+renderSetlist();
+
 // 3. The function to remove a song
 window.removeFromSetlist = function(idx) {
     setlistQueue.splice(idx, 1);
+    saveSetlistQueue();
     renderSetlist();
 };
 
@@ -1623,6 +1640,7 @@ function addSongToSetlist(title, originalKey, targetKey, rawText, bpm, capo, tim
         capo: capo || '0',
         timeSignature: timeSignature
     });
+    saveSetlistQueue();
     renderSetlist();
 }
 
@@ -1738,10 +1756,21 @@ document.getElementById('addSetlistBtn').addEventListener('click', () => {
         capo: window.currentChartData.capo || '0',
         timeSignature: timeSigVal
     });
+    saveSetlistQueue();
     
     if (typeof renderSetlist === 'function') renderSetlist();
     closePreview();
     showStatus(`${window.currentChartData.title} added to Setlist! (${setlistQueue.length} charts ready)`, 'success');
+});
+
+// Clear Setlist Queue
+document.getElementById('clearBinderBtn').addEventListener('click', () => {
+    if (confirm('Are you sure you want to clear the entire setlist?')) {
+        setlistQueue = [];
+        saveSetlistQueue();
+        renderSetlist();
+        showStatus('Setlist cleared!', 'success');
+    }
 });
 
 // Helper functions for BPM / metronome sync
