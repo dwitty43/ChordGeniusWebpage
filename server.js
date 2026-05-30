@@ -22,13 +22,13 @@ app.use(express.static('public'));
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-async function deliverFile(res, finalChart, originalName, originalKey, targetKey, format, bpm) {
+async function deliverFile(res, finalChart, originalName, originalKey, targetKey, format, bpm, columns = '1') {
     let fileBuffer;
     let contentType;
     let extension;
 
     if (format === 'pdf') {
-        fileBuffer = await createPdfChart(finalChart, originalName, originalKey, targetKey, bpm);
+        fileBuffer = await createPdfChart(finalChart, originalName, originalKey, targetKey, bpm, columns);
         contentType = 'application/pdf';
         extension = 'pdf';
     } else if (format === 'pro') {
@@ -58,6 +58,7 @@ app.get('/api/convert', async (req, res) => {
     const format = req.query.format || 'docx';
     const simplify = req.query.simplify === 'true';
     const bpm = req.query.bpm || '';
+    const columns = req.query.columns || '1';
 
     if (!query) return res.status(400).json({ error: "Please provide a song query." });
 
@@ -77,7 +78,7 @@ app.get('/api/convert', async (req, res) => {
         console.log(`[API] Transposing chart...`);
         const finalChart = processAndAlignTabs(tabData.rawTabText, songKey, targetKey, false, simplify);
         
-        await deliverFile(res, finalChart, query, songKey, targetKey, format, bpm);
+        await deliverFile(res, finalChart, query, songKey, targetKey, format, bpm, columns);
 
     } catch (error) {
         console.error(`[API Error]`, error.message);
@@ -87,7 +88,7 @@ app.get('/api/convert', async (req, res) => {
 
 // --- ROUTE 4: BATCH SETLIST BINDER EXPORT ---
 app.post('/api/binder', async (req, res) => {
-    const { setlist, format, bpm } = req.body; 
+    const { setlist, format, bpm, columns } = req.body; 
     if (!setlist || setlist.length === 0) return res.status(400).json({ error: "Setlist is empty." });
 
     try {
@@ -103,7 +104,7 @@ app.post('/api/binder', async (req, res) => {
             combinedText += `Key: ${keyText}\n\n`;
             combinedText += song.text;
         }
-        await deliverFile(res, combinedText, "Setlist_Binder", "Mixed", "Mixed", format, bpm);
+        await deliverFile(res, combinedText, "Setlist_Binder", "Mixed", "Mixed", format, bpm, columns || '1');
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -137,6 +138,7 @@ app.post('/api/import', upload.single('chartFile'), async (req, res) => {
     const format = req.body.format || 'docx';
     const simplify = req.body.simplify === 'true';
     const bpm = req.body.bpm || '';
+    const columns = req.body.columns || '1';
 
     if (!file) return res.status(400).json({ error: "Please upload a .txt, .docx, .pdf, .pro, or .cho file." });
 
@@ -185,7 +187,7 @@ app.post('/api/import', upload.single('chartFile'), async (req, res) => {
         console.log(`[API] Transposing uploaded chart...`);
         const finalChart = processAndAlignTabs(extractedText, finalSongKey, targetKey, isPdf, simplify);
         
-        await deliverFile(res, finalChart, originalName, finalSongKey, targetKey, format, bpm);
+        await deliverFile(res, finalChart, originalName, finalSongKey, targetKey, format, bpm, columns);
 
     } catch (error) {
         console.error(`[API Error]`, error.message);

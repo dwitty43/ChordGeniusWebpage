@@ -416,10 +416,12 @@ async function createDocxChart(finalChartText, songTitle, originalKey, targetKey
     return await Packer.toBuffer(doc);
 }
 
-async function createPdfChart(finalChartText, songTitle, originalKey, targetKey, bpm) {
+async function createPdfChart(finalChartText, songTitle, originalKey, targetKey, bpm, columns = '1') {
     const lines = finalChartText.split('\n');
     
     let htmlLines = lines.map(line => {
+        const isHeader = /^\[?(Intro|Verse|Chorus|Pre-Chorus|Bridge|Outro|Solo|Instrumental)[^\]]*\]?$/i.test(line.trim());
+        const extraClass = isHeader ? ' header' : '';
         if (isNashvilleLine(line) || isChordLine(line)) {
             let htmlLine = '';
             const regex = /(\S+)(\s*)/g;
@@ -453,7 +455,7 @@ async function createPdfChart(finalChartText, songTitle, originalKey, targetKey,
                         const extMatch = rawExtension.match(/^(\D*)(\d.*)?$/);
                         if (extMatch) {
                             if (extMatch[1]) htmlLine += `<b>${extMatch[1]}</b>`;
-                            if (extMatch[2]) htmlLine += `<sup><b>${extMatch[2]}</b></sup>`;
+                            if (extMatch[2]) htmlLine += `sup><b>${extMatch[2]}</b></sup>`;
                         }
                     }
                     if (bassNote) htmlLine += `<b>/${bassNote}</b>`;
@@ -464,15 +466,36 @@ async function createPdfChart(finalChartText, songTitle, originalKey, targetKey,
                 if (suffix) htmlLine += `<b>${suffix}</b>`;
                 htmlLine += spaces;
             }
-            return `<div class="line">${htmlLine || '&nbsp;'}</div>`;
+            return `<div class="line${extraClass}">${htmlLine || '&nbsp;'}</div>`;
         } else {
-            return `<div class="line">${line.replace(/ /g, '&nbsp;') || '&nbsp;'}</div>`;
+            return `<div class="line${extraClass}">${line.replace(/ /g, '&nbsp;') || '&nbsp;'}</div>`;
         }
     });
 
     let headerKeyText = `Key: ${formatKeyDisplay(targetKey)}`;
     if (!targetKey || /^nashville$|^1$/i.test(targetKey)) {
         headerKeyText = /^nashville$/i.test(originalKey) ? 'Nashville Numbers' : `Key: ${formatKeyDisplay(originalKey)}`;
+    }
+    if (bpm) {
+        headerKeyText += ` | BPM: ${bpm}`;
+    }
+
+    let containerStyle = '';
+    let headerStyle = '';
+    if (columns === '2') {
+        containerStyle = `
+            .chart-container {
+                column-count: 2;
+                column-gap: 30px;
+                column-fill: auto;
+                height: 100%;
+            }
+        `;
+        headerStyle = `
+            .line.header {
+                break-inside: avoid;
+            }
+        `;
     }
 
     const htmlContent = `
@@ -485,12 +508,16 @@ async function createPdfChart(finalChartText, songTitle, originalKey, targetKey,
             h2 { font-size: 24px; margin-bottom: 30px; }
             .line { line-height: 1.2; white-space: nowrap; }
             sup { font-size: 75%; }
+            ${containerStyle}
+            ${headerStyle}
         </style>
     </head>
     <body>
         <h1>${songTitle}</h1>
         <h2>${headerKeyText}</h2>
-        ${htmlLines.join('')}
+        <div class="chart-container">
+            ${htmlLines.join('')}
+        </div>
     </body>
     </html>`;
 

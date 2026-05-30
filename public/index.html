@@ -341,7 +341,7 @@
             gap: 10px; margin-bottom: 96px;
         }
         .grid-buttons {
-            display: grid; grid-template-columns: 105px 1fr 1fr 1fr;
+            display: grid; grid-template-columns: 105px 115px 1fr 1fr 1fr;
             gap: 8px; margin-bottom: 12px;
         }
 
@@ -717,6 +717,10 @@
                 <option value="pdf">.PDF</option>
                 <option value="pro">ChordPro (.pro)</option>
             </select>
+            <select id="searchColumns" title="Layout columns">
+                <option value="1">1 Column</option>
+                <option value="2">2 Columns</option>
+            </select>
             <button id="searchBtn">
                 <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                 Scrape &amp; Convert
@@ -770,6 +774,10 @@
                 <option value="pdf">.PDF</option>
                 <option value="pro">ChordPro (.pro)</option>
             </select>
+            <select id="uploadColumns" title="Layout columns">
+                <option value="1">1 Column</option>
+                <option value="2">2 Columns</option>
+            </select>
             <button id="uploadBtn">
                 <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
                 Convert File
@@ -789,11 +797,15 @@
 
         <div class="history-list" id="setlistQueueContainer" style="display: none;"></div>
 
-        <div class="grid-buttons" id="setlistActions" style="display: none; grid-template-columns: 165px 1fr; margin-top: 16px;">
+        <div class="grid-buttons" id="setlistActions" style="display: none; grid-template-columns: 165px 125px 1fr; margin-top: 16px;">
             <select id="binderFormat">
                 <option value="docx">.DOCX Binder</option>
                 <option value="pdf">.PDF Binder</option>
                 <option value="pro">ChordPro Binder (.pro)</option>
+            </select>
+            <select id="binderColumns" title="Layout columns">
+                <option value="1">1 Column</option>
+                <option value="2">2 Columns</option>
             </select>
             <button id="downloadBinderBtn" class="downloadBtn">
                 Download Full Setlist Binder
@@ -995,6 +1007,8 @@ const searchFormat=document.getElementById('searchFormat'), dlSearchBtn=document
 const uploadFormat=document.getElementById('uploadFormat'), dlUploadBtn=document.getElementById('downloadUploadBtn'), pvUploadBtn=document.getElementById('previewUploadBtn');
 searchFormat.addEventListener('change',()=>{ if(!dlSearchBtn.disabled){dlSearchBtn.disabled=true;pvSearchBtn.disabled=true;dlSearchBtn.innerHTML='Download';searchBlob=null;showStatus("Format changed — please convert again.","active");}});
 uploadFormat.addEventListener('change',()=>{ if(!dlUploadBtn.disabled){dlUploadBtn.disabled=true;pvUploadBtn.disabled=true;dlUploadBtn.innerHTML='Download';uploadBlob=null;showStatus("Format changed — please convert again.","active");}});
+const uploadColumns=document.getElementById('uploadColumns');
+uploadColumns.addEventListener('change',()=>{ if(!dlUploadBtn.disabled){dlUploadBtn.disabled=true;pvUploadBtn.disabled=true;dlUploadBtn.innerHTML='Download';uploadBlob=null;showStatus("Layout changed — please convert again.","active");}});
 
 // ── SEARCH TO LIVE EDITOR ──
 const searchBtn = document.getElementById('searchBtn');
@@ -1023,6 +1037,7 @@ searchBtn.addEventListener('click', async () => {
         // Save data globally for the Setlist builder & Modal
         window.currentChartData = await res.json();
         
+        window.currentChartSource = 'search';
         // Populate the modal textarea in the background
         document.getElementById('liveEditor').value = window.currentChartData.text;
         document.getElementById('modalTitle').textContent = window.currentChartData.title;
@@ -1077,7 +1092,7 @@ document.getElementById('downloadSearchBtn').addEventListener('click', async () 
         const res = await fetch('/api/binder', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ setlist: singleSongQueue, format, bpm: bpmVal })
+            body: JSON.stringify({ setlist: singleSongQueue, format, bpm: bpmVal, columns: document.getElementById('searchColumns').value })
         });
         if(!res.ok) throw new Error((await res.json()).error);
         const blob = await res.blob();
@@ -1113,7 +1128,7 @@ uploadBtn.addEventListener('click', async ()=>{
         localStorage.setItem('cg_last_bpm', bpmVal);
         updateRehearseTabLink(bpmVal);
     }
-    const fd=new FormData(); fd.append('chartFile',file); fd.append('key',key); fd.append('targetKey',targetKey); fd.append('format',format); fd.append('simplify', simplifyUp ? 'true' : 'false'); fd.append('bpm', bpmVal);
+    const fd=new FormData(); fd.append('chartFile',file); fd.append('key',key); fd.append('targetKey',targetKey); fd.append('format',format); fd.append('simplify', simplifyUp ? 'true' : 'false'); fd.append('bpm', bpmVal); fd.append('columns', document.getElementById('uploadColumns').value);
     try {
         const res=await fetch('/api/import',{method:'POST',body:fd});
         if(!res.ok) throw new Error((await res.json()).error||"Conversion failed.");
@@ -1143,6 +1158,7 @@ pvUploadBtn.addEventListener('click', async ()=>{
         if(!res.ok) throw new Error((await res.json()).error||"Preview failed.");
         
         window.currentChartData=await res.json();
+        window.currentChartSource = 'upload';
         const bpmVal = document.getElementById('uploadBpm').value || '';
         window.currentChartData.bpm = bpmVal;
         if (bpmVal) {
@@ -1239,7 +1255,7 @@ document.getElementById('downloadBinderBtn').addEventListener('click', async () 
         const res = await fetch('/api/binder', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ setlist: setlistQueue, format: format })
+            body: JSON.stringify({ setlist: setlistQueue, format: format, columns: document.getElementById('binderColumns').value })
         });
         
         if(!res.ok) throw new Error((await res.json()).error);
@@ -1285,11 +1301,14 @@ document.getElementById('modalDownloadBtn').addEventListener('click', async () =
     btn.innerHTML = '⏳ Rendering...';
     btn.disabled = true;
     
+    const source = window.currentChartSource || 'search';
+    const columnsId = source === 'search' ? 'searchColumns' : 'uploadColumns';
+    const columnsVal = document.getElementById(columnsId).value || '1';
     try {
         const res = await fetch('/api/binder', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ setlist: singleSongQueue, format, bpm: bpmVal })
+            body: JSON.stringify({ setlist: singleSongQueue, format, bpm: bpmVal, columns: columnsVal })
         });
         if(!res.ok) throw new Error((await res.json()).error);
         const blob = await res.blob();
