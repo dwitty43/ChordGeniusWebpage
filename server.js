@@ -165,6 +165,7 @@ async function deliverFile(res, finalChart, originalName, originalKey, targetKey
 app.get('/api/convert', async (req, res) => {
     const query = req.query.q;
     let songKey = req.query.key;
+    if (songKey === 'nashville') songKey = '';
     const targetKey = req.query.targetKey || ''; 
     const format = req.query.format || 'docx';
     const simplify = req.query.simplify === 'true';
@@ -209,7 +210,7 @@ app.get('/api/convert', async (req, res) => {
 
 // --- ROUTE 4: BATCH SETLIST BINDER EXPORT ---
 app.post('/api/binder', async (req, res) => {
-    const { setlist, format, bpm, timeSignature, columns } = req.body;
+    const { setlist, format, bpm, timeSignature, columns, title } = req.body;
     if (!setlist || setlist.length === 0) return res.status(400).json({ error: "Setlist is empty." });
 
     try {
@@ -255,7 +256,7 @@ app.post('/api/binder', async (req, res) => {
             combinedText += `Key: ${keyText}\n\n`;
             combinedText += song.text;
         }
-        await deliverFile(res, combinedText, "Setlist_Binder", "Mixed", "Mixed", format, bpm, 0, timeSignature || '', columns || '1');
+        await deliverFile(res, combinedText, title || "Setlist Binder", "Mixed", "Mixed", format, bpm, 0, timeSignature || '', columns || '1');
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -263,7 +264,8 @@ app.post('/api/binder', async (req, res) => {
 
 // --- ROUTE 3: RAW TEXT GENERATOR FOR EDITOR ---
 app.get('/api/preview', async (req, res) => {
-    const { q: query, key: songKey, targetKey, simplify, capo: capoParam } = req.query;
+    let { q: query, key: songKey, targetKey, simplify, capo: capoParam } = req.query;
+    if (songKey === 'nashville') songKey = '';
     try {
         const tabUrl = await getFirstSearchResult(query); 
         const html = await fetchUGPage(tabUrl);
