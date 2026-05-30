@@ -693,6 +693,18 @@
             color: var(--primary);
             margin-top: 10px;
         }
+        .gold-glow {
+            color: #fff !important;
+            background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+            border-color: #f59e0b !important;
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.6) !important;
+            animation: premiumGlow 2s infinite alternate;
+            font-weight: 600;
+        }
+        @keyframes premiumGlow {
+            0% { box-shadow: 0 0 8px rgba(245, 158, 11, 0.4); }
+            100% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.8); }
+        }
     </style>
 </head>
 <body>
@@ -1178,10 +1190,68 @@ function triggerDownload(blob, filename) {
 // ── FORMAT RESET ──
 const searchFormat=document.getElementById('searchFormat'), dlSearchBtn=document.getElementById('downloadSearchBtn'), pvSearchBtn=document.getElementById('previewSearchBtn');
 const uploadFormat=document.getElementById('uploadFormat'), dlUploadBtn=document.getElementById('downloadUploadBtn'), pvUploadBtn=document.getElementById('previewUploadBtn');
-searchFormat.addEventListener('change',()=>{ if(!dlSearchBtn.disabled){dlSearchBtn.disabled=true;pvSearchBtn.disabled=true;dlSearchBtn.innerHTML='Download';searchBlob=null;showStatus("Format changed — please convert again.","active");}});
-uploadFormat.addEventListener('change',()=>{ if(!dlUploadBtn.disabled){dlUploadBtn.disabled=true;pvUploadBtn.disabled=true;dlUploadBtn.innerHTML='Download';uploadBlob=null;showStatus("Format changed — please convert again.","active");}});
+searchFormat.addEventListener('change',()=>{ if(!dlSearchBtn.disabled){dlSearchBtn.disabled=true;pvSearchBtn.disabled=true;pvSearchBtn.classList.remove('gold-glow');dlSearchBtn.innerHTML='Download';searchBlob=null;showStatus("Format changed — please convert again.","active");}});
+uploadFormat.addEventListener('change',()=>{ if(!dlUploadBtn.disabled){dlUploadBtn.disabled=true;pvUploadBtn.disabled=true;pvUploadBtn.classList.remove('gold-glow');dlUploadBtn.innerHTML='Download';uploadBlob=null;showStatus("Format changed — please convert again.","active");}});
 const uploadColumns=document.getElementById('uploadColumns');
-uploadColumns.addEventListener('change',()=>{ if(!dlUploadBtn.disabled){dlUploadBtn.disabled=true;pvUploadBtn.disabled=true;dlUploadBtn.innerHTML='Download';uploadBlob=null;showStatus("Layout changed — please convert again.","active");}});
+uploadColumns.addEventListener('change',()=>{ if(!dlUploadBtn.disabled){dlUploadBtn.disabled=true;pvUploadBtn.disabled=true;pvUploadBtn.classList.remove('gold-glow');dlUploadBtn.innerHTML='Download';uploadBlob=null;showStatus("Layout changed — please convert again.","active");}});
+
+const searchColumns=document.getElementById('searchColumns');
+if (searchColumns) {
+    searchColumns.addEventListener('change',()=>{ if(!dlSearchBtn.disabled){dlSearchBtn.disabled=true;pvSearchBtn.disabled=true;pvSearchBtn.classList.remove('gold-glow');dlSearchBtn.innerHTML='Download';searchBlob=null;showStatus("Layout changed — please convert again.","active");}});
+}
+
+const searchInputs = ['songQuery', 'songKey', 'targetKeySearch', 'capoSearch', 'songBpm', 'songTimeSignature'];
+searchInputs.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+        const eventType = el.tagName === 'SELECT' ? 'change' : 'input';
+        el.addEventListener(eventType, () => {
+            if (!pvSearchBtn.disabled) {
+                pvSearchBtn.disabled = true;
+                pvSearchBtn.classList.remove('gold-glow');
+                dlSearchBtn.disabled = true;
+                searchBlob = null;
+                showStatus("Inputs changed — please convert again.", "active");
+            }
+        });
+    }
+});
+
+const uploadInputs = ['fileInput', 'uploadKey', 'targetKeyUpload', 'capoUpload', 'uploadBpm', 'uploadTimeSignature'];
+uploadInputs.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+        const eventType = el.type === 'file' || el.tagName === 'SELECT' ? 'change' : 'input';
+        el.addEventListener(eventType, () => {
+            if (!pvUploadBtn.disabled) {
+                pvUploadBtn.disabled = true;
+                pvUploadBtn.classList.remove('gold-glow');
+                dlUploadBtn.disabled = true;
+                uploadBlob = null;
+                showStatus("Inputs changed — please convert again.", "active");
+            }
+        });
+    }
+});
+
+const simplifyChords = document.getElementById('simplifyChords');
+if (simplifyChords) {
+    simplifyChords.addEventListener('change', () => {
+        if (!pvSearchBtn.disabled) {
+            pvSearchBtn.disabled = true;
+            pvSearchBtn.classList.remove('gold-glow');
+            dlSearchBtn.disabled = true;
+            searchBlob = null;
+        }
+        if (!pvUploadBtn.disabled) {
+            pvUploadBtn.disabled = true;
+            pvUploadBtn.classList.remove('gold-glow');
+            dlUploadBtn.disabled = true;
+            uploadBlob = null;
+        }
+        showStatus("Options changed — please convert again.", "active");
+    });
+}
 
 // ── SEARCH TO LIVE EDITOR ──
 const searchBtn = document.getElementById('searchBtn');
@@ -1196,6 +1266,9 @@ searchBtn.addEventListener('click', async () => {
     const orig = searchBtn.innerHTML;
     searchBtn.innerHTML = '⏳ Processing...'; 
     searchBtn.disabled = true;
+    pvSearchBtn.disabled = true;
+    pvSearchBtn.classList.remove('gold-glow');
+    dlSearchBtn.disabled = true;
     showStatus("Fetching data and loading into editor...", "active");
     
     const isSimplify = document.getElementById('simplifyChords').checked;
@@ -1244,6 +1317,7 @@ searchBtn.addEventListener('click', async () => {
         
         // THE FIX: Do not open the modal automatically. Just enable the buttons!
         document.getElementById('previewSearchBtn').disabled = false;
+        document.getElementById('previewSearchBtn').classList.add('gold-glow');
         document.getElementById('downloadSearchBtn').disabled = false;
         showStatus("Chart generated! Ready to preview or download.", "success");
         
@@ -1330,6 +1404,7 @@ uploadBtn.addEventListener('click', async ()=>{
     
     const orig=uploadBtn.innerHTML;
     uploadBtn.innerHTML='⏳ Converting…'; uploadBtn.disabled=true; dlUploadBtn.disabled=true; pvUploadBtn.disabled=true;
+    pvUploadBtn.classList.remove('gold-glow');
     showStatus("Uploading and processing chart…","active");
     const simplifyUp = document.getElementById('simplifyChords').checked;
     const bpmVal = document.getElementById('uploadBpm').value || '';
@@ -1358,6 +1433,7 @@ uploadBtn.addEventListener('click', async ()=>{
         uploadBlob=await res.blob(); uploadFilename=getFilename(res.headers.get('Content-Disposition'),`Chart.${format}`); uploadFormat_=format;
         dlUploadBtn.innerHTML=`<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg> .${format.toUpperCase()}`;
         dlUploadBtn.disabled=false; pvUploadBtn.innerHTML=`<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg> Preview`; pvUploadBtn.disabled=false;
+        pvUploadBtn.classList.add('gold-glow');
         showStatus("File converted — preview or download below.","success");
     } catch(e){ showStatus(`Error: ${e.message}`,"error"); }
     finally{ uploadBtn.innerHTML=orig; uploadBtn.disabled=false; }
