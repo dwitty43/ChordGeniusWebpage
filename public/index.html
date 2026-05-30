@@ -345,7 +345,7 @@
             grid-column: 1 / -1;
         }
         .grid-buttons {
-            display: grid; grid-template-columns: 105px 115px 1fr 1fr 1fr;
+            display: grid; grid-template-columns: 105px 115px 1.2fr 1fr 1fr 90px;
             gap: 8px; margin-bottom: 12px;
         }
 
@@ -880,6 +880,7 @@
                 Preview
             </button>
             <button id="downloadSearchBtn" class="downloadBtn" disabled>Download</button>
+            <button id="searchResetBtn" class="previewBtn">Reset</button>
         </div>
 
         <!-- HISTORY -->
@@ -958,6 +959,7 @@
                 Preview
             </button>
             <button id="downloadUploadBtn" class="downloadBtn" disabled>Download</button>
+            <button id="uploadResetBtn" class="previewBtn">Reset</button>
         </div>
         <div class="history-section">
         <div class="section-label">Setlist Builder</div>
@@ -1994,6 +1996,59 @@ if (storedEnableTooltips !== null) {
 }
 enableTooltipsCheckbox.addEventListener('change', () => {
     localStorage.setItem('cg_enable_tooltips', enableTooltipsCheckbox.checked);
+});
+
+// ── RESET BUTTONS ──
+document.getElementById('searchResetBtn').addEventListener('click', () => {
+    document.getElementById('songQuery').value = '';
+    document.getElementById('songKey').value = '';
+    document.getElementById('targetKeySearch').value = '';
+    document.getElementById('capoSearch').value = '0';
+    document.getElementById('songBpm').value = '';
+    document.getElementById('songTimeSignature').value = '';
+    document.getElementById('searchFormat').value = 'docx';
+    document.getElementById('searchColumns').value = '1';
+    document.getElementById('simplifyChords').checked = false;
+    
+    const previewBtn = document.getElementById('previewSearchBtn');
+    const downloadBtn = document.getElementById('downloadSearchBtn');
+    
+    previewBtn.disabled = true;
+    downloadBtn.disabled = true;
+    
+    previewBtn.classList.remove('gold-glow');
+    downloadBtn.classList.remove('gold-glow');
+    
+    searchBlob = null;
+    
+    updateRehearseTabLink(localStorage.getItem('cg_last_bpm') || '', localStorage.getItem('cg_last_beats') || '');
+    
+    showStatus("Search inputs successfully reset.", "success");
+});
+
+document.getElementById('uploadResetBtn').addEventListener('click', () => {
+    document.getElementById('fileInput').value = '';
+    document.getElementById('uploadKey').value = '';
+    document.getElementById('targetKeyUpload').value = '';
+    document.getElementById('capoUpload').value = '0';
+    document.getElementById('uploadBpm').value = '';
+    document.getElementById('uploadTimeSignature').value = '';
+    document.getElementById('uploadFormat').value = 'docx';
+    document.getElementById('uploadColumns').value = '1';
+    
+    const previewBtn = document.getElementById('previewUploadBtn');
+    const downloadBtn = document.getElementById('downloadUploadBtn');
+    
+    previewBtn.disabled = true;
+    downloadBtn.disabled = true;
+    
+    previewBtn.classList.remove('gold-glow');
+    downloadBtn.classList.remove('gold-glow');
+    
+    uploadBlob = null;
+    downloadBtn.innerHTML = 'Download';
+    
+    showStatus("Upload inputs successfully reset.", "success");
 });
 
 // Initialize last bpm/beats on page load
