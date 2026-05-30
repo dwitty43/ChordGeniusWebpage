@@ -305,6 +305,22 @@ function isNoiseLine(line) {
     return false;
 }
 
+function isLyricLine(line) {
+    if (!line) return false;
+    const trimmed = line.trim();
+    if (trimmed === '') return false;
+    if (isChordLine(line) || isNashvilleLine(line) || isTabLine(line) || isNoiseLine(line)) return false;
+    if (/^\[?(Intro|Verse|Chorus|Pre-Chorus|Bridge|Outro|Solo|Instrumental)[^\]]*\]?$/i.test(trimmed)) return false;
+    return true;
+}
+
+function haveLostAlignment(chordLine) {
+    const tokens = chordLine.trim().split(/\s+/);
+    if (tokens.length < 2) return false;
+    const spaces = chordLine.match(/\s+/g) || [];
+    return spaces.every(s => s.length <= 3);
+}
+
 // --- TEXT PROCESSING ---
 function processAndAlignTabs(rawText, originalKey, targetKey, isPdf = false, simplify = false, capo = 0) {
     const lines = rawText.split('\n');
@@ -328,7 +344,8 @@ function processAndAlignTabs(rawText, originalKey, targetKey, isPdf = false, sim
 
     const keyChangeRegex = /\[Key(?: Change)?:?\s*([A-G][#b]?(?:m)?)\]/i;
 
-    for (let line of lines) {
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
         const trimmed = line.trim();
 
         const keyChangeMatch = trimmed.match(keyChangeRegex);
@@ -379,23 +396,83 @@ function processAndAlignTabs(rawText, originalKey, targetKey, isPdf = false, sim
                     processedLines.push('');
                 }
             }
-            let newLine = line.replace(/(\S+)(\s*)/g, (match, chord, spaces) => {
-                let newChord = transposeChord(chord, currentOriginalKey, currentTargetKey, capo);
-                if (simplify && !/^[|()\[\]{}:\-~,]+$/.test(chord) && !/^N\.?C\.?$/i.test(chord.replace(/[()]/g, ''))) {
-                    newChord = simplifyChord(newChord);
-                }
-                const lengthDiff = chord.length - newChord.length;
-                let newSpaces = spaces;
+            let nextLine = lines[i + 1];
+            if (isPdf && isLyricLine(nextLine) && haveLostAlignment(line)) {
+                // Split the chord line into individual chord tokens
+                const chords = line.trim().split(/\s+/);
                 
-                if (lengthDiff > 0) {
-                    newSpaces += ' '.repeat(lengthDiff);
-                } else if (lengthDiff < 0) {
-                    const spacesToRemove = Math.min(Math.abs(lengthDiff), newSpaces.length);
-                    newSpaces = newSpaces.slice(spacesToRemove);
+                // Transpose and simplify chords first
+                const processedChords = chords.map(chord => {
+                    let newChord = transposeChord(chord, currentOriginalKey, currentTargetKey, capo);
+                    if (simplify && !/^[|()\[\]{}:\-~,]+$/.test(chord) && !/^N\.?C\.?$/i.test(chord.replace(/[()]/g, ''))) {
+                        newChord = simplifyChord(newChord);
+                    }
+                    return newChord;
+                });
+
+                // Split the lyric line into words with character indices
+                const words = [];
+                const wordRegex = /\S+/g;
+                let match;
+                while ((match = wordRegex.exec(nextLine)) !== null) {
+                    words.push({
+                        text: match[0],
+                        index: match.index
+                    });
                 }
-                return newChord + newSpaces;
-            });
-            processedLines.push(newLine); 
+
+                const N = chords.length;
+                const chordPlacements = [];
+                for (let j = 0; j < N; j++) {
+                    const chord = processedChords[j];
+                    let targetCharIndex;
+                    if (words.length >= N) {
+                        const w_j = N > 1 ? Math.round((j * (words.length - 1)) / (N - 1)) : 0;
+                        targetCharIndex = words[w_j].index;
+                    } else {
+                        const lengthToDistribute = Math.max(nextLine.length, N * 4);
+                        targetCharIndex = N > 1 ? Math.round((j * lengthToDistribute) / (N - 1)) : 0;
+                    }
+                    
+                    // Whitespace Restoration: prevent overlaps and maintain spacing
+                    if (j > 0) {
+                        const prevPlacement = chordPlacements[j - 1];
+                        const minPos = prevPlacement.index + prevPlacement.chord.length + 1;
+                        if (targetCharIndex < minPos) {
+                            targetCharIndex = minPos;
+                        }
+                    }
+                    chordPlacements.push({ chord, index: targetCharIndex });
+                }
+
+                // Construct new aligned chord line
+                let newLine = '';
+                for (const placement of chordPlacements) {
+                    if (newLine.length < placement.index) {
+                        newLine += ' '.repeat(placement.index - newLine.length);
+                    }
+                    newLine += placement.chord;
+                }
+                processedLines.push(newLine);
+            } else {
+                let newLine = line.replace(/(\S+)(\s*)/g, (match, chord, spaces) => {
+                    let newChord = transposeChord(chord, currentOriginalKey, currentTargetKey, capo);
+                    if (simplify && !/^[|()\[\]{}:\-~,]+$/.test(chord) && !/^N\.?C\.?$/i.test(chord.replace(/[()]/g, ''))) {
+                        newChord = simplifyChord(newChord);
+                    }
+                    const lengthDiff = chord.length - newChord.length;
+                    let newSpaces = spaces;
+                    
+                    if (lengthDiff > 0) {
+                        newSpaces += ' '.repeat(lengthDiff);
+                    } else if (lengthDiff < 0) {
+                        const spacesToRemove = Math.min(Math.abs(lengthDiff), newSpaces.length);
+                        newSpaces = newSpaces.slice(spacesToRemove);
+                    }
+                    return newChord + newSpaces;
+                });
+                processedLines.push(newLine);
+            }
         } else {
             processedLines.push(line);
         }
