@@ -4,7 +4,7 @@ const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 puppeteer.use(StealthPlugin());
 const cheerio = require('cheerio');
-const { Document, Packer, Paragraph, TextRun } = require('docx');
+const { Document, Packer, Paragraph, TextRun, PageBreak } = require('docx');
 
 const USER_AGENTS = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
@@ -664,110 +664,183 @@ function formatKeyDisplay(keyStr) {
     if (!keyStr) return '';
     return keyStr.charAt(0).toUpperCase() + keyStr.slice(1).toLowerCase();
 }
-async function createDocxChart(finalChartText, songTitle, originalKey, targetKey, bpm, capo = 0, timeSignature = '') {
+async function createDocxChart(finalChartText, songTitle, originalKey, targetKey, bpm, capo = 0, timeSignature = '', columns = '1') {
     const cleanText = finalChartText.replace(/\x1B\[\d+m/g, ''); 
     const lines = cleanText.split('\n');
 
-    const documentLines = lines.map(line => {
-        if (isNashvilleLine(line) || isChordLine(line)) {
-            const runs = [];
-            const regex = /(\S+)(\s*)/g;
-            let match;
+    // Helper function to map song lines to document paragraph objects
+    function mapSongLines(songLines) {
+        return songLines.map(line => {
+            if (isNashvilleLine(line) || isChordLine(line)) {
+                const runs = [];
+                const regex = /(\S+)(\s*)/g;
+                let match;
 
-            while ((match = regex.exec(line)) !== null) {
-                const chord = match[1];
-                const spaces = match[2];
+                while ((match = regex.exec(line)) !== null) {
+                    const chord = match[1];
+                    const spaces = match[2];
 
-                if (/^[|()\[\]{}:\-~,]+$/.test(chord)) {
-                    runs.push(new TextRun({ text: chord, font: "Courier New", size: 24, bold: true }));
-                    if (spaces) runs.push(new TextRun({ text: spaces, font: "Courier New", size: 24 }));
-                    continue;
-                }
-
-                const fixMatch = chord.match(/^(\(?)(.*?)(\)?)$/);
-                const prefix = fixMatch[1] || '';
-                const rawChord = fixMatch[2];
-                const suffix = fixMatch[3] || '';
-
-                if (prefix) runs.push(new TextRun({ text: prefix, font: "Courier New", size: 24, bold: true }));
-
-                const chordParts = rawChord.split('/');
-                const mainChord = chordParts[0];
-                const bassNote = chordParts[1]; 
-
-                const rootMatch = mainChord.match(/^([b#]?[1-7]|[A-Ga-g][b#]?)(.*)$/);
-
-                if (rootMatch) {
-                    const root = rootMatch[1];
-                    const rawExtension = rootMatch[2];
-
-                    runs.push(new TextRun({ text: root, font: "Courier New", size: 24, bold: true }));
-
-                    if (rawExtension) {
-                        const extMatch = rawExtension.match(/^(\D*)(\d.*)?$/);
-                        if (extMatch) {
-                            if (extMatch[1]) runs.push(new TextRun({ text: extMatch[1], font: "Courier New", size: 24, bold: true }));
-                            if (extMatch[2]) runs.push(new TextRun({ text: extMatch[2], font: "Courier New", size: 24, bold: true, superScript: true }));
-                        }
+                    if (/^[|()\[\]{}:\-~,]+$/.test(chord)) {
+                        runs.push(new TextRun({ text: chord, font: "Courier New", size: 24, bold: true }));
+                        if (spaces) runs.push(new TextRun({ text: spaces, font: "Courier New", size: 24 }));
+                        continue;
                     }
-                    if (bassNote) runs.push(new TextRun({ text: `/${bassNote}`, font: "Courier New", size: 24, bold: true }));
-                } else {
-                    runs.push(new TextRun({ text: rawChord, font: "Courier New", size: 24, bold: true }));
+
+                    const fixMatch = chord.match(/^(\(?)(.*?)(\)?)$/);
+                    const prefix = fixMatch[1] || '';
+                    const rawChord = fixMatch[2];
+                    const suffix = fixMatch[3] || '';
+
+                    if (prefix) runs.push(new TextRun({ text: prefix, font: "Courier New", size: 24, bold: true }));
+
+                    const chordParts = rawChord.split('/');
+                    const mainChord = chordParts[0];
+                    const bassNote = chordParts[1]; 
+
+                    const rootMatch = mainChord.match(/^([b#]?[1-7]|[A-Ga-g][b#]?)(.*)$/);
+
+                    if (rootMatch) {
+                        const root = rootMatch[1];
+                        const rawExtension = rootMatch[2];
+
+                        runs.push(new TextRun({ text: root, font: "Courier New", size: 24, bold: true }));
+
+                        if (rawExtension) {
+                            const extMatch = rawExtension.match(/^(\D*)(\d.*)?$/);
+                            if (extMatch) {
+                                if (extMatch[1]) runs.push(new TextRun({ text: extMatch[1], font: "Courier New", size: 24, bold: true }));
+                                if (extMatch[2]) runs.push(new TextRun({ text: extMatch[2], font: "Courier New", size: 24, bold: true, superScript: true }));
+                            }
+                        }
+                        if (bassNote) runs.push(new TextRun({ text: `/${bassNote}`, font: "Courier New", size: 24, bold: true }));
+                    } else {
+                        runs.push(new TextRun({ text: rawChord, font: "Courier New", size: 24, bold: true }));
+                    }
+
+                    if (suffix) runs.push(new TextRun({ text: suffix, font: "Courier New", size: 24, bold: true }));
+                    if (spaces) runs.push(new TextRun({ text: spaces, font: "Courier New", size: 24 }));
                 }
-
-                if (suffix) runs.push(new TextRun({ text: suffix, font: "Courier New", size: 24, bold: true }));
-                if (spaces) runs.push(new TextRun({ text: spaces, font: "Courier New", size: 24 }));
+                return new Paragraph({ children: runs });
+            } else {
+                return new Paragraph({ children: [ new TextRun({ text: line, font: "Courier New", size: 24 })] });
             }
-            return new Paragraph({ children: runs });
-        } else {
-            return new Paragraph({ children: [ new TextRun({ text: line, font: "Courier New", size: 24 })] });
+        });
+    }
+
+    // Check if we are dealing with a Setlist Binder
+    const isBinder = songTitle === "Setlist_Binder" || finalChartText.includes("=== SONG ");
+    const docChildren = [];
+
+    if (isBinder) {
+        // Parse songs from the combined text
+        const songs = [];
+        let currentSong = null;
+
+        for (const line of lines) {
+            const match = line.match(/^===\s*SONG\s*\d+:\s*(.*?)\s*===$/i);
+            if (match) {
+                if (currentSong) {
+                    songs.push(currentSong);
+                }
+                currentSong = {
+                    title: match[1],
+                    keyText: "",
+                    lines: []
+                };
+            } else if (currentSong) {
+                if (line.startsWith("Key: ") && currentSong.lines.length === 0) {
+                    currentSong.keyText = line;
+                } else {
+                    currentSong.lines.push(line);
+                }
+            }
         }
-    });
+        if (currentSong) {
+            songs.push(currentSong);
+        }
 
-    let headerTextParts = [];
-    const isTargetNashville = !targetKey || /^nashville$|^1$/i.test(targetKey.trim());
-    const isSourceNashville = !originalKey || /^nashville$/i.test(originalKey.trim());
-    const capoVal = parseInt(capo, 10);
+        // Render each song, separated by a PageBreak
+        for (let i = 0; i < songs.length; i++) {
+            const song = songs[i];
+            if (i > 0) {
+                docChildren.push(new Paragraph({ children: [new PageBreak()] }));
+            }
 
-    let keyText = `Key: ${formatKeyDisplay(targetKey)}`;
-    if (isTargetNashville) {
-        keyText = isSourceNashville ? 'Nashville Numbers' : `Key: ${formatKeyDisplay(originalKey)}`;
+            // Beautiful styled bold section title
+            docChildren.push(new Paragraph({
+                children: [ new TextRun({ text: song.title.toUpperCase(), font: "Courier New", size: 32, bold: true }) ],
+                spacing: { after: 200 }
+            }));
+
+            // Beautiful styled bold key/bpm/sig header
+            if (song.keyText) {
+                docChildren.push(new Paragraph({
+                    children: [ new TextRun({ text: song.keyText, font: "Courier New", size: 24, bold: true }) ],
+                    spacing: { after: 400 }
+                }));
+            }
+
+            const mapped = mapSongLines(song.lines);
+            docChildren.push(...mapped);
+        }
     } else {
-        if (capoVal && capoVal > 0 && !isSourceNashville) {
-            const playKey = getPlayKey(targetKey, capoVal);
-            keyText += ` | Capo: ${capoVal} | Play: ${formatKeyDisplay(playKey)}`;
-        }
-    }
-    headerTextParts.push(keyText);
-    if (bpm) {
-        headerTextParts.push(`BPM: ${bpm}`);
-    }
-    if (timeSignature) {
-        let formattedTimeSig = timeSignature;
-        if (typeof timeSignature === 'number' || !isNaN(Number(timeSignature))) {
-            const num = Number(timeSignature);
-            if (num === 4) formattedTimeSig = '4/4';
-            else if (num === 3) formattedTimeSig = '3/4';
-            else if (num === 2) formattedTimeSig = '2/4';
-            else if (num === 6) formattedTimeSig = '6/8';
-            else formattedTimeSig = `${num}/4`;
-        }
-        headerTextParts.push(`Time Sig: ${formattedTimeSig}`);
-    }
-    const headerKeyText = headerTextParts.join(' | ');
+        // Render a single song (legacy path)
+        let headerTextParts = [];
+        const isTargetNashville = !targetKey || /^nashville$|^1$/i.test(targetKey.trim());
+        const isSourceNashville = !originalKey || /^nashville$/i.test(originalKey.trim());
+        const capoVal = parseInt(capo, 10);
 
-    const titleParagraph = new Paragraph({
-        children: [ new TextRun({ text: songTitle.toUpperCase(), font: "Courier New", size: 32, bold: true }) ],
-        spacing: { after: 200 } 
-    });
+        let keyText = `Key: ${formatKeyDisplay(targetKey)}`;
+        if (isTargetNashville) {
+            keyText = isSourceNashville ? 'Nashville Numbers' : `Key: ${formatKeyDisplay(originalKey)}`;
+        } else {
+            if (capoVal && capoVal > 0 && !isSourceNashville) {
+                const playKey = getPlayKey(targetKey, capoVal);
+                keyText += ` | Capo: ${capoVal} | Play: ${formatKeyDisplay(playKey)}`;
+            }
+        }
+        headerTextParts.push(keyText);
+        if (bpm) {
+            headerTextParts.push(`BPM: ${bpm}`);
+        }
+        if (timeSignature) {
+            let formattedTimeSig = timeSignature;
+            if (typeof timeSignature === 'number' || !isNaN(Number(timeSignature))) {
+                const num = Number(timeSignature);
+                if (num === 4) formattedTimeSig = '4/4';
+                else if (num === 3) formattedTimeSig = '3/4';
+                else if (num === 2) formattedTimeSig = '2/4';
+                else if (num === 6) formattedTimeSig = '6/8';
+                else formattedTimeSig = `${num}/4`;
+            }
+            headerTextParts.push(`Time Sig: ${formattedTimeSig}`);
+        }
+        const headerKeyText = headerTextParts.join(' | ');
 
-    const keyParagraph = new Paragraph({
-        children: [ new TextRun({ text: headerKeyText, font: "Courier New", size: 24, bold: true }) ],
-        spacing: { after: 400 } 
-    });
+        const titleParagraph = new Paragraph({
+            children: [ new TextRun({ text: songTitle.toUpperCase(), font: "Courier New", size: 32, bold: true }) ],
+            spacing: { after: 200 } 
+        });
+
+        const keyParagraph = new Paragraph({
+            children: [ new TextRun({ text: headerKeyText, font: "Courier New", size: 24, bold: true }) ],
+            spacing: { after: 400 } 
+        });
+
+        docChildren.push(titleParagraph, keyParagraph, ...mapSongLines(lines));
+    }
+
+    const sectionProperties = {};
+    if (columns === '2') {
+        sectionProperties.column = {
+            count: 2,
+            space: 720,
+            equalWidth: true
+        };
+    }
 
     const doc = new Document({
-        sections: [{ properties: {}, children: [titleParagraph, keyParagraph, ...documentLines] }]
+        sections: [{ properties: sectionProperties, children: docChildren }]
     });
     
     return await Packer.toBuffer(doc);
@@ -951,6 +1024,9 @@ function getChordSvg(chordName) {
 async function createPdfChart(finalChartText, songTitle, originalKey, targetKey, bpm, capo = 0, timeSignature = '', columns = '1') {
     const lines = finalChartText.split('\n');
     
+    // Check if we are dealing with a Setlist Binder
+    const isBinder = songTitle === "Setlist_Binder" || finalChartText.includes("=== SONG ");
+    
     // Scan for unique chords
     const uniqueChords = new Set();
     for (const line of lines) {
@@ -979,90 +1055,150 @@ async function createPdfChart(finalChartText, songTitle, originalKey, targetKey,
         glossaryHtml = `<div class="chord-diagram-container">${svgCards.join('')}</div>`;
     }
     
-    let htmlLines = lines.map(line => {
-        const isHeader = /^\[?(Intro|Verse|Chorus|Pre-Chorus|Bridge|Outro|Solo|Instrumental)[^\]]*\]?$/i.test(line.trim());
-        const extraClass = isHeader ? ' header' : '';
-        if (isNashvilleLine(line) || isChordLine(line)) {
-            let htmlLine = '';
-            const regex = /(\S+)(\s*)/g;
-            let match;
-            
-            while ((match = regex.exec(line)) !== null) {
-                const chord = match[1];
-                const spaces = match[2].replace(/ /g, '&nbsp;'); 
+    // Helper function to map lines of a single song to HTML lines
+    function mapSongHtmlLines(songLines) {
+        return songLines.map(line => {
+            const isHeader = /^\[?(Intro|Verse|Chorus|Pre-Chorus|Bridge|Outro|Solo|Instrumental)[^\]]*\]?$/i.test(line.trim());
+            const extraClass = isHeader ? ' header' : '';
+            if (isNashvilleLine(line) || isChordLine(line)) {
+                let htmlLine = '';
+                const regex = /(\S+)(\s*)/g;
+                let match;
+                
+                while ((match = regex.exec(line)) !== null) {
+                    const chord = match[1];
+                    const spaces = match[2].replace(/ /g, '&nbsp;'); 
 
-                if (/^[|()\[\]{}:\-~,]+$/.test(chord)) {
-                    htmlLine += `<b>${chord}</b>${spaces}`;
-                    continue;
-                }
-
-                const fixMatch = chord.match(/^(\(?)(.*?)(\)?)$/);
-                const prefix = fixMatch[1] || '';
-                const rawChord = fixMatch[2];
-                const suffix = fixMatch[3] || '';
-
-                if (prefix) htmlLine += `<b>${prefix}</b>`;
-
-                const chordParts = rawChord.split('/');
-                const mainChord = chordParts[0];
-                const bassNote = chordParts[1]; 
-
-                const rootMatch = mainChord.match(/^([b#]?[1-7]|[A-Ga-g][b#]?)(.*)$/);
-                if (rootMatch) {
-                    htmlLine += `<b>${rootMatch[1]}</b>`;
-                    const rawExtension = rootMatch[2];
-                    if (rawExtension) {
-                        const extMatch = rawExtension.match(/^(\D*)(\d.*)?$/);
-                        if (extMatch) {
-                            if (extMatch[1]) htmlLine += `<b>${extMatch[1]}</b>`;
-                            if (extMatch[2]) htmlLine += `<sup><b>${extMatch[2]}</b></sup>`;
-                        }
+                    if (/^[|()\[\]{}:\-~,]+$/.test(chord)) {
+                        htmlLine += `<b>${chord}</b>${spaces}`;
+                        continue;
                     }
-                    if (bassNote) htmlLine += `<b>/${bassNote}</b>`;
-                } else {
-                    htmlLine += `<b>${rawChord}</b>`;
+
+                    const fixMatch = chord.match(/^(\(?)(.*?)(\)?)$/);
+                    const prefix = fixMatch[1] || '';
+                    const rawChord = fixMatch[2];
+                    const suffix = fixMatch[3] || '';
+
+                    if (prefix) htmlLine += `<b>${prefix}</b>`;
+
+                    const chordParts = rawChord.split('/');
+                    const mainChord = chordParts[0];
+                    const bassNote = chordParts[1]; 
+
+                    const rootMatch = mainChord.match(/^([b#]?[1-7]|[A-Ga-g][b#]?)(.*)$/);
+                    if (rootMatch) {
+                        htmlLine += `<b>${rootMatch[1]}</b>`;
+                        const rawExtension = rootMatch[2];
+                        if (rawExtension) {
+                            const extMatch = rawExtension.match(/^(\D*)(\d.*)?$/);
+                            if (extMatch) {
+                                if (extMatch[1]) htmlLine += `<b>${extMatch[1]}</b>`;
+                                if (extMatch[2]) htmlLine += `<sup><b>${extMatch[2]}</b></sup>`;
+                            }
+                        }
+                        if (bassNote) htmlLine += `<b>/${bassNote}</b>`;
+                    } else {
+                        htmlLine += `<b>${rawChord}</b>`;
+                    }
+
+                    if (suffix) htmlLine += `<b>${suffix}</b>`;
+                    htmlLine += spaces;
                 }
-
-                if (suffix) htmlLine += `<b>${suffix}</b>`;
-                htmlLine += spaces;
+                return `<div class="line${extraClass}">${htmlLine || '&nbsp;'}</div>`;
+            } else {
+                return `<div class="line${extraClass}">${line.replace(/ /g, '&nbsp;') || '&nbsp;'}</div>`;
             }
-            return `<div class="line${extraClass}">${htmlLine || '&nbsp;'}</div>`;
-        } else {
-            return `<div class="line${extraClass}">${line.replace(/ /g, '&nbsp;') || '&nbsp;'}</div>`;
+        });
+    }
+
+    let mainContentHtml = '';
+
+    if (isBinder) {
+        // Parse songs from combined text
+        const songs = [];
+        let currentSong = null;
+
+        for (const line of lines) {
+            const match = line.match(/^===\s*SONG\s*\d+:\s*(.*?)\s*===$/i);
+            if (match) {
+                if (currentSong) {
+                    songs.push(currentSong);
+                }
+                currentSong = {
+                    title: match[1],
+                    keyText: "",
+                    lines: []
+                };
+            } else if (currentSong) {
+                if (line.startsWith("Key: ") && currentSong.lines.length === 0) {
+                    currentSong.keyText = line;
+                } else {
+                    currentSong.lines.push(line);
+                }
+            }
         }
-    });
+        if (currentSong) {
+            songs.push(currentSong);
+        }
 
-    let headerTextParts = [];
-    const isTargetNashville = !targetKey || /^nashville$|^1$/i.test(targetKey.trim());
-    const isSourceNashville = !originalKey || /^nashville$/i.test(originalKey.trim());
-    const capoVal = parseInt(capo, 10);
-
-    let keyText = `Key: ${formatKeyDisplay(targetKey)}`;
-    if (isTargetNashville) {
-        keyText = isSourceNashville ? 'Nashville Numbers' : `Key: ${formatKeyDisplay(originalKey)}`;
+        const songSections = songs.map((song, i) => {
+            const htmlLinesForSong = mapSongHtmlLines(song.lines);
+            const pageBreakStyle = i > 0 ? ' style="page-break-before: always;"' : '';
+            return `
+                <div class="song-section"${pageBreakStyle}>
+                    <h1>${song.title}</h1>
+                    <h2>${song.keyText}</h2>
+                    <div class="chart-container">
+                        ${htmlLinesForSong.join('')}
+                    </div>
+                </div>
+            `;
+        });
+        mainContentHtml = songSections.join('');
     } else {
-        if (capoVal && capoVal > 0 && !isSourceNashville) {
-            const playKey = getPlayKey(targetKey, capoVal);
-            keyText += ` | Capo: ${capoVal} | Play: ${formatKeyDisplay(playKey)}`;
+        // Single song HTML content
+        const htmlLines = mapSongHtmlLines(lines);
+
+        let headerTextParts = [];
+        const isTargetNashville = !targetKey || /^nashville$|^1$/i.test(targetKey.trim());
+        const isSourceNashville = !originalKey || /^nashville$/i.test(originalKey.trim());
+        const capoVal = parseInt(capo, 10);
+
+        let keyText = `Key: ${formatKeyDisplay(targetKey)}`;
+        if (isTargetNashville) {
+            keyText = isSourceNashville ? 'Nashville Numbers' : `Key: ${formatKeyDisplay(originalKey)}`;
+        } else {
+            if (capoVal && capoVal > 0 && !isSourceNashville) {
+                const playKey = getPlayKey(targetKey, capoVal);
+                keyText += ` | Capo: ${capoVal} | Play: ${formatKeyDisplay(playKey)}`;
+            }
         }
-    }
-    headerTextParts.push(keyText);
-    if (bpm) {
-        headerTextParts.push(`BPM: ${bpm}`);
-    }
-    if (timeSignature) {
-        let formattedTimeSig = timeSignature;
-        if (typeof timeSignature === 'number' || !isNaN(Number(timeSignature))) {
-            const num = Number(timeSignature);
-            if (num === 4) formattedTimeSig = '4/4';
-            else if (num === 3) formattedTimeSig = '3/4';
-            else if (num === 2) formattedTimeSig = '2/4';
-            else if (num === 6) formattedTimeSig = '6/8';
-            else formattedTimeSig = `${num}/4`;
+        headerTextParts.push(keyText);
+        if (bpm) {
+            headerTextParts.push(`BPM: ${bpm}`);
         }
-        headerTextParts.push(`Time Sig: ${formattedTimeSig}`);
+        if (timeSignature) {
+            let formattedTimeSig = timeSignature;
+            if (typeof timeSignature === 'number' || !isNaN(Number(timeSignature))) {
+                const num = Number(timeSignature);
+                if (num === 4) formattedTimeSig = '4/4';
+                else if (num === 3) formattedTimeSig = '3/4';
+                else if (num === 2) formattedTimeSig = '2/4';
+                else if (num === 6) formattedTimeSig = '6/8';
+                else formattedTimeSig = `${num}/4`;
+            }
+            headerTextParts.push(`Time Sig: ${formattedTimeSig}`);
+        }
+        const headerKeyText = headerTextParts.join(' | ');
+
+        mainContentHtml = `
+            <h1>${songTitle}</h1>
+            <h2>${headerKeyText}</h2>
+            <div class="chart-container">
+                ${htmlLines.join('')}
+            </div>
+        `;
     }
-    const headerKeyText = headerTextParts.join(' | ');
 
     let containerStyle = '';
     let headerStyle = '';
@@ -1077,6 +1213,9 @@ async function createPdfChart(finalChartText, songTitle, originalKey, targetKey,
         `;
         headerStyle = `
             .line.header {
+                break-inside: avoid;
+            }
+            .song-section {
                 break-inside: avoid;
             }
         `;
@@ -1099,11 +1238,7 @@ async function createPdfChart(finalChartText, songTitle, originalKey, targetKey,
         </style>
     </head>
     <body>
-        <h1>${songTitle}</h1>
-        <h2>${headerKeyText}</h2>
-        <div class="chart-container">
-            ${htmlLines.join('')}
-        </div>
+        ${mainContentHtml}
         ${glossaryHtml}
     </body>
     </html>`;

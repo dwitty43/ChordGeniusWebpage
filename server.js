@@ -136,7 +136,8 @@ async function deliverFile(res, finalChart, originalName, originalKey, targetKey
     let extension;
 
     if (format === 'pdf') {
-        fileBuffer = await createPdfChart(finalChart, originalName, originalKey, targetKey, bpm, capo, timeSignature, columns);
+        const rawPdf = await createPdfChart(finalChart, originalName, originalKey, targetKey, bpm, capo, timeSignature, columns);
+        fileBuffer = Buffer.from(rawPdf);
         contentType = 'application/pdf';
         extension = 'pdf';
     } else if (format === 'pro') {
@@ -145,7 +146,8 @@ async function deliverFile(res, finalChart, originalName, originalKey, targetKey
         contentType = 'text/plain';
         extension = 'pro';
     } else {
-        fileBuffer = await createDocxChart(finalChart, originalName, originalKey, targetKey, bpm, capo, timeSignature);
+        const rawDocx = await createDocxChart(finalChart, originalName, originalKey, targetKey, bpm, capo, timeSignature, columns);
+        fileBuffer = Buffer.from(rawDocx);
         contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
         extension = 'docx';
     }
