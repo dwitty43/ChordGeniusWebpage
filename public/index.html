@@ -1465,13 +1465,13 @@ function renderSetlist() {
             metaText += ` | Time Sig: ${formattedTimeSig}`;
         }
         item.innerHTML = `
-            <div class="history-info">
+            <div class="history-info" onclick="previewSongFromSetlist(${idx})">
                 <div class="history-name">${idx + 1}. ${song.title}</div>
                 <div class="history-meta">${metaText}</div>
             </div>
             <div style="display: flex; gap: 8px;">
-                ${(song.bpm || song.timeSignature) ? `<button class="history-clear" style="color: var(--primary);" onclick="playFromSetlist(${idx})">Play</button>` : ''}
-                <button class="history-clear" onclick="removeFromSetlist(${idx})">Remove</button>
+                ${(song.bpm || song.timeSignature) ? `<button class="history-clear" style="color: var(--primary);" onclick="event.stopPropagation(); playFromSetlist(${idx})">Play</button>` : ''}
+                <button class="history-clear" onclick="event.stopPropagation(); removeFromSetlist(${idx})">Remove</button>
             </div>
         `;
         container.appendChild(item);
@@ -1482,6 +1482,47 @@ function renderSetlist() {
 window.removeFromSetlist = function(idx) {
     setlistQueue.splice(idx, 1);
     renderSetlist();
+};
+
+// Function to preview song from setlist inside modal
+window.previewSongFromSetlist = function(idx) {
+    const song = setlistQueue[idx];
+    if (!song) return;
+
+    // Clone the song object and assign to window.currentChartData
+    window.currentChartData = {
+        title: song.title,
+        key: song.originalKey,
+        originalKey: song.originalKey,
+        targetKey: song.targetKey,
+        text: song.text,
+        capo: song.capo || '0',
+        bpm: song.bpm || '',
+        timeSignature: song.timeSignature || ''
+    };
+
+    window.currentChartSource = 'setlist';
+
+    // Populate modal elements
+    document.getElementById('liveEditor').value = song.text;
+    document.getElementById('modalTitle').textContent = song.title;
+    
+    let subtitleText = `Transposed to: ${song.targetKey}`;
+    const capoVal = parseInt(song.capo, 10);
+    if (capoVal && capoVal > 0) {
+        subtitleText += ` | Capo: ${capoVal}`;
+    }
+    document.getElementById('modalSubtitle').textContent = subtitleText;
+
+    // Clean up any old previews
+    document.querySelectorAll('.modal-docx-preview, iframe, .modal-loading').forEach(el => el.remove());
+
+    // Reset preview state (which switches back to edit tab)
+    if (typeof resetModalPreviewState === 'function') resetModalPreviewState();
+
+    // Open modal
+    document.getElementById('previewOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
 };
 
 // 4. The function to add a song (Attach this to an "Add to Setlist" button)
