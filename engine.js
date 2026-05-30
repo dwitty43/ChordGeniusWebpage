@@ -331,7 +331,7 @@ function formatKeyDisplay(keyStr) {
     if (!keyStr) return '';
     return keyStr.charAt(0).toUpperCase() + keyStr.slice(1).toLowerCase();
 }
-async function createDocxChart(finalChartText, songTitle, originalKey, targetKey) {
+async function createDocxChart(finalChartText, songTitle, originalKey, targetKey, bpm) {
     const cleanText = finalChartText.replace(/\x1B\[\d+m/g, ''); 
     const lines = cleanText.split('\n');
 
@@ -395,6 +395,9 @@ async function createDocxChart(finalChartText, songTitle, originalKey, targetKey
     if (!targetKey || /^nashville$|^1$/i.test(targetKey)) {
         headerKeyText = /^nashville$/i.test(originalKey) ? 'Nashville Numbers' : `Key: ${formatKeyDisplay(originalKey)}`;
     }
+    if (bpm) {
+        headerKeyText += ` | BPM: ${bpm}`;
+    }
 
     const titleParagraph = new Paragraph({
         children: [ new TextRun({ text: songTitle.toUpperCase(), font: "Courier New", size: 32, bold: true }) ],
@@ -413,7 +416,7 @@ async function createDocxChart(finalChartText, songTitle, originalKey, targetKey
     return await Packer.toBuffer(doc);
 }
 
-async function createPdfChart(finalChartText, songTitle, originalKey, targetKey) {
+async function createPdfChart(finalChartText, songTitle, originalKey, targetKey, bpm) {
     const lines = finalChartText.split('\n');
     
     let htmlLines = lines.map(line => {

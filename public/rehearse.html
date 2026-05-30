@@ -528,7 +528,14 @@ document.addEventListener('keydown',e=>{
     }
 });
 
-buildDots(); setBpm(120);
+buildDots();
+const urlParams = new URLSearchParams(window.location.search);
+const initialBpm = parseInt(urlParams.get('bpm'), 10);
+if (!isNaN(initialBpm) && initialBpm >= 40 && initialBpm <= 240) {
+    setBpm(initialBpm);
+} else {
+    setBpm(120);
+}
 
 // ── BPM CLICK-TO-EDIT ──
 const bpmDisplay = document.getElementById('bpmDisplay');
