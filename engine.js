@@ -331,7 +331,7 @@ function formatKeyDisplay(keyStr) {
     if (!keyStr) return '';
     return keyStr.charAt(0).toUpperCase() + keyStr.slice(1).toLowerCase();
 }
-async function createDocxChart(finalChartText, songTitle, originalKey, targetKey, bpm) {
+async function createDocxChart(finalChartText, songTitle, originalKey, targetKey, bpm, timeSignature) {
     const cleanText = finalChartText.replace(/\x1B\[\d+m/g, ''); 
     const lines = cleanText.split('\n');
 
@@ -391,13 +391,28 @@ async function createDocxChart(finalChartText, songTitle, originalKey, targetKey
         }
     });
 
-    let headerKeyText = `Key: ${formatKeyDisplay(targetKey)}`;
+    let headerTextParts = [];
+    let keyText = `Key: ${formatKeyDisplay(targetKey)}`;
     if (!targetKey || /^nashville$|^1$/i.test(targetKey)) {
-        headerKeyText = /^nashville$/i.test(originalKey) ? 'Nashville Numbers' : `Key: ${formatKeyDisplay(originalKey)}`;
+        keyText = /^nashville$/i.test(originalKey) ? 'Nashville Numbers' : `Key: ${formatKeyDisplay(originalKey)}`;
     }
+    headerTextParts.push(keyText);
     if (bpm) {
-        headerKeyText += ` | BPM: ${bpm}`;
+        headerTextParts.push(`BPM: ${bpm}`);
     }
+    if (timeSignature) {
+        let formattedTimeSig = timeSignature;
+        if (typeof timeSignature === 'number' || !isNaN(Number(timeSignature))) {
+            const num = Number(timeSignature);
+            if (num === 4) formattedTimeSig = '4/4';
+            else if (num === 3) formattedTimeSig = '3/4';
+            else if (num === 2) formattedTimeSig = '2/4';
+            else if (num === 6) formattedTimeSig = '6/8';
+            else formattedTimeSig = `${num}/4`;
+        }
+        headerTextParts.push(`Time Sig: ${formattedTimeSig}`);
+    }
+    const headerKeyText = headerTextParts.join(' | ');
 
     const titleParagraph = new Paragraph({
         children: [ new TextRun({ text: songTitle.toUpperCase(), font: "Courier New", size: 32, bold: true }) ],
@@ -416,7 +431,7 @@ async function createDocxChart(finalChartText, songTitle, originalKey, targetKey
     return await Packer.toBuffer(doc);
 }
 
-async function createPdfChart(finalChartText, songTitle, originalKey, targetKey, bpm) {
+async function createPdfChart(finalChartText, songTitle, originalKey, targetKey, bpm, timeSignature) {
     const lines = finalChartText.split('\n');
     
     let htmlLines = lines.map(line => {
@@ -470,10 +485,28 @@ async function createPdfChart(finalChartText, songTitle, originalKey, targetKey,
         }
     });
 
-    let headerKeyText = `Key: ${formatKeyDisplay(targetKey)}`;
+    let headerTextParts = [];
+    let keyText = `Key: ${formatKeyDisplay(targetKey)}`;
     if (!targetKey || /^nashville$|^1$/i.test(targetKey)) {
-        headerKeyText = /^nashville$/i.test(originalKey) ? 'Nashville Numbers' : `Key: ${formatKeyDisplay(originalKey)}`;
+        keyText = /^nashville$/i.test(originalKey) ? 'Nashville Numbers' : `Key: ${formatKeyDisplay(originalKey)}`;
     }
+    headerTextParts.push(keyText);
+    if (bpm) {
+        headerTextParts.push(`BPM: ${bpm}`);
+    }
+    if (timeSignature) {
+        let formattedTimeSig = timeSignature;
+        if (typeof timeSignature === 'number' || !isNaN(Number(timeSignature))) {
+            const num = Number(timeSignature);
+            if (num === 4) formattedTimeSig = '4/4';
+            else if (num === 3) formattedTimeSig = '3/4';
+            else if (num === 2) formattedTimeSig = '2/4';
+            else if (num === 6) formattedTimeSig = '6/8';
+            else formattedTimeSig = `${num}/4`;
+        }
+        headerTextParts.push(`Time Sig: ${formattedTimeSig}`);
+    }
+    const headerKeyText = headerTextParts.join(' | ');
 
     const htmlContent = `
     <!DOCTYPE html>
