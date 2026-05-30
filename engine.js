@@ -204,7 +204,23 @@ async function getFirstSearchResult(query) {
     throw new Error(`Could not find an Ultimate Guitar chords link for "${query}".`);
 }
 
+const USER_AGENTS = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36 Edg/123.0.0.0'
+];
+
+async function delay(min = 800, max = 2000) {
+    const ms = Math.floor(Math.random() * (max - min + 1)) + min;
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function fetchUGPage(url, isSearch = false) {
+    // Mimic human delays
+    await delay(1000, 2500);
+
     const browser = await puppeteer.launch({ 
         headless: "new", 
         args: [
@@ -215,26 +231,56 @@ async function fetchUGPage(url, isSearch = false) {
     });
     
     const page = await browser.newPage();
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36');
+    const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+    await page.setUserAgent(userAgent);
 
     try {
-        // Fast load: Removed the massive 30-second loop to prevent API timeouts.
         await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
 
         if (!isSearch) {
-            // The Stealth Plugin will handle the background check naturally.
-            // waitForSelector automatically waits across redirects if Cloudflare clears us.
             try { await page.waitForSelector('pre', { timeout: 8000 }); } catch (e) {}
         } else {
-            // Give search engine DOMs a brief moment to paint their anchor tags
             await new Promise(r => setTimeout(r, 1000));
         }
 
-        const html = await page.content();
+        let html = await page.content();
+        
+        // If Cloudflare blocks us on direct UG fetch, try Google Cache fallback
+        if (!isSearch && (html.includes("Just a moment...") || html.includes("cf-browser-verification") || !html.includes("<pre>"))) {
+            console.log("[Engine] Direct page blocked by Cloudflare or missing pre tag. Trying Google Web Cache...");
+            const cacheUrl = `https://webcache.googleusercontent.com/search?q=cache:${encodeURIComponent(url)}&strip=0`;
+            await page.goto(cacheUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
+            try { await page.waitForSelector('pre', { timeout: 8000 }); } catch (e) {}
+            html = await page.content();
+        }
+
         await browser.close();
         return html;
     } catch (error) {
         if (browser) await browser.close();
+        
+        // Try fallback to Google Cache on connection error too
+        if (!isSearch) {
+            console.log(`[Engine] Direct page fetch failed: ${error.message}. Trying Google Web Cache...`);
+            let browserFallback;
+            try {
+                browserFallback = await puppeteer.launch({ 
+                    headless: "new", 
+                    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-blink-features=AutomationControlled'] 
+                });
+                const pageFallback = await browserFallback.newPage();
+                await pageFallback.setUserAgent(USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)]);
+                const cacheUrl = `https://webcache.googleusercontent.com/search?q=cache:${encodeURIComponent(url)}&strip=0`;
+                await pageFallback.goto(cacheUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
+                try { await pageFallback.waitForSelector('pre', { timeout: 8000 }); } catch (e) {}
+                const htmlFallback = await pageFallback.content();
+                await browserFallback.close();
+                return htmlFallback;
+            } catch (eFallback) {
+                if (browserFallback) await browserFallback.close();
+            }
+        }
+        
         throw new Error(`Puppeteer failed: ${error.message}`);
     }
 }
