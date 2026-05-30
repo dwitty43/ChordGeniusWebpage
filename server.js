@@ -217,14 +217,25 @@ app.post('/api/binder', async (req, res) => {
             const song = setlist[i];
             if (i > 0) combinedText += `\n\n\n\n\n`; 
             combinedText += `=== SONG ${i + 1}: ${song.title.toUpperCase()} ===\n`;
+            
             let keyText = song.targetKey;
             const isTargetNashville = !song.targetKey || /^nashville$|^1$/i.test(song.targetKey.trim());
             const isSourceNashville = !song.originalKey || /^nashville$/i.test(song.originalKey.trim());
             const capoVal = parseInt(song.capo, 10);
-            if (capoVal && capoVal > 0 && !isTargetNashville && !isSourceNashville) {
-                const playKey = getPlayKey(song.targetKey, capoVal);
-                keyText = `${song.targetKey} | Capo: ${capoVal} | Play: ${playKey}`;
+            
+            if (!isTargetNashville && !isSourceNashville) {
+                keyText = `${song.targetKey}`;
+                if (song.originalKey && song.originalKey !== song.targetKey) {
+                    keyText += ` (Original: ${song.originalKey})`;
+                }
+                if (capoVal && capoVal > 0) {
+                    const playKey = getPlayKey(song.targetKey, capoVal);
+                    keyText += ` | Capo: ${capoVal} | Play: ${playKey}`;
+                }
+            } else if (isTargetNashville) {
+                keyText = isSourceNashville ? 'Nashville Numbers' : `${song.originalKey}`;
             }
+
             if (song.bpm) {
                 keyText += ` | BPM: ${song.bpm}`;
             }
@@ -300,7 +311,7 @@ app.post('/api/import', upload.single('chartFile'), async (req, res) => {
     const timeSignature = req.body.timeSignature || '';
     const columns = req.body.columns || '1';
 
-    if (!file) return res.status(400).json({ error: "Please upload a .txt, .docx, .pdf, .pro, or .cho file." });
+    if (!file) return res.status(400).json({ error: "Please upload a .txt, .docx, .pdf, .pro, or .cho" });
 
     try {
         console.log(`[API] Processing upload: ${file.originalname}`);

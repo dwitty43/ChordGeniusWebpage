@@ -848,6 +848,10 @@
 
         <div class="history-list" id="setlistQueueContainer" style="display: none;"></div>
 
+        <div id="setlistTitleContainer" style="display: none; margin-top: 16px; margin-bottom: 12px;">
+            <input type="text" id="setlistTitleInput" placeholder="Setlist Title (e.g. 'Sunday Morning Worship Setlist')" value="Setlist Binder">
+        </div>
+
         <div class="grid-buttons" id="setlistActions" style="display: none; grid-template-columns: 165px 125px 1fr; margin-top: 16px;">
             <select id="binderFormat">
                 <option value="docx">.DOCX Binder</option>
@@ -1323,11 +1327,13 @@ function renderSetlist() {
     const container = document.getElementById('setlistQueueContainer');
     const emptyMsg = document.getElementById('emptySetlistMsg');
     const actions = document.getElementById('setlistActions');
+    const titleContainer = document.getElementById('setlistTitleContainer');
     
     // If empty, show the dashed box
     if(setlistQueue.length === 0) {
         container.style.display = 'none';
         actions.style.display = 'none';
+        if (titleContainer) titleContainer.style.display = 'none';
         emptyMsg.style.display = 'block';
         return;
     }
@@ -1336,6 +1342,7 @@ function renderSetlist() {
     emptyMsg.style.display = 'none';
     container.style.display = 'flex';
     actions.style.display = 'grid';
+    if (titleContainer) titleContainer.style.display = 'block';
     container.innerHTML = '';
     
     setlistQueue.forEach((song, idx) => {
@@ -1401,6 +1408,7 @@ document.getElementById('downloadBinderBtn').addEventListener('click', async () 
     const format = document.getElementById('binderFormat').value;
     const btn = document.getElementById('downloadBinderBtn');
     const origHTML = btn.innerHTML;
+    const binderTitle = document.getElementById('setlistTitleInput').value || 'Setlist Binder';
     
     btn.innerHTML = '⏳ Compiling Binder...';
     btn.disabled = true;
@@ -1409,7 +1417,12 @@ document.getElementById('downloadBinderBtn').addEventListener('click', async () 
         const res = await fetch('/api/binder', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ setlist: setlistQueue, format: format, columns: document.getElementById('binderColumns').value })
+            body: JSON.stringify({ 
+                setlist: setlistQueue, 
+                format: format, 
+                columns: document.getElementById('binderColumns').value,
+                title: binderTitle
+            })
         });
         
         if(!res.ok) throw new Error((await res.json()).error);
@@ -1419,7 +1432,7 @@ document.getElementById('downloadBinderBtn').addEventListener('click', async () 
         // Trigger the download in the browser
         const url = URL.createObjectURL(blob); 
         const a = document.createElement('a');
-        a.style.display = 'none'; a.href = url; a.download = `Chord_Chart_Binder.${format}`;
+        a.style.display = 'none'; a.href = url; a.download = `${binderTitle.replace(/\s+/g, '_')}_Binder.${format}`;
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 5000);
         

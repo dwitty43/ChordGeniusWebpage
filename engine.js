@@ -4,7 +4,7 @@ const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 puppeteer.use(StealthPlugin());
 const cheerio = require('cheerio');
-const { Document, Packer, Paragraph, TextRun, PageBreak } = require('docx');
+const { Document, Packer, Paragraph, TextRun, PageBreak, Table, TableRow, TableCell, WidthType, BorderStyle } = require('docx');
 
 const USER_AGENTS = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
@@ -664,12 +664,13 @@ function formatKeyDisplay(keyStr) {
     if (!keyStr) return '';
     return keyStr.charAt(0).toUpperCase() + keyStr.slice(1).toLowerCase();
 }
+
 async function createDocxChart(finalChartText, songTitle, originalKey, targetKey, bpm, capo = 0, timeSignature = '', columns = '1') {
     const cleanText = finalChartText.replace(/\x1B\[\d+m/g, ''); 
     const lines = cleanText.split('\n');
 
     // Helper function to map song lines to document paragraph objects
-    function mapSongLines(songLines) {
+    function mapSongLines(songLines, fontSize) {
         return songLines.map(line => {
             if (isNashvilleLine(line) || isChordLine(line)) {
                 const runs = [];
@@ -681,8 +682,8 @@ async function createDocxChart(finalChartText, songTitle, originalKey, targetKey
                     const spaces = match[2];
 
                     if (/^[|()\[\]{}:\-~,]+$/.test(chord)) {
-                        runs.push(new TextRun({ text: chord, font: "Courier New", size: 24, bold: true }));
-                        if (spaces) runs.push(new TextRun({ text: spaces, font: "Courier New", size: 24 }));
+                        runs.push(new TextRun({ text: chord, font: "Courier New", size: fontSize, bold: true }));
+                        if (spaces) runs.push(new TextRun({ text: spaces, font: "Courier New", size: fontSize }));
                         continue;
                     }
 
@@ -691,7 +692,7 @@ async function createDocxChart(finalChartText, songTitle, originalKey, targetKey
                     const rawChord = fixMatch[2];
                     const suffix = fixMatch[3] || '';
 
-                    if (prefix) runs.push(new TextRun({ text: prefix, font: "Courier New", size: 24, bold: true }));
+                    if (prefix) runs.push(new TextRun({ text: prefix, font: "Courier New", size: fontSize, bold: true }));
 
                     const chordParts = rawChord.split('/');
                     const mainChord = chordParts[0];
@@ -703,33 +704,33 @@ async function createDocxChart(finalChartText, songTitle, originalKey, targetKey
                         const root = rootMatch[1];
                         const rawExtension = rootMatch[2];
 
-                        runs.push(new TextRun({ text: root, font: "Courier New", size: 24, bold: true }));
+                        runs.push(new TextRun({ text: root, font: "Courier New", size: fontSize, bold: true }));
 
                         if (rawExtension) {
                             const extMatch = rawExtension.match(/^(\D*)(\d.*)?$/);
                             if (extMatch) {
-                                if (extMatch[1]) runs.push(new TextRun({ text: extMatch[1], font: "Courier New", size: 24, bold: true }));
-                                if (extMatch[2]) runs.push(new TextRun({ text: extMatch[2], font: "Courier New", size: 24, bold: true, superScript: true }));
+                                if (extMatch[1]) runs.push(new TextRun({ text: extMatch[1], font: "Courier New", size: fontSize, bold: true }));
+                                if (extMatch[2]) runs.push(new TextRun({ text: extMatch[2], font: "Courier New", size: fontSize, bold: true, superScript: true }));
                             }
                         }
-                        if (bassNote) runs.push(new TextRun({ text: `/${bassNote}`, font: "Courier New", size: 24, bold: true }));
+                        if (bassNote) runs.push(new TextRun({ text: `/${bassNote}`, font: "Courier New", size: fontSize, bold: true }));
                     } else {
-                        runs.push(new TextRun({ text: rawChord, font: "Courier New", size: 24, bold: true }));
+                        runs.push(new TextRun({ text: rawChord, font: "Courier New", size: fontSize, bold: true }));
                     }
 
-                    if (suffix) runs.push(new TextRun({ text: suffix, font: "Courier New", size: 24, bold: true }));
-                    if (spaces) runs.push(new TextRun({ text: spaces, font: "Courier New", size: 24 }));
+                    if (suffix) runs.push(new TextRun({ text: suffix, font: "Courier New", size: fontSize, bold: true }));
+                    if (spaces) runs.push(new TextRun({ text: spaces, font: "Courier New", size: fontSize }));
                 }
                 return new Paragraph({ children: runs });
             } else {
-                return new Paragraph({ children: [ new TextRun({ text: line, font: "Courier New", size: 24 })] });
+                return new Paragraph({ children: [ new TextRun({ text: line, font: "Courier New", size: fontSize })] });
             }
         });
     }
 
     // Check if we are dealing with a Setlist Binder
     const isBinder = songTitle === "Setlist_Binder" || finalChartText.includes("=== SONG ");
-    const docChildren = [];
+    const sections = [];
 
     if (isBinder) {
         // Parse songs from the combined text
@@ -759,46 +760,112 @@ async function createDocxChart(finalChartText, songTitle, originalKey, targetKey
             songs.push(currentSong);
         }
 
-        // Render each song, separated by a PageBreak
-        for (let i = 0; i < songs.length; i++) {
-            const song = songs[i];
-            if (i > 0) {
-                docChildren.push(new Paragraph({ children: [new PageBreak()] }));
-            }
+        // Section 1: Binder Cover Page (1 column)
+        const coverChildren = [
+            new Paragraph({ children: [ new TextRun({ text: "", font: "Courier New" }) ], spacing: { before: 2400 } }),
+            new Paragraph({
+                children: [ new TextRun({ text: "SETLIST BINDER", font: "Courier New", size: 48, bold: true }) ],
+                alignment: "center",
+                spacing: { after: 600 }
+            }),
+            new Paragraph({
+                children: [ new TextRun({ text: "Generated by Chord Genius Studio", font: "Courier New", size: 24, italic: true }) ],
+                alignment: "center",
+                spacing: { after: 1200 }
+            })
+        ];
 
-            // Beautiful styled bold section title
-            docChildren.push(new Paragraph({
-                children: [ new TextRun({ text: song.title.toUpperCase(), font: "Courier New", size: 32, bold: true }) ],
+        songs.forEach((song, idx) => {
+            const displayKey = song.keyText.replace('Key: ', '');
+            coverChildren.push(new Paragraph({
+                children: [ new TextRun({ text: `${idx + 1}. ${song.title.toUpperCase()} (${displayKey})`, font: "Courier New", size: 24 }) ],
+                alignment: "center",
                 spacing: { after: 200 }
             }));
+        });
 
-            // Beautiful styled bold key/bpm/sig header
-            if (song.keyText) {
-                docChildren.push(new Paragraph({
-                    children: [ new TextRun({ text: song.keyText, font: "Courier New", size: 24, bold: true }) ],
-                    spacing: { after: 400 }
-                }));
-            }
+        sections.push({
+            properties: { column: { count: 1 } },
+            children: coverChildren
+        });
 
-            const mapped = mapSongLines(song.lines);
-            docChildren.push(...mapped);
+        // For each song: Split Title & Metadata (1 col) and Body (columns col)
+        for (let i = 0; i < songs.length; i++) {
+            const song = songs[i];
+            const fontScale = columns === '2' ? 18 : 24;
+
+            const titleParagraph = new Paragraph({
+                children: [ new TextRun({ text: song.title.toUpperCase(), font: "Courier New", size: columns === '2' ? 24 : 32, bold: true }) ],
+                spacing: { before: 400, after: 200 }
+            });
+
+            // Metadata row table
+            const headerTextParts = song.keyText.replace('Key: ', '').split(' | ');
+            const cells = headerTextParts.map(part => {
+                return new TableCell({
+                    width: { size: 100 / headerTextParts.length, type: WidthType.PERCENTAGE },
+                    children: [
+                        new Paragraph({
+                            children: [ new TextRun({ text: part, font: "Courier New", size: fontScale, bold: true }) ],
+                            alignment: "center"
+                        })
+                    ]
+                });
+            });
+
+            const metadataTable = new Table({
+                width: { size: 100, type: WidthType.PERCENTAGE },
+                borders: {
+                    top: { style: BorderStyle.NONE },
+                    bottom: { style: BorderStyle.NONE },
+                    left: { style: BorderStyle.NONE },
+                    right: { style: BorderStyle.NONE },
+                    insideHorizontal: { style: BorderStyle.NONE },
+                    insideVertical: { style: BorderStyle.NONE },
+                },
+                rows: [
+                    new TableRow({ children: cells })
+                ]
+            });
+
+            sections.push({
+                properties: { column: { count: 1 } },
+                children: [
+                    titleParagraph,
+                    metadataTable,
+                    new Paragraph({ children: [], spacing: { after: 400 } })
+                ]
+            });
+
+            const bodyChildren = mapSongLines(song.lines, fontScale);
+            sections.push({
+                properties: {
+                    column: columns === '2' ? { count: 2, space: 720, equalWidth: true } : { count: 1 }
+                },
+                children: bodyChildren
+            });
         }
     } else {
-        // Render a single song (legacy path)
-        let headerTextParts = [];
+        // Single song
         const isTargetNashville = !targetKey || /^nashville$|^1$/i.test(targetKey.trim());
         const isSourceNashville = !originalKey || /^nashville$/i.test(originalKey.trim());
         const capoVal = parseInt(capo, 10);
+        const fontScale = columns === '2' ? 18 : 24;
 
         let keyText = `Key: ${formatKeyDisplay(targetKey)}`;
         if (isTargetNashville) {
             keyText = isSourceNashville ? 'Nashville Numbers' : `Key: ${formatKeyDisplay(originalKey)}`;
         } else {
+            if (originalKey && originalKey !== targetKey) {
+                keyText += ` (Original: ${formatKeyDisplay(originalKey)})`;
+            }
             if (capoVal && capoVal > 0 && !isSourceNashville) {
                 const playKey = getPlayKey(targetKey, capoVal);
                 keyText += ` | Capo: ${capoVal} | Play: ${formatKeyDisplay(playKey)}`;
             }
         }
+
+        let headerTextParts = [];
         headerTextParts.push(keyText);
         if (bpm) {
             headerTextParts.push(`BPM: ${bpm}`);
@@ -815,32 +882,61 @@ async function createDocxChart(finalChartText, songTitle, originalKey, targetKey
             }
             headerTextParts.push(`Time Sig: ${formattedTimeSig}`);
         }
-        const headerKeyText = headerTextParts.join(' | ');
 
+        // Section 1: Title and Metadata Row (1 column)
         const titleParagraph = new Paragraph({
-            children: [ new TextRun({ text: songTitle.toUpperCase(), font: "Courier New", size: 32, bold: true }) ],
-            spacing: { after: 200 } 
+            children: [ new TextRun({ text: songTitle.toUpperCase(), font: "Courier New", size: columns === '2' ? 24 : 32, bold: true }) ],
+            spacing: { after: 200 }
         });
 
-        const keyParagraph = new Paragraph({
-            children: [ new TextRun({ text: headerKeyText, font: "Courier New", size: 24, bold: true }) ],
-            spacing: { after: 400 } 
+        const cells = headerTextParts.map(part => {
+            return new TableCell({
+                width: { size: 100 / headerTextParts.length, type: WidthType.PERCENTAGE },
+                children: [
+                    new Paragraph({
+                        children: [ new TextRun({ text: part, font: "Courier New", size: fontScale, bold: true }) ],
+                        alignment: "center"
+                    })
+                ]
+            });
         });
 
-        docChildren.push(titleParagraph, keyParagraph, ...mapSongLines(lines));
-    }
+        const metadataTable = new Table({
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            borders: {
+                top: { style: BorderStyle.NONE },
+                bottom: { style: BorderStyle.NONE },
+                left: { style: BorderStyle.NONE },
+                right: { style: BorderStyle.NONE },
+                insideHorizontal: { style: BorderStyle.NONE },
+                insideVertical: { style: BorderStyle.NONE },
+            },
+            rows: [
+                new TableRow({ children: cells })
+            ]
+        });
 
-    const sectionProperties = {};
-    if (columns === '2') {
-        sectionProperties.column = {
-            count: 2,
-            space: 720,
-            equalWidth: true
-        };
+        sections.push({
+            properties: { column: { count: 1 } },
+            children: [
+                titleParagraph,
+                metadataTable,
+                new Paragraph({ children: [], spacing: { after: 400 } })
+            ]
+        });
+
+        // Section 2: Song Body (1 or 2 columns)
+        const bodyChildren = mapSongLines(lines, fontScale);
+        sections.push({
+            properties: {
+                column: columns === '2' ? { count: 2, space: 720, equalWidth: true } : { count: 1 }
+            },
+            children: bodyChildren
+        });
     }
 
     const doc = new Document({
-        sections: [{ properties: sectionProperties, children: docChildren }]
+        sections: sections
     });
     
     return await Packer.toBuffer(doc);
@@ -1112,10 +1208,11 @@ async function createPdfChart(finalChartText, songTitle, originalKey, targetKey,
     }
 
     let mainContentHtml = '';
+    let coverHtml = '';
+    const songs = [];
 
     if (isBinder) {
         // Parse songs from combined text
-        const songs = [];
         let currentSong = null;
 
         for (const line of lines) {
@@ -1141,13 +1238,27 @@ async function createPdfChart(finalChartText, songTitle, originalKey, targetKey,
             songs.push(currentSong);
         }
 
+        // Generate Cover Page HTML
+        const coverSongsHtml = songs.map((song, i) => `
+            <div class="cover-song-item" style="margin-bottom: 10px;">${i + 1}. ${song.title.toUpperCase()} (${song.keyText.replace('Key: ', '')})</div>
+        `).join('');
+        coverHtml = `
+            <div class="binder-cover-page" style="page-break-after: always; text-align: center; padding-top: 150px; box-sizing: border-box; font-family: 'Courier New', Courier, monospace;">
+                <h1 style="font-size: 48px; margin-bottom: 20px; font-weight: bold; text-transform: uppercase;">SETLIST BINDER</h1>
+                <h3 style="font-size: 20px; font-style: italic; margin-bottom: 60px; color: #666;">Generated by Chord Genius Studio</h3>
+                <div style="display: inline-block; text-align: left; font-size: 18px; line-height: 2;">
+                    ${coverSongsHtml}
+                </div>
+            </div>
+        `;
+
         const songSections = songs.map((song, i) => {
             const htmlLinesForSong = mapSongHtmlLines(song.lines);
             const pageBreakStyle = i > 0 ? ' style="page-break-before: always;"' : '';
             return `
                 <div class="song-section"${pageBreakStyle}>
-                    <h1>${song.title}</h1>
-                    <h2>${song.keyText}</h2>
+                    <h1 class="song-title">${song.title}</h1>
+                    <h2 class="song-metadata">${song.keyText}</h2>
                     <div class="chart-container">
                         ${htmlLinesForSong.join('')}
                     </div>
@@ -1168,6 +1279,9 @@ async function createPdfChart(finalChartText, songTitle, originalKey, targetKey,
         if (isTargetNashville) {
             keyText = isSourceNashville ? 'Nashville Numbers' : `Key: ${formatKeyDisplay(originalKey)}`;
         } else {
+            if (originalKey && originalKey !== targetKey) {
+                keyText += ` (Original: ${formatKeyDisplay(originalKey)})`;
+            }
             if (capoVal && capoVal > 0 && !isSourceNashville) {
                 const playKey = getPlayKey(targetKey, capoVal);
                 keyText += ` | Capo: ${capoVal} | Play: ${formatKeyDisplay(playKey)}`;
@@ -1192,8 +1306,8 @@ async function createPdfChart(finalChartText, songTitle, originalKey, targetKey,
         const headerKeyText = headerTextParts.join(' | ');
 
         mainContentHtml = `
-            <h1>${songTitle}</h1>
-            <h2>${headerKeyText}</h2>
+            <h1 class="song-title">${songTitle}</h1>
+            <h2 class="song-metadata">${headerKeyText}</h2>
             <div class="chart-container">
                 ${htmlLines.join('')}
             </div>
@@ -1221,14 +1335,19 @@ async function createPdfChart(finalChartText, songTitle, originalKey, targetKey,
         `;
     }
 
+    // Dynamic monospaced font scaling layout properties
+    let bodyFontSize = columns === '2' ? '12px' : '16px';
+    let h1FontSize = columns === '2' ? '24px' : '32px';
+    let h2FontSize = columns === '2' ? '18px' : '24px';
+
     const htmlContent = `
     <!DOCTYPE html>
     <html>
     <head>
         <style>
-            body { font-family: 'Courier New', Courier, monospace; font-size: 16px; margin: 40px; color: #000; }
-            h1 { font-size: 32px; margin-bottom: 5px; text-transform: uppercase; }
-            h2 { font-size: 24px; margin-bottom: 30px; }
+            body { font-family: 'Courier New', Courier, monospace; font-size: ${bodyFontSize}; margin: 40px; color: #000; }
+            .song-title { font-size: ${h1FontSize}; margin-bottom: 5px; text-transform: uppercase; font-weight: bold; }
+            .song-metadata { font-size: ${h2FontSize}; margin-bottom: 30px; font-weight: bold; }
             .line { line-height: 1.2; white-space: nowrap; }
             sup { font-size: 75%; }
             ${containerStyle}
@@ -1238,6 +1357,7 @@ async function createPdfChart(finalChartText, songTitle, originalKey, targetKey,
         </style>
     </head>
     <body>
+        ${coverHtml}
         ${mainContentHtml}
         ${glossaryHtml}
     </body>
