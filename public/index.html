@@ -337,7 +337,7 @@
 
         /* ── GRIDS ── */
         .grid-inputs {
-            display: grid; grid-template-columns: 1fr 160px 160px 140px;
+            display: grid; grid-template-columns: 1fr 130px 150px 120px 120px;
             gap: 10px; margin-bottom: 96px;
         }
         .grid-buttons {
@@ -697,6 +697,20 @@
             <input type="text" id="songQuery" placeholder='Song + artist (e.g. "Yellow – Coldplay")'>
             <select id="songKey"></select>
             <select id="targetKeySearch"></select>
+            <select id="capoSearch">
+                <option value="0">Capo: None</option>
+                <option value="1">Capo 1</option>
+                <option value="2">Capo 2</option>
+                <option value="3">Capo 3</option>
+                <option value="4">Capo 4</option>
+                <option value="5">Capo 5</option>
+                <option value="6">Capo 6</option>
+                <option value="7">Capo 7</option>
+                <option value="8">Capo 8</option>
+                <option value="9">Capo 9</option>
+                <option value="10">Capo 10</option>
+                <option value="11">Capo 11</option>
+            </select>
             <input type="number" id="songBpm" placeholder="BPM (Optional)" min="40" max="240">
         </div>
         <div class="toggle-row">
@@ -762,6 +776,20 @@
             </div>
             <select id="uploadKey"></select>
             <select id="targetKeyUpload"></select>
+            <select id="capoUpload">
+                <option value="0">Capo: None</option>
+                <option value="1">Capo 1</option>
+                <option value="2">Capo 2</option>
+                <option value="3">Capo 3</option>
+                <option value="4">Capo 4</option>
+                <option value="5">Capo 5</option>
+                <option value="6">Capo 6</option>
+                <option value="7">Capo 7</option>
+                <option value="8">Capo 8</option>
+                <option value="9">Capo 9</option>
+                <option value="10">Capo 10</option>
+                <option value="11">Capo 11</option>
+            </select>
             <input type="number" id="uploadBpm" placeholder="BPM (Optional)" min="40" max="240">
         </div>
         <div class="grid-buttons">
@@ -910,11 +938,15 @@ function timeAgo(ts) {
     if (s<604800) return Math.floor(s/86400)+'d ago';
     return new Date(ts).toLocaleDateString();
 }
-function keyLabel(k, t, b) {
+function keyLabel(k, t, b, capo) {
     if (!k && !t) return '—';
     const src = k || 'auto';
     const dst = t || 'Nashville';
     let label = src + ' → ' + dst;
+    const capoVal = parseInt(capo, 10);
+    if (capoVal && capoVal > 0) {
+        label += ` | Capo: ${capoVal}`;
+    }
     if (b) label += ` | BPM: ${b}`;
     return label;
 }
@@ -934,7 +966,7 @@ function renderHistory() {
             </div>
             <div class="history-info">
                 <div class="history-name">${entry.query}</div>
-                <div class="history-meta">${keyLabel(entry.key, entry.targetKey, entry.bpm)}</div>
+                <div class="history-meta">${keyLabel(entry.key, entry.targetKey, entry.bpm, entry.capo)}</div>
             </div>
             <div class="history-badges">
                 <span class="history-badge format-${entry.format}">.${entry.format.toUpperCase()}</span>
@@ -961,6 +993,7 @@ function rerunHistory(entry) {
     document.getElementById('songKey').value = entry.key || '';
     document.getElementById('targetKeySearch').value = entry.targetKey || '';
     document.getElementById('searchFormat').value = entry.format || 'docx';
+    document.getElementById('capoSearch').value = entry.capo || '0';
     if (entry.bpm) {
         document.getElementById('songBpm').value = entry.bpm;
         localStorage.setItem('cg_last_bpm', entry.bpm);
@@ -1012,7 +1045,8 @@ searchBtn.addEventListener('click', async () => {
     showStatus("Fetching data and loading into editor...", "active");
     
     const isSimplify = document.getElementById('simplifyChords').checked;
-    let url = `/api/preview?q=${encodeURIComponent(query)}&simplify=${isSimplify}`;
+    const capo = document.getElementById('capoSearch').value;
+    let url = `/api/preview?q=${encodeURIComponent(query)}&simplify=${isSimplify}&capo=${encodeURIComponent(capo)}`;
     if(key) url += `&key=${encodeURIComponent(key)}`;
     if(targetKey) url += `&targetKey=${encodeURIComponent(targetKey)}`;
     
@@ -1026,7 +1060,12 @@ searchBtn.addEventListener('click', async () => {
         // Populate the modal textarea in the background
         document.getElementById('liveEditor').value = window.currentChartData.text;
         document.getElementById('modalTitle').textContent = window.currentChartData.title;
-        document.getElementById('modalSubtitle').textContent = `Transposed to: ${window.currentChartData.targetKey}`;
+        let subtitleText = `Transposed to: ${window.currentChartData.targetKey}`;
+        const capoVal = parseInt(window.currentChartData.capo, 10);
+        if (capoVal && capoVal > 0 && window.currentChartData.playKey) {
+            subtitleText += ` | Capo: ${capoVal} (Play: ${window.currentChartData.playKey})`;
+        }
+        document.getElementById('modalSubtitle').textContent = subtitleText;
         
         // Clean up any old mammoth iframes if they exist
         document.querySelectorAll('.modal-docx-preview, iframe, .modal-loading').forEach(el => el.remove());
@@ -1036,7 +1075,8 @@ searchBtn.addEventListener('click', async () => {
         document.getElementById('downloadSearchBtn').disabled = false;
         showStatus("Chart generated! Ready to preview or download.", "success");
         
-        addToHistory({query, key, targetKey, format});
+        const capoSearchVal = document.getElementById('capoSearch').value;
+        addToHistory({query, key, targetKey, format, capo: capoSearchVal});
     } catch(e) {
         showStatus(`Error: ${e.message}`, "error");
     } finally {
@@ -1065,7 +1105,8 @@ document.getElementById('downloadSearchBtn').addEventListener('click', async () 
         originalKey: window.currentChartData.originalKey,
         targetKey: window.currentChartData.targetKey,
         text: text,
-        bpm: bpmVal
+        bpm: bpmVal,
+        capo: window.currentChartData.capo || '0'
     }];
     
     const btn = document.getElementById('downloadSearchBtn');
@@ -1113,7 +1154,8 @@ uploadBtn.addEventListener('click', async ()=>{
         localStorage.setItem('cg_last_bpm', bpmVal);
         updateRehearseTabLink(bpmVal);
     }
-    const fd=new FormData(); fd.append('chartFile',file); fd.append('key',key); fd.append('targetKey',targetKey); fd.append('format',format); fd.append('simplify', simplifyUp ? 'true' : 'false'); fd.append('bpm', bpmVal);
+    const capo = document.getElementById('capoUpload').value;
+    const fd=new FormData(); fd.append('chartFile',file); fd.append('key',key); fd.append('targetKey',targetKey); fd.append('format',format); fd.append('simplify', simplifyUp ? 'true' : 'false'); fd.append('bpm', bpmVal); fd.append('capo', capo);
     try {
         const res=await fetch('/api/import',{method:'POST',body:fd});
         if(!res.ok) throw new Error((await res.json()).error||"Conversion failed.");
@@ -1132,8 +1174,9 @@ pvUploadBtn.addEventListener('click', async ()=>{
     const file=fileInput.files[0];
     if(!file) return showStatus("Please select a file to upload!","error");
     
+    const capo = document.getElementById('capoUpload').value;
     const isSimplify = document.getElementById('simplifyChords').checked;
-    const fd=new FormData(); fd.append('chartFile',file); fd.append('key',key); fd.append('targetKey',targetKey); fd.append('simplify', isSimplify ? 'true' : 'false');
+    const fd=new FormData(); fd.append('chartFile',file); fd.append('key',key); fd.append('targetKey',targetKey); fd.append('simplify', isSimplify ? 'true' : 'false'); fd.append('capo', capo);
     
     const orig=pvUploadBtn.innerHTML;
     pvUploadBtn.innerHTML='⏳ Loading...'; pvUploadBtn.disabled=true;
@@ -1152,7 +1195,12 @@ pvUploadBtn.addEventListener('click', async ()=>{
         
         document.getElementById('liveEditor').value = window.currentChartData.text;
         document.getElementById('modalTitle').textContent = window.currentChartData.title;
-        document.getElementById('modalSubtitle').textContent = `Transposed to: ${window.currentChartData.targetKey}`;
+        let subtitleText = `Transposed to: ${window.currentChartData.targetKey}`;
+        const capoVal = parseInt(window.currentChartData.capo, 10);
+        if (capoVal && capoVal > 0 && window.currentChartData.playKey) {
+            subtitleText += ` | Capo: ${capoVal} (Play: ${window.currentChartData.playKey})`;
+        }
+        document.getElementById('modalSubtitle').textContent = subtitleText;
         
         document.querySelectorAll('.modal-docx-preview, iframe, .modal-loading').forEach(el=>el.remove());
         document.getElementById('previewOverlay').classList.add('open');
@@ -1190,6 +1238,10 @@ function renderSetlist() {
         const item = document.createElement('div');
         item.className = 'history-item';
         let metaText = `Original: ${song.originalKey} &rarr; Target: ${song.targetKey}`;
+        const capoVal = parseInt(song.capo, 10);
+        if (capoVal && capoVal > 0) {
+            metaText += ` | Capo: ${capoVal}`;
+        }
         if (song.bpm) {
             metaText += ` | BPM: ${song.bpm}`;
         }
@@ -1215,13 +1267,14 @@ window.removeFromSetlist = function(idx) {
 
 // 4. The function to add a song (Attach this to an "Add to Setlist" button)
 // NOTE: Make sure you have the song's title, key, and raw text available when you call this!
-function addSongToSetlist(title, originalKey, targetKey, rawText, bpm) {
+function addSongToSetlist(title, originalKey, targetKey, rawText, bpm, capo) {
     setlistQueue.push({
         title: title,
         originalKey: originalKey,
         targetKey: targetKey,
         text: rawText,
-        bpm: bpm
+        bpm: bpm,
+        capo: capo || '0'
     });
     renderSetlist();
 }
@@ -1315,7 +1368,8 @@ document.getElementById('addSetlistBtn').addEventListener('click', () => {
         originalKey: window.currentChartData.originalKey,
         targetKey: window.currentChartData.targetKey,
         text: text,
-        bpm: bpmVal
+        bpm: bpmVal,
+        capo: window.currentChartData.capo || '0'
     });
     
     if (typeof renderSetlist === 'function') renderSetlist();

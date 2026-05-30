@@ -12,7 +12,8 @@ const {
     createDocxChart,
     createPdfChart,
     chordProToLineBased,
-    lineBasedToChordPro
+    lineBasedToChordPro,
+    getPlayKey
 } = require('./engine'); 
 
 const app = express();
@@ -22,13 +23,13 @@ app.use(express.static('public'));
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-async function deliverFile(res, finalChart, originalName, originalKey, targetKey, format, bpm) {
+async function deliverFile(res, finalChart, originalName, originalKey, targetKey, format, bpm, capo = 0) {
     let fileBuffer;
     let contentType;
     let extension;
 
     if (format === 'pdf') {
-        fileBuffer = await createPdfChart(finalChart, originalName, originalKey, targetKey, bpm);
+        fileBuffer = await createPdfChart(finalChart, originalName, originalKey, targetKey, bpm, capo);
         contentType = 'application/pdf';
         extension = 'pdf';
     } else if (format === 'pro') {
@@ -37,7 +38,7 @@ async function deliverFile(res, finalChart, originalName, originalKey, targetKey
         contentType = 'text/plain';
         extension = 'pro';
     } else {
-        fileBuffer = await createDocxChart(finalChart, originalName, originalKey, targetKey, bpm);
+        fileBuffer = await createDocxChart(finalChart, originalName, originalKey, targetKey, bpm, capo);
         contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
         extension = 'docx';
     }
@@ -58,6 +59,7 @@ app.get('/api/convert', async (req, res) => {
     const format = req.query.format || 'docx';
     const simplify = req.query.simplify === 'true';
     const bpm = req.query.bpm || '';
+    const capo = parseInt(req.query.capo, 10) || 0;
 
     if (!query) return res.status(400).json({ error: "Please provide a song query." });
 
@@ -75,9 +77,9 @@ app.get('/api/convert', async (req, res) => {
         }
 
         console.log(`[API] Transposing chart...`);
-        const finalChart = processAndAlignTabs(tabData.rawTabText, songKey, targetKey, false, simplify);
+        const finalChart = processAndAlignTabs(tabData.rawTabText, songKey, targetKey, false, simplify, capo);
         
-        await deliverFile(res, finalChart, query, songKey, targetKey, format, bpm);
+        await deliverFile(res, finalChart, query, songKey, targetKey, format, bpm, capo);
 
     } catch (error) {
         console.error(`[API Error]`, error.message);
@@ -97,6 +99,13 @@ app.post('/api/binder', async (req, res) => {
             if (i > 0) combinedText += `\n\n\n\n\n`; 
             combinedText += `=== SONG ${i + 1}: ${song.title.toUpperCase()} ===\n`;
             let keyText = song.targetKey;
+            const isTargetNashville = !song.targetKey || /^nashville$|^1$/i.test(song.targetKey.trim());
+            const isSourceNashville = !song.originalKey || /^nashville$/i.test(song.originalKey.trim());
+            const capoVal = parseInt(song.capo, 10);
+            if (capoVal && capoVal > 0 && !isTargetNashville && !isSourceNashville) {
+                const playKey = getPlayKey(song.targetKey, capoVal);
+                keyText = `${song.targetKey} | Capo: ${capoVal} | Play: ${playKey}`;
+            }
             if (song.bpm) {
                 keyText += ` | BPM: ${song.bpm}`;
             }
@@ -111,7 +120,7 @@ app.post('/api/binder', async (req, res) => {
 
 // --- ROUTE 3: RAW TEXT GENERATOR FOR EDITOR ---
 app.get('/api/preview', async (req, res) => {
-    const { q: query, key: songKey, targetKey, simplify } = req.query;
+    const { q: query, key: songKey, targetKey, simplify, capo: capoParam } = req.query;
     try {
         const tabUrl = await getFirstSearchResult(query); 
         const html = await fetchUGPage(tabUrl);
@@ -121,9 +130,11 @@ app.get('/api/preview', async (req, res) => {
         if (!finalKey) return res.status(400).json({ error: "No key found." });
 
         const isSimplify = simplify === 'true';
-        const finalChart = processAndAlignTabs(tabData.rawTabText, finalKey, targetKey || '', false, isSimplify);
+        const capo = parseInt(capoParam, 10) || 0;
+        const finalChart = processAndAlignTabs(tabData.rawTabText, finalKey, targetKey || '', false, isSimplify, capo);
+        const playKey = capo > 0 ? getPlayKey(targetKey || finalKey, capo) : '';
         
-        res.json({ title: query, originalKey: finalKey, targetKey: targetKey || 'Nashville', text: finalChart });
+        res.json({ title: query, originalKey: finalKey, targetKey: targetKey || 'Nashville', text: finalChart, capo: capo, playKey: playKey });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -137,6 +148,7 @@ app.post('/api/import', upload.single('chartFile'), async (req, res) => {
     const format = req.body.format || 'docx';
     const simplify = req.body.simplify === 'true';
     const bpm = req.body.bpm || '';
+    const capo = parseInt(req.body.capo, 10) || 0;
 
     if (!file) return res.status(400).json({ error: "Please upload a .txt, .docx, .pdf, .pro, or .cho file." });
 
@@ -183,9 +195,9 @@ app.post('/api/import', upload.single('chartFile'), async (req, res) => {
         }
 
         console.log(`[API] Transposing uploaded chart...`);
-        const finalChart = processAndAlignTabs(extractedText, finalSongKey, targetKey, isPdf, simplify);
+        const finalChart = processAndAlignTabs(extractedText, finalSongKey, targetKey, isPdf, simplify, capo);
         
-        await deliverFile(res, finalChart, originalName, finalSongKey, targetKey, format, bpm);
+        await deliverFile(res, finalChart, originalName, finalSongKey, targetKey, format, bpm, capo);
 
     } catch (error) {
         console.error(`[API Error]`, error.message);
@@ -199,6 +211,7 @@ app.post('/api/import-preview', upload.single('chartFile'), async (req, res) => 
     const file = req.file;
     const targetKey = req.body.targetKey || ''; 
     const simplify = req.body.simplify === 'true';
+    const capo = parseInt(req.body.capo, 10) || 0;
 
     if (!file) return res.status(400).json({ error: "Please upload a file." });
 
@@ -241,13 +254,16 @@ app.post('/api/import-preview', upload.single('chartFile'), async (req, res) => 
         }
 
         console.log(`[API] Previewing uploaded chart...`);
-        const finalChart = processAndAlignTabs(extractedText, finalSongKey, targetKey, isPdf, simplify);
+        const finalChart = processAndAlignTabs(extractedText, finalSongKey, targetKey, isPdf, simplify, capo);
+        const playKey = capo > 0 ? getPlayKey(targetKey || finalSongKey, capo) : '';
 
         res.json({
             title: originalName,
             originalKey: finalSongKey,
             targetKey: targetKey || 'Nashville',
-            text: finalChart
+            text: finalChart,
+            capo: capo,
+            playKey: playKey
         });
 
     } catch (error) {

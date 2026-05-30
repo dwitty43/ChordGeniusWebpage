@@ -36,6 +36,27 @@ function getPreferredAccidentals(key) {
     return flatKeys.includes(key) ? flats : sharps;
 }
 
+function getPlayKey(targetKey, capoFret) {
+    if (!targetKey || /^nashville$|^1$/i.test(targetKey.trim())) return targetKey;
+    const capo = parseInt(capoFret, 10);
+    if (!capo || isNaN(capo) || capo <= 0) return targetKey;
+
+    const match = targetKey.trim().match(/^([A-G][#b]?)(m|min|minor)?$/i);
+    if (!match) return targetKey;
+
+    const root = match[1];
+    const quality = match[2] || '';
+
+    const rootIndex = getNoteIndex(root);
+    if (rootIndex === -1) return targetKey;
+
+    const playIndex = (rootIndex - capo + 12) % 12;
+    const targetScale = getPreferredAccidentals(targetKey.trim());
+    const playRoot = targetScale[playIndex];
+    
+    return playRoot + quality;
+}
+
 function parseChord(chordString) {
     const parts = chordString.split('/'); 
     return parts.map(part => {
@@ -46,7 +67,7 @@ function parseChord(chordString) {
     });
 }
 
-function transposeChord(chordString, originalKey, targetKey) {
+function transposeChord(chordString, originalKey, targetKey, capoFret = 0) {
     if (/^[|()\[\]{}:\-~,]+$/.test(chordString)) return chordString;
 
     const match = chordString.match(/^(\(?)(.*?)(\)?)$/);
@@ -58,8 +79,16 @@ function transposeChord(chordString, originalKey, targetKey) {
 
     // Determine target format
     const isTargetNashville = !targetKey || /^nashville$|^1$/i.test(targetKey.trim());
-    const targetScale = isTargetNashville ? null : getPreferredAccidentals(targetKey.trim());
-    const targetKeyIndex = isTargetNashville ? 0 : getNoteIndex(targetKey.trim());
+    const isSourceNashville = !originalKey || /^nashville$/i.test(originalKey.trim());
+
+    let finalTargetKey = targetKey;
+    const capo = parseInt(capoFret, 10);
+    if (capo && capo > 0 && !isTargetNashville && !isSourceNashville) {
+        finalTargetKey = getPlayKey(targetKey || originalKey, capo);
+    }
+
+    const targetScale = isTargetNashville ? null : getPreferredAccidentals(finalTargetKey.trim());
+    const targetKeyIndex = isTargetNashville ? 0 : getNoteIndex(finalTargetKey.trim());
 
     const parsedParts = parseChord(rawChord);
     
@@ -277,7 +306,7 @@ function isNoiseLine(line) {
 }
 
 // --- TEXT PROCESSING ---
-function processAndAlignTabs(rawText, originalKey, targetKey, isPdf = false, simplify = false) {
+function processAndAlignTabs(rawText, originalKey, targetKey, isPdf = false, simplify = false, capo = 0) {
     const lines = rawText.split('\n');
     let processedLines = [];
     let hasStarted = false; 
@@ -303,7 +332,7 @@ function processAndAlignTabs(rawText, originalKey, targetKey, isPdf = false, sim
                 }
             }
             let newLine = line.replace(/(\S+)(\s*)/g, (match, chord, spaces) => {
-                let newChord = transposeChord(chord, originalKey, targetKey);
+                let newChord = transposeChord(chord, originalKey, targetKey, capo);
                 if (simplify && !/^[|()\[\]{}:\-~,]+$/.test(chord) && !/^N\.?C\.?$/i.test(chord.replace(/[()]/g, ''))) {
                     newChord = simplifyChord(newChord);
                 }
@@ -331,7 +360,7 @@ function formatKeyDisplay(keyStr) {
     if (!keyStr) return '';
     return keyStr.charAt(0).toUpperCase() + keyStr.slice(1).toLowerCase();
 }
-async function createDocxChart(finalChartText, songTitle, originalKey, targetKey, bpm) {
+async function createDocxChart(finalChartText, songTitle, originalKey, targetKey, bpm, capo = 0) {
     const cleanText = finalChartText.replace(/\x1B\[\d+m/g, ''); 
     const lines = cleanText.split('\n');
 
@@ -391,9 +420,19 @@ async function createDocxChart(finalChartText, songTitle, originalKey, targetKey
         }
     });
 
-    let headerKeyText = `Key: ${formatKeyDisplay(targetKey)}`;
-    if (!targetKey || /^nashville$|^1$/i.test(targetKey)) {
-        headerKeyText = /^nashville$/i.test(originalKey) ? 'Nashville Numbers' : `Key: ${formatKeyDisplay(originalKey)}`;
+    let headerKeyText = '';
+    const isTargetNashville = !targetKey || /^nashville$|^1$/i.test(targetKey.trim());
+    const isSourceNashville = !originalKey || /^nashville$/i.test(originalKey.trim());
+    const capoVal = parseInt(capo, 10);
+
+    if (isTargetNashville) {
+        headerKeyText = isSourceNashville ? 'Nashville Numbers' : `Key: ${formatKeyDisplay(originalKey)}`;
+    } else {
+        headerKeyText = `Key: ${formatKeyDisplay(targetKey)}`;
+        if (capoVal && capoVal > 0 && !isSourceNashville) {
+            const playKey = getPlayKey(targetKey, capoVal);
+            headerKeyText += ` | Capo: ${capoVal} | Play: ${formatKeyDisplay(playKey)}`;
+        }
     }
     if (bpm) {
         headerKeyText += ` | BPM: ${bpm}`;
@@ -416,7 +455,7 @@ async function createDocxChart(finalChartText, songTitle, originalKey, targetKey
     return await Packer.toBuffer(doc);
 }
 
-async function createPdfChart(finalChartText, songTitle, originalKey, targetKey, bpm) {
+async function createPdfChart(finalChartText, songTitle, originalKey, targetKey, bpm, capo = 0) {
     const lines = finalChartText.split('\n');
     
     let htmlLines = lines.map(line => {
@@ -470,9 +509,19 @@ async function createPdfChart(finalChartText, songTitle, originalKey, targetKey,
         }
     });
 
-    let headerKeyText = `Key: ${formatKeyDisplay(targetKey)}`;
-    if (!targetKey || /^nashville$|^1$/i.test(targetKey)) {
-        headerKeyText = /^nashville$/i.test(originalKey) ? 'Nashville Numbers' : `Key: ${formatKeyDisplay(originalKey)}`;
+    let headerKeyText = '';
+    const isTargetNashville = !targetKey || /^nashville$|^1$/i.test(targetKey.trim());
+    const isSourceNashville = !originalKey || /^nashville$/i.test(originalKey.trim());
+    const capoVal = parseInt(capo, 10);
+
+    if (isTargetNashville) {
+        headerKeyText = isSourceNashville ? 'Nashville Numbers' : `Key: ${formatKeyDisplay(originalKey)}`;
+    } else {
+        headerKeyText = `Key: ${formatKeyDisplay(targetKey)}`;
+        if (capoVal && capoVal > 0 && !isSourceNashville) {
+            const playKey = getPlayKey(targetKey, capoVal);
+            headerKeyText += ` | Capo: ${capoVal} | Play: ${formatKeyDisplay(playKey)}`;
+        }
     }
 
     const htmlContent = `
@@ -686,5 +735,6 @@ module.exports = {
     createDocxChart, 
     createPdfChart,
     chordProToLineBased,
-    lineBasedToChordPro
+    lineBasedToChordPro,
+    getPlayKey
 }
