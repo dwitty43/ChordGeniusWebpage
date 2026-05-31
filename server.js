@@ -214,7 +214,7 @@ app.post('/api/binder', async (req, res) => {
     if (!setlist || setlist.length === 0) return res.status(400).json({ error: "Setlist is empty." });
 
     try {
-        if (setlist.length === 1) {
+        if (setlist.length === 1 && (!title || !title.trim())) {
             const song = setlist[0];
             return await deliverFile(
                 res,
