@@ -4,7 +4,7 @@ const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 puppeteer.use(StealthPlugin());
 const cheerio = require('cheerio');
-const { Document, Packer, Paragraph, TextRun, PageBreak, Table, TableRow, TableCell, WidthType, BorderStyle } = require('docx');
+const { Document, Packer, Paragraph, TextRun, PageBreak, Table, TableRow, TableCell, WidthType, BorderStyle, SectionType } = require('docx');
 
 const USER_AGENTS = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
@@ -933,6 +933,7 @@ async function createDocxChart(finalChartText, songTitle, originalKey, targetKey
             const bodyChildren = mapSongLines(song.lines, fontScale);
             sections.push({
                 properties: {
+                    type: SectionType.CONTINUOUS,
                     column: columns === '2' ? { count: 2, space: 720, equalWidth: true } : { count: 1 }
                 },
                 children: bodyChildren
@@ -1022,6 +1023,7 @@ async function createDocxChart(finalChartText, songTitle, originalKey, targetKey
         const bodyChildren = mapSongLines(lines, fontScale);
         sections.push({
             properties: {
+                type: SectionType.CONTINUOUS,
                 column: columns === '2' ? { count: 2, space: 720, equalWidth: true } : { count: 1 }
             },
             children: bodyChildren
