@@ -822,7 +822,7 @@ async function createDocxChart(finalChartText, songTitle, originalKey, targetKey
     }
 
     // Check if we are dealing with a Setlist Binder
-    const isBinder = songTitle === "Setlist_Binder" || finalChartText.includes("=== SONG ");
+    const isBinder = songTitle === "Setlist_Binder" || songTitle === "Setlist Binder" || (songTitle && songTitle.toLowerCase().includes("binder")) || finalChartText.includes("=== SONG ");
     const sections = [];
 
     if (isBinder) {
@@ -1214,7 +1214,7 @@ async function createPdfChart(finalChartText, songTitle, originalKey, targetKey,
     const lines = finalChartText.split('\n');
     
     // Check if we are dealing with a Setlist Binder
-    const isBinder = songTitle === "Setlist_Binder" || finalChartText.includes("=== SONG ");
+    const isBinder = songTitle === "Setlist_Binder" || songTitle === "Setlist Binder" || (songTitle && songTitle.toLowerCase().includes("binder")) || finalChartText.includes("=== SONG ");
     
     // Scan for unique chords
     const uniqueChords = new Set();
