@@ -568,6 +568,96 @@ function haveLostAlignment(chordLine) {
     return spaces.every(s => s.length <= 3);
 }
 
+function wrapSongLinesForTwoColumns(lines, limit = 42) {
+    const processed = [];
+    let i = 0;
+    while (i < lines.length) {
+        const currentLine = lines[i];
+        const nextLine = lines[i + 1];
+        
+        const isCurrentChord = isChordLine(currentLine) || isNashvilleLine(currentLine);
+        const isNextLyric = nextLine !== undefined && isLyricLine(nextLine);
+        
+        if (isCurrentChord && isNextLyric) {
+            let remainingC = currentLine;
+            let remainingL = nextLine;
+            let didSplit = false;
+            
+            while (remainingC.length > limit || remainingL.length > limit) {
+                didSplit = true;
+                let splitIdx = -1;
+                const maxSearchLen = Math.min(limit, remainingL.length);
+                for (let j = maxSearchLen - 1; j >= 0; j--) {
+                    if (remainingL[j] === ' ') {
+                        splitIdx = j;
+                        break;
+                    }
+                }
+                
+                if (splitIdx === -1) {
+                    const maxSearchLenC = Math.min(limit, remainingC.length);
+                    for (let j = maxSearchLenC - 1; j >= 0; j--) {
+                        if (remainingC[j] === ' ') {
+                            splitIdx = j;
+                            break;
+                        }
+                    }
+                }
+                
+                if (splitIdx === -1) {
+                    splitIdx = limit;
+                }
+                
+                processed.push(remainingC.slice(0, splitIdx));
+                processed.push(remainingL.slice(0, splitIdx));
+                
+                let skip = 0;
+                while (splitIdx + skip < remainingL.length && remainingL[splitIdx + skip] === ' ') {
+                    skip++;
+                }
+                remainingC = remainingC.slice(splitIdx + skip);
+                remainingL = remainingL.slice(splitIdx + skip);
+            }
+            
+            if (!didSplit || remainingC !== "" || remainingL !== "") {
+                processed.push(remainingC);
+                processed.push(remainingL);
+            }
+            
+            i += 2;
+        } else {
+            let remaining = currentLine;
+            let didSplit = false;
+            while (remaining.length > limit) {
+                didSplit = true;
+                let splitIdx = -1;
+                const maxSearchLen = Math.min(limit, remaining.length);
+                for (let j = maxSearchLen - 1; j >= 0; j--) {
+                    if (remaining[j] === ' ') {
+                        splitIdx = j;
+                        break;
+                    }
+                }
+                if (splitIdx === -1) {
+                    splitIdx = limit;
+                }
+                processed.push(remaining.slice(0, splitIdx));
+                
+                let skip = 0;
+                while (splitIdx + skip < remaining.length && remaining[splitIdx + skip] === ' ') {
+                    skip++;
+                }
+                remaining = remaining.slice(splitIdx + skip);
+            }
+            if (!didSplit || remaining !== "") {
+                processed.push(remaining);
+            }
+            i += 1;
+        }
+    }
+    return processed;
+}
+
 // --- TEXT PROCESSING ---
 function processAndAlignTabs(rawText, originalKey, targetKey, isPdf = false, simplify = false, capo = 0) {
     let lines = rawText.split('\n');
@@ -1333,6 +1423,12 @@ async function createPdfChart(finalChartText, songTitle, originalKey, targetKey,
             songs.push(currentSong);
         }
 
+        if (columns === '2') {
+            songs.forEach(song => {
+                song.lines = wrapSongLinesForTwoColumns(song.lines, 42);
+            });
+        }
+
         // Generate Cover Page HTML
         const coverSongsHtml = songs.map((song, i) => `
             <div class="cover-song-item" style="margin-bottom: 10px;">${i + 1}. ${song.title.toUpperCase()} (${song.keyText.replace('Key: ', '')})</div>
@@ -1363,7 +1459,11 @@ async function createPdfChart(finalChartText, songTitle, originalKey, targetKey,
         mainContentHtml = songSections.join('');
     } else {
         // Single song HTML content
-        const htmlLines = mapSongHtmlLines(lines);
+        let processedLines = lines;
+        if (columns === '2') {
+            processedLines = wrapSongLinesForTwoColumns(lines, 42);
+        }
+        const htmlLines = mapSongHtmlLines(processedLines);
 
         let headerTextParts = [];
         const isTargetNashville = !targetKey || /^nashville$|^1$/i.test(targetKey.trim());
@@ -1644,6 +1744,7 @@ function lineBasedToChordPro(lineBasedText, title = '', key = '') {
 }
 
 module.exports = { 
+    wrapSongLinesForTwoColumns,
     getFirstSearchResult, 
     fetchUGPage, 
     extractTabData, 
