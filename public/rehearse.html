@@ -168,7 +168,7 @@
         }
         .app-card {
             background-color: var(--card-bg);
-            width: 100%; max-width: 840px;
+            width: 100%; max-width: 1200px;
             border-radius: 24px; box-shadow: var(--shadow-main);
             border: 1px solid var(--card-border);
             animation: fadeInUp 0.5s ease-out; overflow: hidden;
@@ -402,7 +402,321 @@
             .metro-screen { min-width: 0; width: 100%; }
             .hero::after { display: none; }
         }
+    
+        /* ── REHEARSAL SPLIT LAYOUT ── */
+        .rehearse-split {
+            display: flex;
+            gap: 32px;
+            align-items: flex-start;
+            margin-top: 8px;
+        }
+        .rehearse-left {
+            flex: 0 0 380px;
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+            width: 380px;
+        }
+        .rehearse-right {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            background: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
+            height: 860px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            position: relative;
+        }
+        #rehearsalSheet {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            white-space: pre;
+            padding: 24px;
+            background: var(--input-bg);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            position: relative;
+            color: var(--text-main);
+            scrollbar-width: thin;
+            scrollbar-color: var(--primary) var(--border);
+        }
+        #rehearsalSheet::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        #rehearsalSheet::-webkit-scrollbar-track {
+            background: var(--border);
+            border-radius: 4px;
+        }
+        #rehearsalSheet::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+        
+        /* ── SONG SHEET RENDERING ── */
+        .sheet-header {
+            margin-bottom: 20px;
+        }
+        .sheet-title {
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(245,158,11,0.15);
+        }
+        .sheet-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            font-size: 12.5px;
+            color: var(--text-muted);
+        }
+        .meta-item strong {
+            color: var(--text-main);
+            font-weight: 600;
+        }
+        .sheet-divider {
+            height: 1px;
+            background: linear-gradient(90deg, var(--border), transparent);
+            margin-bottom: 24px;
+        }
+        .sheet-content {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14.5px;
+            white-space: pre-wrap;
+            line-height: 1.55;
+            color: var(--text-main);
+        }
+        #rehearsalSheet b {
+            font-weight: bold;
+        }
+        #rehearsalSheet b.chord-hoverable {
+            color: var(--primary);
+            cursor: pointer;
+            border-bottom: 1px dashed rgba(245, 158, 11, 0.4);
+            padding: 0 1px;
+            display: inline-block;
+            transition: all 0.2s ease;
+        }
+        #rehearsalSheet b.chord-hoverable:hover {
+            color: #fff !important;
+            background: var(--primary-glow);
+            border-bottom-color: var(--primary);
+        }
+        #rehearsalSheet .line {
+            line-height: 1.4;
+            min-height: 1.4em;
+        }
+        #rehearsalSheet .line.header {
+            font-weight: bold;
+            color: var(--primary);
+            margin-top: 10px;
+        }
+
+        /* ── INFO BOX (accordion) ── */
+        .info-accordion {
+            background: var(--panel-bg); border: 1px solid var(--border);
+            border-left: 3px solid var(--primary); border-radius: 0 14px 14px 0;
+            margin-bottom: 32px; overflow: hidden;
+        }
+        .info-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 20px; cursor: pointer; user-select: none;
+            transition: background 0.2s;
+        }
+        .info-header:hover { background: rgba(245,158,11,0.04); }
+        .info-header-left {
+            display: flex; align-items: center; gap: 12px;
+        }
+        .info-header-title {
+            font-size: 13px; font-weight: 700; color: var(--primary);
+            text-transform: uppercase; letter-spacing: 0.1em;
+        }
+        .info-header-sub {
+            font-size: 12px; color: var(--text-muted); margin-top: 1px;
+        }
+        .info-chevron {
+            color: var(--text-muted); transition: transform 0.3s;
+            flex-shrink: 0;
+        }
+        .info-accordion.open .info-chevron { transform: rotate(180deg); }
+        .info-body {
+            max-height: 0; overflow: hidden;
+            transition: max-height 0.4s ease, padding 0.3s;
+            padding: 0 20px;
+        }
+        .info-accordion.open .info-body { max-height: 800px; padding: 0 20px 20px; }
+        .info-body p { color: var(--text-muted); font-size: 14px; line-height: 1.7; margin: 0 0 16px; }
+        .info-body ul { margin: 0 0 16px; padding-left: 18px; color: var(--text-muted); font-size: 14px; line-height: 1.65; }
+        .info-body li { margin-bottom: 9px; }
+        .info-body li strong { color: var(--text-main); }
+        .info-body .warning-box {
+            padding: 10px 14px; background: rgba(245,158,11,0.06);
+            border-left: 3px solid var(--primary); color: var(--primary);
+            border-radius: 0 8px 8px 0; font-size: 12.5px;
+        }
+        [data-theme="light"] .info-accordion {
+            border-color: hsla(30, 10%, 50%, 0.12);
+            transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+        }
+        [data-theme="light"] .info-accordion:hover {
+            border-color: hsla(38, 90%, 42%, 0.25);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.02);
+        }
+        [data-theme="light"] .info-header:hover {
+            background: hsla(38, 90%, 42%, 0.03);
+        }
+
+        /* ── TOGGLE SWITCH ── */
+        .toggle-label { display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
+        .toggle-switch { position: relative; width: 42px; height: 24px; flex-shrink: 0; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+        .toggle-slider {
+            position: absolute; inset: 0; background: var(--border); border-radius: 12px;
+            transition: background 0.22s; cursor: pointer; border: 1px solid transparent;
+        }
+        .toggle-slider::before {
+            content: ''; position: absolute; width: 18px; height: 18px;
+            left: 2px; top: 2px; background: white; border-radius: 50%;
+            transition: transform 0.22s cubic-bezier(0.4,0,0.2,1);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+        }
+        .toggle-switch input:checked + .toggle-slider { background: var(--primary); border-color: var(--primary-hover); }
+        .toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); }
+        .toggle-label:hover .toggle-slider { border-color: var(--primary); }
+        .toggle-text { display: flex; flex-direction: column; gap: 2px; }
+        .toggle-title { font-size: 13.5px; font-weight: 600; color: var(--text-main); }
+        .toggle-desc { font-size: 11.5px; color: var(--text-muted); line-height: 1.4; }
+        [data-theme="light"] .toggle-switch input:checked + .toggle-slider { background: var(--primary); border-color: var(--primary-hover); }
+        [data-theme="light"] .toggle-label:hover .toggle-slider { border-color: var(--primary); }
+
+        /* ── CHORD TOOLTIP ── */
+        .chord-tooltip {
+            position: absolute;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.9) translateY(10px);
+            transition: opacity 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            background: rgba(16, 19, 28, 0.85);
+            backdrop-filter: blur(12px) saturate(180%);
+            -webkit-backdrop-filter: blur(12px) saturate(180%);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            border-radius: 12px;
+            padding: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100px;
+            height: 110px;
+        }
+        [data-theme="light"] .chord-tooltip {
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(138, 94, 16, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+        .chord-tooltip svg {
+            width: 80px;
+            height: 90px;
+            display: block;
+        }
+        .chord-tooltip svg line {
+            stroke: #ede8dc !important;
+        }
+        .chord-tooltip svg text {
+            fill: #ede8dc !important;
+        }
+        .chord-tooltip svg circle {
+            stroke: #ede8dc !important;
+        }
+        .chord-tooltip svg circle[fill="#000000"], .chord-tooltip svg circle:not([fill]) {
+            fill: #ede8dc !important;
+        }
+        .chord-tooltip svg circle[fill="none"] {
+            fill: none !important;
+        }
+        .chord-tooltip svg text[fill="#FFFFFF"] {
+            fill: #0c0800 !important;
+        }
+        [data-theme="light"] .chord-tooltip svg line {
+            stroke: #000000 !important;
+        }
+        [data-theme="light"] .chord-tooltip svg text {
+            fill: #000000 !important;
+        }
+        [data-theme="light"] .chord-tooltip svg circle {
+            stroke: #000000 !important;
+        }
+        [data-theme="light"] .chord-tooltip svg circle[fill="#000000"] {
+            fill: #000000 !important;
+        }
+        [data-theme="light"] .chord-tooltip svg circle[fill="none"] {
+            fill: none !important;
+        }
+        [data-theme="light"] .chord-tooltip svg text[fill="#FFFFFF"] {
+            fill: #FFFFFF !important;
+        }
+
+        /* ── PLACEHOLDER ── */
+        .no-song-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 60px 24px;
+            color: var(--text-muted);
+            height: 100%;
+        }
+        .no-song-placeholder .placeholder-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.7;
+            animation: bounce 2s infinite ease-in-out;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        .no-song-placeholder h3 {
+            color: var(--text-main);
+            margin-bottom: 12px;
+            font-family: 'Playfair Display', Georgia, serif;
+            font-size: 20px;
+        }
+        .no-song-placeholder p {
+            font-size: 13.5px;
+            max-width: 340px;
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        /* ── RESPONSIVE REHEARSAL ── */
+        @media (max-width: 1000px) {
+            .rehearse-split {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .rehearse-left {
+                flex: none;
+                width: 100%;
+            }
+            .rehearse-right {
+                height: 600px;
+            }
+        }
     </style>
+
 </head>
 <body>
 <div class="app-card">
@@ -443,104 +757,169 @@
     </div>
 
     <div class="card-body">
-
-        <!-- CAPO CALCULATOR -->
-        <div class="section">
-            <div class="section-label">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
-                Capo Calculator
+        
+        <!-- How to use accordion -->
+        <div class="info-accordion" id="infoAccordion">
+            <div class="info-header" id="infoToggle">
+                <div class="info-header-left">
+                    <svg width="16" height="16" fill="none" stroke="var(--primary)" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path stroke-linecap="round" d="M12 8v4m0 4h.01"/></svg>
+                    <div>
+                        <div class="info-header-title">How to Rehearse with Chord Genius</div>
+                        <div class="info-header-sub">Tap to expand the rehearsal &amp; autoscroll guide</div>
+                    </div>
+                </div>
+                <svg class="info-chevron" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
             </div>
-            <div class="tool-panel">
-                <div class="capo-grid">
-                    <div>
-                        <div class="field-label">I want to play shapes in</div>
-                        <select id="capoShapeKey"></select>
-                    </div>
-                    <div>
-                        <div class="field-label">Song actually sounds in</div>
-                        <select id="capoSongKey"></select>
-                    </div>
-                </div>
-                <div class="capo-result">
-                    <div class="capo-fret" id="capoFretNum">—</div>
-                    <div class="capo-text" id="capoResultText">Select both keys to calculate your capo position.</div>
-                </div>
+            <div class="info-body" id="infoBody">
+                <p>Welcome to the Chord Genius Rehearsal Studio. Here you can lock in your timing with our high-fidelity metronome, analyze chord groupings to find the original key of any song, calculate transposing capo frets, and practice with a smooth hands-free scrolling sheet display.</p>
+                <ul>
+                    <li><strong>1. Loading a Song:</strong> Go to the <strong>Convert</strong> tab, search or upload a song, and click the ⚡ <strong>Take to Rehearsal</strong> button. This grabs your active song text, target key, and tempo settings, and transfers them here instantly!</li>
+                    <li><strong>2. Metronome Rehearsal:</strong> Use the metronome control pane to set your target BPM, select a time signature (2/4, 3/4, 4/4, 6/8), and click <strong>Start</strong> (or press the <kbd>Space</kbd> bar) to play the audio click.</li>
+                    <li><strong>3. Metronome-Synced Autoscroll:</strong> Switch on the <strong>Sync Autoscroll with Metronome</strong> toggle. When active, starting the metronome will automatically scroll your chords sheet continuously at a velocity directly proportional to the active BPM! Stopping the metronome or toggling off the sync will immediately pause the scroll.</li>
+                    <li><strong>4. Fine-Tuning Scroll Velocity:</strong> Adjust the <strong>Scroll Speed</strong> slider (0.2x to 3.0x speed factor) to speed up or slow down the scrolling rate to perfectly match the length and layout of your chart.</li>
+                    <li><strong>5. Chord Fingering Tooltips:</strong> Stuck on a complex shape? Simply hover your cursor over any chord in the rehearsal sheet to view visual, theme-aware guitar fingerings in real-time!</li>
+                    <li><strong>6. Free-play Mode:</strong> Feel free to drag or scroll the sheet manually at any time. Chord Genius will dynamically adapt and continue smooth autoscrolling from your new position without snapping back.</li>
+                </ul>
+                <div class="warning-box">⚡ Pro-Tip: Connect your laptop or tablet to a stand on stage, set your BPM, toggle Autoscroll Sync, and play hands-free!</div>
             </div>
         </div>
 
-        <!-- METRONOME -->
-        <div class="section">
-            <div class="section-label">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2l-1.5 9h3L12 22M5 8l14 8M19 8L5 16"/></svg>
-                Metronome
-            </div>
-            <div class="metro-panel">
+        <div class="rehearse-split">
+            
+            <!-- Left panel: Metronome, scroll controls, tools -->
+            <div class="rehearse-left">
+                
+                <!-- METRONOME -->
+                <div class="section" style="margin-bottom: 0;">
+                    <div class="section-label">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2l-1.5 9h3L12 22M5 8l14 8M19 8L5 16"/></svg>
+                        Metronome
+                    </div>
+                    <div class="metro-panel">
 
-                <div class="metro-display">
-                    <div class="metro-screen">
-                        <div class="metro-bpm" id="bpmDisplay" title="Click to type a BPM">120</div>
-                        <input type="number" id="bpmInput" min="40" max="240" value="120">
-                        <div class="metro-bpm-label" id="bpmUnitLabel">BPM</div>
-                        <div class="metro-tempo-name" id="tempoLabel">Allegro</div>
-                        <div class="metro-edit-hint">tap to edit</div>
+                        <div class="metro-display">
+                            <div class="metro-screen">
+                                <div class="metro-bpm" id="bpmDisplay" title="Click to type a BPM">120</div>
+                                <input type="number" id="bpmInput" min="40" max="240" value="120">
+                                <div class="metro-bpm-label" id="bpmUnitLabel">BPM</div>
+                                <div class="metro-tempo-name" id="tempoLabel">Allegro</div>
+                                <div class="metro-edit-hint">tap to edit</div>
+                            </div>
+                        </div>
+
+                        <div class="beat-row" id="beatRow"></div>
+
+                        <div class="metro-controls">
+                            <button class="metro-btn" id="playBtn">
+                                <svg id="playIcon" width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                <svg id="stopIcon" style="display:none" width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>
+                                <span id="playLabel">Start</span>
+                            </button>
+                            <button class="metro-btn" id="tapBtn">
+                                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/></svg>
+                                Tap Tempo
+                            </button>
+                        </div>
+
+                        <div class="metro-row">
+                            <span class="metro-row-label">BPM</span>
+                            <button class="adj-btn" id="bpmDown">−</button>
+                            <input type="range" id="bpmSlider" min="40" max="240" value="120">
+                            <button class="adj-btn" id="bpmUp">+</button>
+                        </div>
+
+                        <div class="metro-row">
+                            <span class="metro-row-label">Time Sig</span>
+                            <div class="sig-row" id="sigRow">
+                                <button class="sig-btn" data-beats="2">2/4</button>
+                                <button class="sig-btn" data-beats="3">3/4</button>
+                                <button class="sig-btn active" data-beats="4">4/4</button>
+                                <button class="sig-btn" data-beats="6">6/8</button>
+                            </div>
+                        </div>
+
+                        <!-- Autoscroll settings -->
+                        <div class="scroll-controls" style="margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border);">
+                            <div class="field-label" style="margin-bottom: 12px;">Autoscroll Settings</div>
+                            
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
+                                <label class="toggle-label" for="autoscrollSync">
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="autoscrollSync">
+                                        <span class="toggle-slider"></span>
+                                    </div>
+                                    <span class="toggle-text">
+                                        <span class="toggle-title">Autoscroll Sync</span>
+                                        <span class="toggle-desc" style="font-size: 10px;">Scroll sheet down with metronome tempo</span>
+                                    </span>
+                                </label>
+                            </div>
+
+                            <div class="metro-row" style="margin-bottom: 0;">
+                                <span class="metro-row-label" style="min-width: 80px;">Scroll Speed</span>
+                                <input type="range" id="scrollSpeedSlider" min="0.2" max="3.0" step="0.1" value="1.0">
+                                <span id="scrollSpeedLabel" style="font-size: 13px; font-weight: 700; color: var(--primary); min-width: 32px; text-align: right;">1.0x</span>
+                            </div>
+                        </div>
+
+                        <div class="kb-hint">Press <kbd>Space</kbd> to start / stop</div>
                     </div>
                 </div>
 
-                <div class="beat-row" id="beatRow"></div>
-
-                <div class="metro-controls">
-                    <button class="metro-btn" id="playBtn">
-                        <svg id="playIcon" width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                        <svg id="stopIcon" style="display:none" width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>
-                        <span id="playLabel">Start</span>
-                    </button>
-                    <button class="metro-btn" id="tapBtn">
-                        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/></svg>
-                        Tap Tempo
-                    </button>
-                </div>
-
-                <div class="metro-row">
-                    <span class="metro-row-label">BPM</span>
-                    <button class="adj-btn" id="bpmDown">−</button>
-                    <input type="range" id="bpmSlider" min="40" max="240" value="120">
-                    <button class="adj-btn" id="bpmUp">+</button>
-                </div>
-
-                <div class="metro-row">
-                    <span class="metro-row-label">Time Sig</span>
-                    <div class="sig-row" id="sigRow">
-                        <button class="sig-btn" data-beats="2">2/4</button>
-                        <button class="sig-btn" data-beats="3">3/4</button>
-                        <button class="sig-btn active" data-beats="4">4/4</button>
-                        <button class="sig-btn" data-beats="6">6/8</button>
+                <!-- CAPO CALCULATOR -->
+                <div class="section" style="margin-bottom: 0;">
+                    <div class="section-label">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
+                        Capo Calculator
+                    </div>
+                    <div class="tool-panel">
+                        <div class="capo-grid">
+                            <div>
+                                <div class="field-label">shapes in</div>
+                                <select id="capoShapeKey"></select>
+                            </div>
+                            <div>
+                                <div class="field-label">sounds in</div>
+                                <select id="capoSongKey"></select>
+                            </div>
+                        </div>
+                        <div class="capo-result">
+                            <div class="capo-fret" id="capoFretNum">—</div>
+                            <div class="capo-text" id="capoResultText" style="font-size: 12px; line-height: 1.4;">Select both keys to calculate capo position.</div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="kb-hint">Press <kbd>Space</kbd> to start / stop</div>
-            </div>
-        </div>
-
-        <!-- KEY FINDER -->
-        <div class="section">
-            <div class="section-label">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/><path stroke-linecap="round" stroke-linejoin="round" d="M11 8v3m0 2h.01"/></svg>
-                Song Key Finder
-            </div>
-            <div class="kf-panel">
-                <div class="kf-input-row">
-                    <textarea class="kf-textarea" id="kfInput" placeholder="Type your chords separated by spaces or commas — e.g.  Am F C G" rows="1"></textarea>
-                    <button class="kf-btn" id="kfBtn">
-                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                        Find Key
-                    </button>
+                <!-- KEY FINDER -->
+                <div class="section" style="margin-bottom: 0;">
+                    <div class="section-label">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/><path stroke-linecap="round" stroke-linejoin="round" d="M11 8v3m0 2h.01"/></svg>
+                        Song Key Finder
+                    </div>
+                    <div class="kf-panel">
+                        <div class="kf-input-row">
+                            <textarea class="kf-textarea" id="kfInput" placeholder="Chords — e.g. Am F C G" rows="1"></textarea>
+                            <button class="kf-btn" id="kfBtn">Find Key</button>
+                        </div>
+                        <div class="kf-result" id="kfResult">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
                 </div>
-                <div class="kf-hint"><em>Works with major, minor, dim, sus, 7th chords — just type them as you'd write them on a chart.</em></div>
 
-                <div class="kf-result" id="kfResult">
-                    <!-- Populated by JS -->
+            </div>
+
+            <!-- Right panel: Rehearsal Sheet display -->
+            <div class="rehearse-right">
+                <div class="section-label" style="margin-bottom: 8px;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    Rehearsal Sheet
+                </div>
+                <div id="rehearsalSheet">
+                    <!-- Song rendering or placeholder goes here -->
                 </div>
             </div>
+
         </div>
 
         <div class="card-footer">
@@ -602,8 +981,36 @@ function sched(){
     }
     timer=setTimeout(sched,25);
 }
-function start(){const c=getCtx();if(c.state==='suspended')c.resume();beat=0;nextT=c.currentTime+0.05;sched();playing=true;document.getElementById('playBtn').classList.add('playing');document.getElementById('playLabel').textContent='Stop';document.getElementById('playIcon').style.display='none';document.getElementById('stopIcon').style.display='block';}
-function stop(){clearTimeout(timer);timer=null;playing=false;document.getElementById('playBtn').classList.remove('playing');document.getElementById('playLabel').textContent='Start';document.getElementById('playIcon').style.display='block';document.getElementById('stopIcon').style.display='none';document.querySelectorAll('.beat-dot').forEach(d=>d.classList.remove('on'));}
+function start(){
+    const c=getCtx();
+    if(c.state==='suspended')c.resume();
+    beat=0;
+    nextT=c.currentTime+0.05;
+    sched();
+    playing=true;
+    document.getElementById('playBtn').classList.add('playing');
+    document.getElementById('playLabel').textContent='Stop';
+    document.getElementById('playIcon').style.display='none';
+    document.getElementById('stopIcon').style.display='block';
+    
+    // Start autoscroll loop if sync is active
+    if (document.getElementById('autoscrollSync').checked) {
+        scrollPosFloat = rehearsalSheet.scrollTop;
+        lastScrollTime = 0;
+        requestAnimationFrame(scrollLoop);
+    }
+}
+
+function stop(){
+    clearTimeout(timer);
+    timer=null;
+    playing=false;
+    document.getElementById('playBtn').classList.remove('playing');
+    document.getElementById('playLabel').textContent='Start';
+    document.getElementById('playIcon').style.display='block';
+    document.getElementById('stopIcon').style.display='none';
+    document.querySelectorAll('.beat-dot').forEach(d=>d.classList.remove('on'));
+}
 function setBpm(v){bpm=Math.max(40,Math.min(240,v));document.getElementById('bpmDisplay').textContent=bpm;document.getElementById('bpmSlider').value=bpm;document.getElementById('tempoLabel').textContent=tempoName(bpm);}
 
 document.getElementById('playBtn').addEventListener('click',()=>playing?stop():start());
@@ -788,6 +1195,285 @@ function runKeyFinder() {
 
 document.getElementById('kfBtn').addEventListener('click', runKeyFinder);
 document.getElementById('kfInput').addEventListener('keydown', e => { if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); runKeyFinder(); } });
+
+// ── INFO ACCORDION CLICK EVENT ──
+document.getElementById('infoToggle').addEventListener('click', () => {
+    document.getElementById('infoAccordion').classList.toggle('open');
+});
+
+// ── AUTOSCROLL & RENDERING JS ──
+const autoscrollSync = document.getElementById('autoscrollSync');
+const scrollSpeedSlider = document.getElementById('scrollSpeedSlider');
+const scrollSpeedLabel = document.getElementById('scrollSpeedLabel');
+const rehearsalSheet = document.getElementById('rehearsalSheet');
+
+let lastScrollTime = 0;
+let scrollPosFloat = 0;
+
+scrollSpeedSlider.addEventListener('input', () => {
+    scrollSpeedLabel.textContent = parseFloat(scrollSpeedSlider.value).toFixed(1) + 'x';
+});
+
+autoscrollSync.addEventListener('change', () => {
+    if (playing && autoscrollSync.checked) {
+        scrollPosFloat = rehearsalSheet.scrollTop;
+        lastScrollTime = 0;
+        requestAnimationFrame(scrollLoop);
+    }
+});
+
+function scrollLoop(time) {
+    if (!playing || !autoscrollSync.checked) {
+        lastScrollTime = 0;
+        return;
+    }
+    
+    if (lastScrollTime === 0) {
+        lastScrollTime = time;
+        requestAnimationFrame(scrollLoop);
+        return;
+    }
+    
+    const dt = time - lastScrollTime;
+    lastScrollTime = time;
+    
+    const speedFactor = parseFloat(scrollSpeedSlider.value) || 1.0;
+    const baseSpeed = 0.007; // Proportional to BPM, smooth & natural scroll velocity
+    const velocity = (bpm / 120) * baseSpeed * speedFactor; // pixels per ms
+    
+    scrollPosFloat += velocity * dt;
+    rehearsalSheet.scrollTop = Math.floor(scrollPosFloat);
+    
+    requestAnimationFrame(scrollLoop);
+}
+
+// Manual scroll detection
+rehearsalSheet.addEventListener('scroll', () => {
+    if (Math.abs(scrollPosFloat - rehearsalSheet.scrollTop) > 2) {
+        scrollPosFloat = rehearsalSheet.scrollTop;
+    }
+});
+
+// ── HOVER DIAGRAMS TOOLTIPS ──
+let hoverTimeout = null;
+let activeTooltip = null;
+
+function removeActiveTooltip() {
+    if (hoverTimeout) clearTimeout(hoverTimeout);
+    if (activeTooltip) {
+        activeTooltip.style.opacity = '0';
+        activeTooltip.style.transform = 'scale(0.9) translateY(10px)';
+        const tooltipRef = activeTooltip;
+        activeTooltip = null;
+        setTimeout(() => {
+            if (tooltipRef && tooltipRef.parentNode) {
+                tooltipRef.parentNode.removeChild(tooltipRef);
+            }
+        }, 200);
+    }
+}
+
+function setupRehearsalTooltips() {
+    rehearsalSheet.addEventListener('mouseover', (e) => {
+        const tooltipsEnabled = localStorage.getItem('cg_enable_tooltips') !== 'false';
+        if (!tooltipsEnabled) return;
+        
+        const target = e.target.closest('.chord-hoverable');
+        if (!target) return;
+
+        const chord = target.getAttribute('data-chord');
+        if (!chord) return;
+
+        if (hoverTimeout) clearTimeout(hoverTimeout);
+
+        hoverTimeout = setTimeout(async () => {
+            if (localStorage.getItem('cg_enable_tooltips') === 'false') return;
+            try {
+                const res = await fetch(`/api/chord-svg?chord=${encodeURIComponent(chord)}`);
+                if (!res.ok) return;
+                const svgText = await res.text();
+
+                if (!activeTooltip) {
+                    activeTooltip = document.createElement('div');
+                    activeTooltip.className = 'chord-tooltip';
+                    document.body.appendChild(activeTooltip);
+                }
+
+                activeTooltip.innerHTML = svgText;
+
+                const rect = target.getBoundingClientRect();
+                const tooltipWidth = 100;
+                const tooltipHeight = 110;
+
+                const left = rect.left + window.scrollX + (rect.width - tooltipWidth) / 2;
+                let top = rect.top + window.scrollY - tooltipHeight - 8;
+
+                if (rect.top - tooltipHeight - 8 < 0) {
+                    top = rect.bottom + window.scrollY + 8;
+                }
+
+                activeTooltip.style.left = `${left}px`;
+                activeTooltip.style.top = `${top}px`;
+                activeTooltip.style.opacity = '1';
+                activeTooltip.style.transform = 'scale(1) translateY(0)';
+            } catch (err) {
+                console.error(err);
+            }
+        }, 200);
+    });
+
+    rehearsalSheet.addEventListener('mouseout', (e) => {
+        const target = e.target.closest('.chord-hoverable');
+        if (!target) return;
+        removeActiveTooltip();
+    });
+}
+
+// ── PREVIEW CHORD PARSING FOR REHEARSAL SHEET ──
+function isChordLineFrontend(line) {
+    const trimmed = line.trim();
+    if (trimmed === '') return false;
+    const tokens = trimmed.split(/\s+/);
+    const chordCharRegex = /^([|()\[\]{}:\-~,]+|\(?([A-G][#b]?(m|min|maj|M|dim|aug|sus|add|o|\+|-|\d|[#b])*(?:\/[A-G][#b]?)?\*?|N\.?C\.?)\)?)$/i;
+    return tokens.every(token => chordCharRegex.test(token));
+}
+
+function isNashvilleLineFrontend(line) {
+    const trimmed = line.trim();
+    if (trimmed === '') return false;
+    const tokens = trimmed.split(/\s+/);
+    const nashvilleRegex = /^([|()\[\]{}:\-~,]+|\(?([b#]?[1-7](m|min|maj|M|dim|aug|sus|add|o|\+|-|\d|[#b])*(?:\/[b#]?[1-7])?\*?|N\.?C\.?)\)?)$/i;
+    return tokens.every(token => nashvilleRegex.test(token));
+}
+
+function renderInteractivePreview(text) {
+    const lines = text.split(/\r?\n/);
+    const htmlLines = lines.map(line => {
+        const trimmed = line.trim();
+        const isHeader = /^Intro|Verse|Chorus|Pre-Chorus|Bridge|Outro|Solo|Instrumental/i.test(trimmed);
+        const extraClass = isHeader ? ' header' : '';
+        if (isChordLineFrontend(line) || isNashvilleLineFrontend(line)) {
+            let htmlLine = '';
+            const regex = /(\S+)(\s*)/g;
+            let match;
+            
+            while ((match = regex.exec(line)) !== null) {
+                const chord = match[1];
+                const spaces = match[2].replace(/ /g, '&nbsp;'); 
+
+                if (/^[|()\[\]{}:\-~,]+$/.test(chord)) {
+                    htmlLine += `<b>${chord}</b>${spaces}`;
+                    continue;
+                }
+
+                const fixMatch = chord.match(/^(\(?)(.*?)(\)?)$/);
+                const prefix = fixMatch[1] || '';
+                const rawChord = fixMatch[2];
+                const suffix = fixMatch[3] || '';
+
+                if (prefix) htmlLine += `<b>${prefix}</b>`;
+
+                const chordParts = rawChord.split('/');
+                const mainChord = chordParts[0];
+                const bassNote = chordParts[1]; 
+
+                const rootMatch = mainChord.match(/^([b#]?[1-7]|[A-Ga-g][b#]?)(.*)$/);
+                if (rootMatch) {
+                    htmlLine += `<b class="chord-hoverable" data-chord="${rawChord}">${rootMatch[1]}</b>`;
+                    const rawExtension = rootMatch[2];
+                    if (rawExtension) {
+                        const extMatch = rawExtension.match(/^(\D*)(\d.*)?$/);
+                        if (extMatch) {
+                            if (extMatch[1]) htmlLine += `<b class="chord-hoverable" data-chord="${rawChord}">${extMatch[1]}</b>`;
+                            if (extMatch[2]) htmlLine += `<sup><b class="chord-hoverable" data-chord="${rawChord}">${extMatch[2]}</b></sup>`;
+                        }
+                    }
+                    if (bassNote) htmlLine += `<b class="chord-hoverable" data-chord="${rawChord}">/${bassNote}</b>`;
+                } else {
+                    htmlLine += `<b class="chord-hoverable" data-chord="${rawChord}">${rawChord}</b>`;
+                }
+
+                if (suffix) htmlLine += `<b>${suffix}</b>`;
+                htmlLine += spaces;
+            }
+            return `<div class="line${extraClass}">${htmlLine || '&nbsp;'}</div>`;
+        } else {
+            return `<div class="line${extraClass}">${line.replace(/ /g, '&nbsp;') || '&nbsp;'}</div>`;
+        }
+    });
+    return htmlLines.join('');
+}
+
+// ── REHEARSAL SONG LOADING & RENDERING ──
+let rehearseSong = null;
+try {
+    rehearseSong = JSON.parse(localStorage.getItem('cg_rehearse_song'));
+} catch (e) {
+    console.error("Failed to parse cg_rehearse_song", e);
+}
+
+function renderSong() {
+    if (!rehearseSong) {
+        rehearsalSheet.innerHTML = `
+            <div class="no-song-placeholder">
+                <div class="placeholder-icon">🎵</div>
+                <h3>No Song Loaded for Rehearsal</h3>
+                <p>Go to the <strong>Convert</strong> tab to find a song, transpose it, and click <strong>Take to Rehearsal</strong> to load it here with interactive chords!</p>
+                <a href="/" class="nav-tab active" style="display: inline-block; margin-top: 16px; text-align: center; text-decoration: none;">Go to Convert Tab</a>
+            </div>
+        `;
+        return;
+    }
+    
+    // Fill metronome from song data if available
+    if (rehearseSong.bpm) {
+        setBpm(parseInt(rehearseSong.bpm, 10));
+    }
+    if (rehearseSong.timeSignature) {
+        let beatsVal = parseInt(rehearseSong.timeSignature, 10);
+        if (!isNaN(beatsVal) && [2, 3, 4, 6].includes(beatsVal)) {
+            beats = beatsVal;
+            document.querySelectorAll('.sig-btn').forEach(x => {
+                x.classList.toggle('active', parseInt(x.dataset.beats, 10) === beats);
+            });
+            buildDots();
+        }
+    }
+    
+    let metaHTML = [];
+    if (rehearseSong.keyText) metaHTML.push(`<span class="meta-item">Key: <strong>${rehearseSong.keyText}</strong></span>`);
+    const capoVal = parseInt(rehearseSong.capo, 10);
+    if (capoVal && capoVal > 0) metaHTML.push(`<span class="meta-item">Capo: <strong>Fret ${capoVal}</strong></span>`);
+    if (rehearseSong.bpm) metaHTML.push(`<span class="meta-item">BPM: <strong>${rehearseSong.bpm}</strong></span>`);
+    if (rehearseSong.timeSignature) {
+        let formattedTimeSig = rehearseSong.timeSignature;
+        if (!isNaN(Number(rehearseSong.timeSignature))) {
+            const num = Number(rehearseSong.timeSignature);
+            if (num === 4) formattedTimeSig = '4/4';
+            else if (num === 3) formattedTimeSig = '3/4';
+            else if (num === 2) formattedTimeSig = '2/4';
+            else if (num === 6) formattedTimeSig = '6/8';
+            else formattedTimeSig = `${num}/4`;
+        }
+        metaHTML.push(`<span class="meta-item">Time Sig: <strong>${formattedTimeSig}</strong></span>`);
+    }
+    
+    const formattedMeta = metaHTML.length > 0 ? `<div class="sheet-meta">${metaHTML.join('')}</div>` : '';
+    
+    rehearsalSheet.innerHTML = `
+        <div class="sheet-header">
+            <div class="sheet-title">${rehearseSong.title}</div>
+            ${formattedMeta}
+        </div>
+        <div class="sheet-divider"></div>
+        <div class="sheet-content">${renderInteractivePreview(rehearseSong.text)}</div>
+    `;
+    
+    setupRehearsalTooltips();
+}
+
+// Call renderSong on load
+renderSong();
 </script>
 </body>
 </html>
