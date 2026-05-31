@@ -214,6 +214,22 @@ app.post('/api/binder', async (req, res) => {
     if (!setlist || setlist.length === 0) return res.status(400).json({ error: "Setlist is empty." });
 
     try {
+        if (setlist.length === 1) {
+            const song = setlist[0];
+            return await deliverFile(
+                res,
+                song.text,
+                song.title,
+                song.originalKey,
+                song.targetKey,
+                format,
+                song.bpm || bpm,
+                parseInt(song.capo, 10) || 0,
+                song.timeSignature || timeSignature || '',
+                columns || '1'
+            );
+        }
+
         let combinedText = "";
         for (let i = 0; i < setlist.length; i++) {
             const song = setlist[i];
