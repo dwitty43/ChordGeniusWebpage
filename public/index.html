@@ -1023,6 +1023,7 @@
         <div class="modal-footer">
             <button class="previewBtn" id="addSetlistBtn" style="background: var(--primary-glow); color: var(--primary); border-color: var(--primary);">+ Add to Setlist</button>
             <button class="downloadBtn" id="modalDownloadBtn">Download Current</button>
+            <button class="gold-glow" id="takeToRehearsalBtn" style="color: #fff;">⚡ Take to Rehearsal</button>
         </div>
     </div>
 </div>
@@ -1772,6 +1773,30 @@ document.getElementById('addSetlistBtn').addEventListener('click', () => {
     if (typeof renderSetlist === 'function') renderSetlist();
     closePreview();
     showStatus(`${window.currentChartData.title} added to Setlist! (${setlistQueue.length} charts ready)`, 'success');
+});
+
+// Take to Rehearsal Button Click
+document.getElementById('takeToRehearsalBtn').addEventListener('click', () => {
+    if (!window.currentChartData) return;
+    const text = document.getElementById('liveEditor').value;
+    const bpmVal = document.getElementById('songBpm').value || document.getElementById('uploadBpm').value || window.currentChartData.bpm || '';
+    const timeSigVal = document.getElementById('songTimeSignature').value || document.getElementById('uploadTimeSignature').value || window.currentChartData.timeSignature || '';
+    
+    const song = {
+        title: window.currentChartData.title,
+        keyText: window.currentChartData.targetKey || window.currentChartData.originalKey || '',
+        text: text,
+        bpm: bpmVal,
+        capo: window.currentChartData.capo || '0',
+        timeSignature: timeSigVal
+    };
+    
+    localStorage.setItem('cg_rehearse_song', JSON.stringify(song));
+    
+    if (bpmVal) localStorage.setItem('cg_last_bpm', bpmVal);
+    if (timeSigVal) localStorage.setItem('cg_last_beats', timeSigVal);
+    
+    window.location.href = '/rehearse.html';
 });
 
 // Clear Setlist Queue
