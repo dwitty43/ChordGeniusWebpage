@@ -294,7 +294,6 @@
                             <div class="modal-subtitle" id="modalSubtitle"></div>
                         </div>
                         <div style="display: flex; gap: 8px; align-items: center;">
-                            <button class="previewBtn" id="modalToggleExpand" style="width: auto; padding: 6px 14px; font-size: 12px; border-color: var(--border); color: var(--text-muted); cursor: pointer;">↔ Expand</button>
                             <button class="previewBtn" id="modalClose" style="width: auto; padding: 6px 14px; font-size: 12px; border-color: var(--border); color: var(--text-muted); cursor: pointer;">Close Preview</button>
                         </div>
                     </div>
@@ -1509,7 +1508,7 @@ function updateProStatusUI() {
     const isPro = localStorage.getItem('cg_pro_status') === 'pro' || localStorage.getItem('cg_pro_status') === 'true';
     if (proStatusBadge) {
         if (isPro) {
-            proStatusBadge.innerHTML = 'Plan: Pro 👑';
+            proStatusBadge.innerHTML = 'Plan: Pro (Beta) 👑';
             proStatusBadge.classList.add('gold-glow');
             proStatusBadge.style.color = '';
             proStatusBadge.style.borderColor = '';
