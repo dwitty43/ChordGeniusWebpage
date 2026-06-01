@@ -210,6 +210,9 @@
             </div>
         </div>
 
+
+        <div class="resize-gutter" id="workspaceResizer"></div>
+
         <!-- RIGHT PANEL: STAGE VIEW (Pane 3) -->
         <div class="panel-right rehearse-right">
             <div class="panel-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
@@ -833,8 +836,7 @@ function renderInteractivePreview(text) {
 // ── REHEARSAL SONG LOADING & RENDERING ──
 let rehearseSong = null;
 
-// Try parsing from URL parameters first
-const urlParams = new URLSearchParams(window.location.search);
+// Try parsing from URL parameters first (urlParams is already declared on line 435)
 const paramTitle = urlParams.get('title') || urlParams.get('query');
 const paramText = urlParams.get('text') || urlParams.get('rawText');
 
@@ -1008,6 +1010,75 @@ function updateProStatusUI() {
 
 // Initial plan evaluation
 updateProStatusUI();
+
+// ── DRAGGABLE PANEL RESIZER ──
+(function() {
+    const resizer = document.getElementById('workspaceResizer');
+    const panelLeft = document.querySelector('.panel-left');
+    const workspaceBody = document.querySelector('.workspace-body');
+    if (!resizer || !panelLeft || !workspaceBody) return;
+
+    // Load saved width from localStorage
+    const savedWidth = localStorage.getItem('cg_panel_left_width');
+    if (savedWidth && window.innerWidth > 1024) {
+        panelLeft.style.width = savedWidth + 'px';
+    }
+
+    let startX = 0;
+    let startWidth = 0;
+    let isDragging = false;
+
+    function startDrag(e) {
+        if (window.innerWidth <= 1024) return; // Disable dragging on mobile stacked layout
+        isDragging = true;
+        startX = (e.clientX !== undefined) ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+        startWidth = parseInt(document.defaultView.getComputedStyle(panelLeft).width, 10);
+        
+        resizer.classList.add('dragging');
+        workspaceBody.classList.add('resizing-active');
+        document.body.style.cursor = 'col-resize';
+        
+        // Add listeners for move and end on document
+        document.addEventListener('mousemove', onDrag);
+        document.addEventListener('mouseup', endDrag);
+        document.addEventListener('touchmove', onDrag, { passive: false });
+        document.addEventListener('touchend', endDrag);
+    }
+
+    function onDrag(e) {
+        if (!isDragging) return;
+        if (e.cancelable) e.preventDefault(); // Prevent standard touch scroll during drag
+        
+        const clientX = (e.clientX !== undefined) ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+        const deltaX = clientX - startX;
+        let newWidth = startWidth + deltaX;
+
+        // Strict bounds constraint: 300px min for left, 350px min for right panel
+        // Workspace sidebar (Pane 1) is 240px wide on desktop
+        const maxLeftWidth = window.innerWidth - 350 - 240; 
+        if (newWidth < 300) newWidth = 300;
+        if (newWidth > maxLeftWidth) newWidth = maxLeftWidth;
+
+        panelLeft.style.width = newWidth + 'px';
+        localStorage.setItem('cg_panel_left_width', newWidth);
+    }
+
+    function endDrag() {
+        if (!isDragging) return;
+        isDragging = false;
+        resizer.classList.remove('dragging');
+        workspaceBody.classList.remove('resizing-active');
+        document.body.style.cursor = '';
+        
+        document.removeEventListener('mousemove', onDrag);
+        document.removeEventListener('mouseup', endDrag);
+        document.removeEventListener('touchmove', onDrag);
+        document.removeEventListener('touchend', endDrag);
+    }
+
+    resizer.addEventListener('mousedown', startDrag);
+    resizer.addEventListener('touchstart', startDrag, { passive: true });
+})();
 </script>
 </body>
 </html>
