@@ -67,7 +67,7 @@
         <!-- LEFT PANEL: CONTROLS -->
         <div class="panel-left">
             <div class="panel-header">
-                <h2>Convert</h2>
+                <h2>Convert Studio</h2>
             </div>
             
             <div class="panel-scrollable">
@@ -1087,14 +1087,16 @@ document.getElementById('modalClose').addEventListener('click', closePreview);
 // Toggle Modal Expansion
 const workspaceBody = document.querySelector('.workspace-body');
 const modalToggleExpand = document.getElementById('modalToggleExpand');
-modalToggleExpand.addEventListener('click', () => {
-    workspaceBody.classList.toggle('right-expanded');
-    if (workspaceBody.classList.contains('right-expanded')) {
-        modalToggleExpand.textContent = '→← Compress';
-    } else {
-        modalToggleExpand.textContent = '↔ Expand';
-    }
-});
+if (modalToggleExpand) {
+    modalToggleExpand.addEventListener('click', () => {
+        workspaceBody.classList.toggle('right-expanded');
+        if (workspaceBody.classList.contains('right-expanded')) {
+            modalToggleExpand.textContent = '→← Compress';
+        } else {
+            modalToggleExpand.textContent = '↔ Expand';
+        }
+    });
+}
 
 // Download Single Edited Chart
 document.getElementById('modalDownloadBtn').addEventListener('click', async () => {
