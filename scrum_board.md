@@ -10,19 +10,20 @@ Welcome to the central product backlog and scrum dashboard! This board synthesiz
 gantt
     title ChordGenius Development Phases
     dateFormat  YYYY-MM-DD
-    section Sprint 1: UX Repair & Core Fixes
-    Convert Page Layout Repair       :active, s1a, 2026-06-01, 5d
-    Dark Mode & Color Fixes         :active, s1b, after s1a, 4d
-    Setlist Cache & Preview Sync    :active, s1c, after s1b, 3d
+    section Sprint 1: UX Repair (DONE)
+    Convert Page Layout Repair       :done, s1a, 2026-05-30, 2d
+    Dark Mode & Color Fixes         :done, s1b, 2026-05-31, 1d
+    Setlist Cache & Preview Sync    :done, s1c, 2026-05-31, 1d
     section Sprint 2: Platform Prep & Auth
-    Production Scraper Hardening    :s2a, 2026-06-13, 4d
-    Beta Indicator & Pro Pricing UX :s2b, after s2a, 3d
-    Auth Init & Premium Landing Page:s2c, after s2b, 5d
+    Production Scraper Hardening    :s2a, 2026-06-01, 4d
+    Rehearsal Capo/Key Switcher     :active, s2d, 2026-06-05, 3d
+    Auth Init & Premium Landing Page:s2c, after s2a, 5d
     section Sprint 3: Smart Assistants (Med Priority)
-    Vocal Range Matcher Calibrator  :s3a, 2026-06-25, 7d
+    Vocal Range Matcher Calibrator  :s3a, 2026-06-13, 7d
+    Piano Voicing SVGs Support      :s3c, 2026-06-20, 4d
     Setlist Flow & Time Estimator  :s3b, after s3a, 6d
     section Sprint 4: Future Scale (Low Priority)
-    Hands-Free Stage Mode           :s4a, 2026-07-08, 6d
+    Hands-Free Stage Mode           :s4a, 2026-06-30, 6d
     WebSocket Band Sync             :s4b, after s4a, 8d
     Gig Tracker & Music Trainer     :s4c, after s4b, 8d
 ```
@@ -33,7 +34,7 @@ gantt
 
 | 📥 BACKLOG (Future Scope) | 📝 TO DO (Ready for Sprint) | ⏳ IN PROGRESS | ✅ DONE (Completed) |
 | :--- | :--- | :--- | :--- |
-| • Band Sync (WebSocket Sync) <br> • Gig Tracker & Analytics <br> • Dynamic Ear Trainer & Analysis | • Vocal Range Matcher <br> • Setlist Flow / Time Estimator <br> • Stage Mode & Foot Pedal | • Convert Page Layout Repair <br> • Preview Modal Overlay Refactor <br> • Preview Controller Repositioning | • Dark Mode & Colors Restored <br> • Workspace renamed to "Convert" <br> • Setlist Queue Caching <br> • Setlist Card Preview Click <br> • Options Reset Buttons <br> • Binder Custom Title Sync |
+| • Band Sync (WebSocket Sync) <br> • Gig Tracker & Analytics <br> • Dynamic Ear Trainer & Analysis | • Vocal Range Matcher <br> • Setlist Flow / Time Estimator <br> • Stage Mode & Foot Pedal <br> • **Piano Chord SVGs** <br> • **Active Chart Zoom Controls** | • Production Scraper Hardening <br> • **Rehearsal Capo/Key Switcher** <br> • Login/Signup Account Init | **Sprint 1 (100% Completed):** <br> • Resizable Panels (No Scroll) <br> • Dark Mode CSS Accessibility <br> • Workspace renamed to "Convert" <br> • Stage View Hides Placeholders <br> • Preview Header Buttons <br> • Setlist Queue Caching <br> • Setlist Card Preview Click <br> • Options Reset Buttons <br> • Binder Custom Title Sync |
 
 ---
 
@@ -41,32 +42,29 @@ gantt
 
 ### 🎯 Sprint 1: Core UX Repair & Critical Fixes (Priority: High)
 * **Goal:** Polish the core layout to be comfortable, fix critical visual bugs, and ensure standard operations work smoothly.
+* **Status:** **🎉 100% Completed!**
 
-- [ ] **TSK-101: Convert Page Layout Restructure**
+- [x] **TSK-101: Convert Page Layout Restructure**
   - **Description:** Decompress layout. Remove horizontal scroller. Make the Preview pane compressible and significantly smaller by default.
-  - **Source:** [next_steps.md - Bug 1](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/next_steps.md#L10)
+  - **Status:** Completed in commit `041f94f` (implemented persistent resizable draggable sidebar panels with bound constraints).
 - [x] **TSK-102: Dark Mode Font & Colors Restoration**
   - **Description:** Fix the dark mode CSS bug where text inside the Edit/Preview panels and the "Stage View/Editor" buttons becomes invisible or hard to read.
-  - **Source:** [next_steps.md - Bug 2](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/next_steps.md#L12) & [proposed_ideas.md - Next Step 7](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/proposed_ideas.md#L61)
-  - **Status:** Verified completed in commit `45a8a28` (CSS extracted to consolidated `public/styles.css` with accessibility overrides).
+  - **Status:** Completed in commit `45a8a28` / `62786f7` (CSS consolidated with WCAG compliance contrast fixes).
 - [x] **TSK-103: Header Renaming & Workspace Cleanup**
   - **Description:** Rename the top workstation title from "Workstation" to "Convert". Add a visual/text notice that the site is in Beta and everyone has the "Pro Tier" unlocked.
-  - **Source:** [next_steps.md - Bug 3 & Step 3](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/next_steps.md#L13)
-  - **Status:** Verified completed in commit `45a8a28` (workstation title cleanups applied across HTML panels).
-- [ ] **TSK-104: Preview Modal Overlay Refactor**
+  - **Status:** Completed in commit `45a8a28` (headers renamed across HTML panels).
+- [x] **TSK-104: Preview Modal Overlay Refactor**
   - **Description:** When a chart is active in the preview, hide the static "Chord Genius Stage" at the bottom to prevent screen space blockage. 
-  - **Source:** [next_steps.md - Bug 4](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/next_steps.md#L14)
-- [ ] **TSK-105: Preview Controller Repositioning**
+  - **Status:** Completed in commit `45a8a28` (placeholder panel hides dynamically when active overlay is open).
+- [x] **TSK-105: Preview Controller Repositioning**
   - **Description:** Move preview action buttons (Add to Setlist, Download, Send to Rehearse) to the top right of the Preview bar, aligned vertically and styled consistently with Stage View/Editor buttons.
-  - **Source:** [next_steps.md - Bug 5](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/next_steps.md#L15)
+  - **Status:** Completed in commit `45a8a28` (action controller layout placed directly into header/tab bar).
 - [x] **TSK-106: Setlist Queue Caching (`localStorage`)**
   - **Description:** Cache the current Setlist queue array in browser `localStorage` so refreshing does not wipe the active list. Add a clean "Clear Setlist" button.
-  - **Source:** [proposed_ideas.md - Next Step 1](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/proposed_ideas.md#L55)
-  - **Status:** Verified completed in commit `45a8a28` (setlistQueue array fully cached as `cg_setlist` with clear button hooked).
+  - **Status:** Completed in commit `45a8a28` (cached array loaded and updated dynamically).
 - [x] **TSK-107: Setlist Card Preview Integration**
   - **Description:** Allow users to preview a specific song in the Setlist Queue directly by clicking its card in the Setlist Builder panel.
-  - **Source:** [proposed_ideas.md - Next Step 5](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/proposed_ideas.md#L59)
-  - **Status:** Verified completed in commit `45a8a28` (hooked `previewSongFromSetlist` click triggers on compiled setlist render loops).
+  - **Status:** Completed in commit `45a8a28` (added click preview modal events).
 
 ---
 
@@ -91,6 +89,9 @@ gantt
 - [ ] **TSK-206: Nashville Scrape Parser Patch**
   - **Description:** Resolve formatting bug where scraping a song that lists Nashville Numbers as the input key disrupts the conversion layout.
   - **Source:** [proposed_ideas.md - Next Step 6](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/proposed_ideas.md#L60)
+- [ ] **[NEW] TSK-207: Rehearsal Tab Capo/Key Switcher**
+  - **Description:** Add an interactive transposition capo/key control panel directly inside the Rehearse tab. Allow musicians to change key and capo fret on the fly during a rehearsal run without returning to Convert panel.
+  - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/scrum_board.md)
 
 ---
 
@@ -106,11 +107,18 @@ gantt
 - [x] **TSK-303: Options Reset Buttons**
   - **Description:** Add standard "Reset Settings" buttons to the *Search & Convert* and *Upload & Convert* configuration grids to allow rapid standard state restores.
   - **Source:** [proposed_ideas.md - Next Step 2](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/proposed_ideas.md#L56)
-  - **Status:** Verified completed in commit `45a8a28` (implemented reset elements on both conversion dashboards).
 - [x] **TSK-304: Custom Binder Title Dynamic Alignment**
   - **Description:** Fix PDF/Word binder cover generation so it reads the user's custom binder name instead of outputting the default "SETLIST BINDER".
   - **Source:** [proposed_ideas.md - Next Step 8](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/proposed_ideas.md#L64)
-  - **Status:** Verified completed in commit `45a8a28` (mapped custom title input fields dynamically in Compiled downloads).
+- [ ] **[NEW] TSK-305: Piano Chord Voicing Diagram Support**
+  - **Description:** Expand the visual chord tooltip voicing engine. In addition to guitar fretboard diagrams, add a togglable option to render standard piano keys highlighting finger positions for the active hover chord.
+  - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/scrum_board.md)
+- [ ] **[NEW] TSK-306: Spotify Playlist Setlist Importer**
+  - **Description:** Allow users to import a Spotify playlist (capped at max 15 songs) directly into the Convert tab to automatically generate a setlist binder. Build a bulk-configuration screen where users can customize key transpositions, capos, simplifies, and formatting details for each song before triggering the scrape pipeline.
+  - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/scrum_board.md)
+- [ ] **[NEW] TSK-307: Active Chart Text Zoom Controls**
+  - **Description:** Add + (Zoom In) and - (Zoom Out) controls to allow musicians to dynamically adjust font size on the interactive preview (Convert tab) and the rehearsal sheet (Rehearse tab) for optimal stage readability.
+  - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/scrum_board.md)
 
 ---
 
