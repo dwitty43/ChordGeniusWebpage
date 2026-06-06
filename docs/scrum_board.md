@@ -149,8 +149,8 @@ gantt
 - [ ] **[NEW] TSK-311: Title Space Underscore Sanitization**
   - **Description:** Titles should always have spaces not underscores, verify this and fix it.
   - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
-- [ ] **[NEW] TSK-312: Hide Piano SVGs in Nashville Mode**
-  - **Description:** Piano SVGs should not display if in Nashville Number system.
+- [ ] **[NEW] TSK-312: Hide SVGs in Nashville Mode**
+  - **Description:** SVGs should not display if in Nashville Number system.
   - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
 
 ---

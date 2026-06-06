@@ -1499,16 +1499,36 @@ function getPianoChordSvg(chordName) {
 }
 
 function getChordSvg(chordName, voicing = 'guitar') {
-    if (voicing === 'piano') {
-        return getPianoChordSvg(chordName);
+    // Convert Nashville Number chord to standard key of C chord if needed
+    let resolvedChordName = chordName;
+    if (typeof chordName === 'string') {
+        const parts = chordName.split('/');
+        const resolvePart = (part) => {
+            const nashvilleRootMatch = part.match(/^([b#]?[1-7])(.*)$/i);
+            if (nashvilleRootMatch) {
+                const rootStr = nashvilleRootMatch[1].toLowerCase();
+                const suffix = nashvilleRootMatch[2];
+                const halfSteps = nashvilleToHalfSteps[rootStr];
+                if (halfSteps !== undefined) {
+                    const standardRoots = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+                    return standardRoots[halfSteps] + suffix;
+                }
+            }
+            return part;
+        };
+        resolvedChordName = parts.map(resolvePart).join('/');
     }
 
-    let chord = chordDictionary[chordName];
+    if (voicing === 'piano') {
+        return getPianoChordSvg(resolvedChordName);
+    }
+
+    let chord = chordDictionary[resolvedChordName];
     if (!chord) {
-        let rootOnly = chordName.split('/')[0];
+        let rootOnly = resolvedChordName.split('/')[0];
         chord = chordDictionary[rootOnly];
         if (!chord) {
-            const match = chordName.match(/^([A-G][#b]?m?)/);
+            const match = resolvedChordName.match(/^([A-G][#b]?m?)/);
             if (match) {
                 chord = chordDictionary[match[1]];
             }

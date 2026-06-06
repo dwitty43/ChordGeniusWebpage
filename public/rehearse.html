@@ -167,6 +167,54 @@
                     </div>
                 </div>
 
+                <!-- DISPLAY SETTINGS -->
+                <div class="section" style="margin-bottom: 24px;">
+                    <div class="section-label">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                        Display Settings
+                    </div>
+                    <div class="tool-panel">
+                        <div style="display: flex; flex-direction: column; gap: 16px;">
+                            <!-- Capo / Key Switcher -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                <div>
+                                    <div class="field-label">Target Key</div>
+                                    <select id="stageTargetKey" style="font-size: 13px; padding: 10px;"></select>
+                                </div>
+                                <div>
+                                    <div class="field-label">Capo Fret</div>
+                                    <select id="stageCapo" style="font-size: 13px; padding: 10px;">
+                                        <option value="0">None</option>
+                                        <option value="1">Capo 1</option>
+                                        <option value="2">Capo 2</option>
+                                        <option value="3">Capo 3</option>
+                                        <option value="4">Capo 4</option>
+                                        <option value="5">Capo 5</option>
+                                        <option value="6">Capo 6</option>
+                                        <option value="7">Capo 7</option>
+                                        <option value="8">Capo 8</option>
+                                        <option value="9">Capo 9</option>
+                                        <option value="10">Capo 10</option>
+                                        <option value="11">Capo 11</option>
+                                        <option value="12">Capo 12</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <!-- Voicing Mode Select -->
+                            <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 14px;">
+                                <span class="toggle-text" style="flex: 1;">
+                                    <span class="toggle-title" style="font-size: 13px; font-weight: 600;">Voicing Mode</span>
+                                    <span class="toggle-desc" style="font-size: 10px; color: var(--text-muted);">Guitar shapes or piano keys guide</span>
+                                </span>
+                                <select id="voicingMode" style="width: 100px; padding: 4px 8px; font-size: 13px; height: 32px; background-position: right 8px center; background-size: 12px; padding-right: 24px; margin-left: 12px;">
+                                    <option value="guitar">Guitar</option>
+                                    <option value="piano">Piano</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- CAPO CALCULATOR -->
                 <div class="section" style="margin-bottom: 24px;">
                     <div class="section-label">
@@ -886,6 +934,16 @@ if (!rehearseSong) {
     }
 }
 
+// Guarantee originalText & originalKey exist for safe stage transposing
+if (rehearseSong) {
+    if (!rehearseSong.originalText) {
+        rehearseSong.originalText = rehearseSong.text || '';
+    }
+    if (!rehearseSong.originalKey) {
+        rehearseSong.originalKey = rehearseSong.keyText || 'C';
+    }
+}
+
 function renderSong() {
     const stageSongTitle = document.getElementById('stageSongTitle');
     if (!rehearseSong) {
@@ -902,6 +960,16 @@ function renderSong() {
     }
     
     if (stageSongTitle) stageSongTitle.textContent = rehearseSong.title || 'Rehearsal Stage';
+    
+    // Initialize selects to loaded song's active key and capo values
+    const stageTargetKeySelect = document.getElementById('stageTargetKey');
+    if (stageTargetKeySelect && rehearseSong.keyText) {
+        stageTargetKeySelect.value = rehearseSong.keyText;
+    }
+    const stageCapoSelect = document.getElementById('stageCapo');
+    if (stageCapoSelect && rehearseSong.capo !== undefined) {
+        stageCapoSelect.value = rehearseSong.capo;
+    }
     
     // Fill metronome from song data if available
     if (rehearseSong.bpm) {
@@ -952,6 +1020,118 @@ function renderSong() {
 
 // Call renderSong on load
 renderSong();
+
+// ── STAGE DISPLAY CONTROLS & TRANSPOSE ──
+function populateStageKeySelect() {
+    const standardKeys = ['C','C#','Db','D','Eb','E','F','F#','Gb','G','Ab','A','Bb','B'];
+    const minorKeys = standardKeys.map(k => k + 'm');
+    const s = document.getElementById('stageTargetKey');
+    if (!s) return;
+    s.innerHTML = '';
+    
+    // Add Nashville option
+    const n = document.createElement('option');
+    n.value = 'nashville';
+    n.textContent = 'Nashville Numbers';
+    n.style.fontWeight = '700';
+    s.appendChild(n);
+    
+    const mg = document.createElement('optgroup');
+    mg.label = 'Major Keys';
+    standardKeys.forEach(k => {
+        const o = document.createElement('option');
+        o.value = k;
+        o.textContent = k;
+        mg.appendChild(o);
+    });
+    s.appendChild(mg);
+    
+    const ming = document.createElement('optgroup');
+    ming.label = 'Minor Keys';
+    minorKeys.forEach(k => {
+        const o = document.createElement('option');
+        o.value = k;
+        o.textContent = k;
+        ming.appendChild(o);
+    });
+    s.appendChild(ming);
+}
+
+// Populate stage keys select
+populateStageKeySelect();
+
+// Set initial voicing mode selection
+const voicingSelect = document.getElementById('voicingMode');
+if (voicingSelect) {
+    const stored = localStorage.getItem('cg_voicing_mode') || 'guitar';
+    voicingSelect.value = stored;
+    voicingSelect.addEventListener('change', () => {
+        localStorage.setItem('cg_voicing_mode', voicingSelect.value);
+        removeActiveTooltip();
+    });
+}
+
+async function triggerStageTransposition() {
+    if (!rehearseSong) return;
+    
+    const targetKey = document.getElementById('stageTargetKey').value;
+    const capo = parseInt(document.getElementById('stageCapo').value, 10) || 0;
+    
+    const sourceText = rehearseSong.originalText || rehearseSong.text || '';
+    const sourceKey = rehearseSong.originalKey || rehearseSong.keyText || 'C';
+    
+    try {
+        showStatus(`Transposing to key ${targetKey}...`, 'active');
+        const res = await fetch('/api/transpose', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                text: sourceText,
+                originalKey: sourceKey,
+                targetKey: targetKey,
+                capo: capo,
+                simplify: false
+            })
+        });
+        if (!res.ok) throw new Error("Failed to transpose stage chart.");
+        
+        const data = await res.json();
+        
+        // Update local object
+        rehearseSong.text = data.text;
+        rehearseSong.keyText = targetKey;
+        rehearseSong.capo = capo.toString();
+        
+        // Save back to localStorage
+        localStorage.setItem('cg_rehearse_song', JSON.stringify(rehearseSong));
+        
+        // Render updated song sheet
+        renderSong();
+        showStatus("Transposed successfully!", "success");
+    } catch (err) {
+        showStatus(`Error transposing: ${err.message}`, "error");
+    }
+}
+
+// Attach change listeners to key/capo controls
+const stageTargetKeySelect = document.getElementById('stageTargetKey');
+if (stageTargetKeySelect) {
+    stageTargetKeySelect.addEventListener('change', triggerStageTransposition);
+}
+const stageCapoSelect = document.getElementById('stageCapo');
+if (stageCapoSelect) {
+    stageCapoSelect.addEventListener('change', triggerStageTransposition);
+}
+
+// Align selects values once populated
+if (rehearseSong) {
+    if (stageTargetKeySelect && rehearseSong.keyText) {
+        stageTargetKeySelect.value = rehearseSong.keyText;
+    }
+    if (stageCapoSelect && rehearseSong.capo !== undefined) {
+        stageCapoSelect.value = rehearseSong.capo;
+    }
+}
 
 // ── TOAST STATUS ALERT UTILITIES ──
 const statusDiv = document.getElementById('status');
@@ -1026,8 +1206,11 @@ updateProStatusUI();
     if (!resizer || !panelLeft || !workspaceBody) return;
 
     // Load saved width from localStorage
-    const savedWidth = localStorage.getItem('cg_panel_left_width');
-    if (savedWidth && window.innerWidth > 1024) {
+    let savedWidth = localStorage.getItem('cg_panel_left_width');
+    if (window.innerWidth > 1024) {
+        if (!savedWidth) {
+            savedWidth = Math.floor(0.75 * (window.innerWidth - 240));
+        }
         panelLeft.style.width = savedWidth + 'px';
     }
 

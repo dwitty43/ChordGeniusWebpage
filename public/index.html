@@ -103,7 +103,7 @@
                         Search &amp; Convert
                     </div>
                     <div class="grid-inputs" style="margin-bottom: 24px;">
-                        <input type="text" id="songQuery" placeholder='Song + artist (e.g. "Yellow – Coldplay")'>
+                        <input type="text" id="songQuery" placeholder='Song, artist, or Ultimate Guitar URL (e.g. "Yellow – Coldplay")'>
                         <select id="songKey"></select>
                         <select id="targetKeySearch"></select>
                         <select id="capoSearch">
@@ -316,9 +316,10 @@
                             <button class="downloadBtn" id="modalDownloadBtn" style="width: auto; padding: 6px 14px; border-radius: 7px; font-size: 12px; font-weight: 700; cursor: pointer; border: none; background: linear-gradient(135deg, #10b981, #059669); color: white; transition: all 0.2s;">Download Current</button>
                         </div>
                     </div>
-                    <div class="modal-body" id="modalBody" style="display: flex; flex-direction: column;">
+                    <div class="modal-body" id="modalBody" style="display: flex; flex-direction: column; position: relative;">
                         <textarea id="liveEditor" spellcheck="false" style="width: 100%; flex: 1; min-height: 500px; padding: 24px; font-family: 'Courier New', Courier, monospace; font-size: 14px; border: none; resize: none; outline: none; background: var(--input-bg); color: var(--text-main);"></textarea>
                         <div id="interactivePreview" style="display: none; width: 100%; flex: 1; min-height: 500px; padding: 24px; font-family: 'Courier New', Courier, monospace; font-size: 14px; border: none; outline: none; overflow: auto; white-space: pre-wrap; background: var(--input-bg); color: var(--text-main);"></div>
+                        <div id="editorChordPreview" class="editor-chord-preview"></div>
                     </div>
                 </div>
             </div>
@@ -1282,6 +1283,11 @@ function closePreview() {
     document.body.style.overflow=''; 
     if (typeof resetModalPreviewState === 'function') resetModalPreviewState();
     localStorage.removeItem('cg_active_song');
+    const previewCard = document.getElementById('editorChordPreview');
+    if (previewCard) {
+        previewCard.classList.remove('visible');
+        previewCard.style.display = 'none';
+    }
 }
 document.getElementById('modalClose').addEventListener('click', closePreview);
 
@@ -1388,7 +1394,9 @@ document.getElementById('takeToRehearsalBtn').addEventListener('click', () => {
         text: text,
         bpm: bpmVal,
         capo: window.currentChartData.capo || '0',
-        timeSignature: timeSigVal
+        timeSignature: timeSigVal,
+        originalKey: window.currentChartData.originalKey || '',
+        originalText: window.currentChartData.originalText || window.currentChartData.text || ''
     };
     
     localStorage.setItem('cg_rehearse_song', JSON.stringify(song));
@@ -1525,12 +1533,18 @@ function switchModalTab(mode) {
         modalTabPreview.classList.remove('active');
         liveEditor.style.display = 'block';
         interactivePreview.style.display = 'none';
+        updateEditorChordPreview();
     } else {
         modalTabPreview.classList.add('active');
         modalTabEdit.classList.remove('active');
         liveEditor.style.display = 'none';
         interactivePreview.style.display = 'block';
         interactivePreview.innerHTML = renderInteractivePreview(liveEditor.value);
+        const previewCard = document.getElementById('editorChordPreview');
+        if (previewCard) {
+            previewCard.classList.remove('visible');
+            previewCard.style.display = 'none';
+        }
     }
 }
 
@@ -1641,7 +1655,90 @@ if (storedVoicingMode !== null) {
 }
 voicingModeSelect.addEventListener('change', () => {
     localStorage.setItem('cg_voicing_mode', voicingModeSelect.value);
+    updateEditorChordPreview();
 });
+
+// ── SVG LIVE EDITOR SYNC ──
+function getChordAtCursor(text, pos) {
+    if (!text || pos === undefined || pos < 0 || pos > text.length) return null;
+    
+    const isDelimiter = (char) => /\s|\[|\]|\(|\)|\|/.test(char);
+
+    let start = pos;
+    while (start > 0 && !isDelimiter(text[start - 1])) {
+        start--;
+    }
+    
+    let end = pos;
+    while (end < text.length && !isDelimiter(text[end])) {
+        end++;
+    }
+    
+    const token = text.substring(start, end).trim();
+    if (!token) return null;
+    
+    const cleanToken = token.replace(/^[^A-Za-z1-7#b]+|[^A-Za-z0-9#b/]+$/g, '');
+    
+    const chordRegex = /^[A-G][#b]?(m|min|maj|M|dim|aug|sus|add|o|\+|-|\d|[#b])*(?:\/[A-G][#b]?)?$/i;
+    const nashvilleRegex = /^[b#]?[1-7](m|min|maj|M|dim|aug|sus|add|o|\+|-|\d|[#b])*(?:\/[b#]?[1-7])?$/i;
+
+    if (chordRegex.test(cleanToken) || nashvilleRegex.test(cleanToken)) {
+        return cleanToken;
+    }
+    return null;
+}
+
+async function updateEditorChordPreview() {
+    const previewCard = document.getElementById('editorChordPreview');
+    if (!previewCard) return;
+
+    // Check if we are currently in the Edit tab
+    if (liveEditor.style.display === 'none') {
+        previewCard.classList.remove('visible');
+        previewCard.style.display = 'none';
+        return;
+    }
+
+    const text = liveEditor.value;
+    const pos = liveEditor.selectionStart;
+    const chord = getChordAtCursor(text, pos);
+
+    if (chord) {
+        try {
+            const voicing = localStorage.getItem('cg_voicing_mode') || 'guitar';
+            const res = await fetch(`/api/chord-svg?chord=${encodeURIComponent(chord)}&voicing=${voicing}`);
+            if (!res.ok) {
+                previewCard.classList.remove('visible');
+                previewCard.style.display = 'none';
+                return;
+            }
+            const svgText = await res.text();
+
+            if (voicing === 'piano') {
+                previewCard.classList.add('piano-mode');
+            } else {
+                previewCard.classList.remove('piano-mode');
+            }
+
+            previewCard.innerHTML = svgText;
+            previewCard.style.display = 'flex';
+            previewCard.classList.add('visible');
+        } catch (err) {
+            console.error(err);
+            previewCard.classList.remove('visible');
+            previewCard.style.display = 'none';
+        }
+    } else {
+        previewCard.classList.remove('visible');
+        previewCard.style.display = 'none';
+    }
+}
+
+// Add listeners to liveEditor
+liveEditor.addEventListener('input', updateEditorChordPreview);
+liveEditor.addEventListener('keyup', updateEditorChordPreview);
+liveEditor.addEventListener('click', updateEditorChordPreview);
+liveEditor.addEventListener('focus', updateEditorChordPreview);
 
 // ── RESET BUTTONS ──
 document.getElementById('searchResetBtn').addEventListener('click', () => {
@@ -1819,8 +1916,11 @@ updateProStatusUI();
     if (!resizer || !panelLeft || !workspaceBody) return;
 
     // Load saved width from localStorage
-    const savedWidth = localStorage.getItem('cg_panel_left_width');
-    if (savedWidth && window.innerWidth > 1024) {
+    let savedWidth = localStorage.getItem('cg_panel_left_width');
+    if (window.innerWidth > 1024) {
+        if (!savedWidth) {
+            savedWidth = Math.floor(0.75 * (window.innerWidth - 240));
+        }
         panelLeft.style.width = savedWidth + 'px';
     }
 

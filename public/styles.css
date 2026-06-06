@@ -1901,4 +1901,95 @@
 
 
         }
+
+        /* Floating chord preview card inside Live Editor */
+        .editor-chord-preview {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(16, 19, 28, 0.85);
+            backdrop-filter: blur(12px) saturate(180%);
+            -webkit-backdrop-filter: blur(12px) saturate(180%);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            border-radius: 12px;
+            padding: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            z-index: 1000;
+            pointer-events: none;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            opacity: 0;
+            transform: translateY(-5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 100px;
+            height: 110px;
+        }
+        .editor-chord-preview.visible {
+            opacity: 1;
+            transform: translateY(0);
+            display: flex;
+        }
+        [data-theme="light"] .editor-chord-preview {
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid rgba(138, 94, 16, 0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .editor-chord-preview:not(.piano-mode) svg {
+            width: 80px;
+            height: 90px;
+            display: block;
+        }
+        .editor-chord-preview:not(.piano-mode) svg line {
+            stroke: #ede8dc !important;
+        }
+        .editor-chord-preview:not(.piano-mode) svg text {
+            fill: #ede8dc !important;
+        }
+        .editor-chord-preview:not(.piano-mode) svg circle {
+            stroke: #ede8dc !important;
+        }
+        .editor-chord-preview:not(.piano-mode) svg circle[fill="#000000"], .editor-chord-preview:not(.piano-mode) svg circle:not([fill]) {
+            fill: #ede8dc !important;
+        }
+        .editor-chord-preview:not(.piano-mode) svg circle[fill="none"] {
+            fill: none !important;
+        }
+        .editor-chord-preview:not(.piano-mode) svg text[fill="#FFFFFF"] {
+            fill: #0c0800 !important;
+        }
+
+        [data-theme="light"] .editor-chord-preview:not(.piano-mode) svg line {
+            stroke: #000000 !important;
+        }
+        [data-theme="light"] .editor-chord-preview:not(.piano-mode) svg text {
+            fill: #000000 !important;
+        }
+        [data-theme="light"] .editor-chord-preview:not(.piano-mode) svg circle {
+            stroke: #000000 !important;
+        }
+        [data-theme="light"] .editor-chord-preview:not(.piano-mode) svg circle[fill="#000000"] {
+            fill: #000000 !important;
+        }
+        [data-theme="light"] .editor-chord-preview:not(.piano-mode) svg circle[fill="none"] {
+            fill: none !important;
+        }
+        [data-theme="light"] .editor-chord-preview:not(.piano-mode) svg text[fill="#FFFFFF"] {
+            fill: #FFFFFF !important;
+        }
+
+        .editor-chord-preview.piano-mode {
+            width: 240px;
+            height: 115px;
+            padding: 10px;
+        }
+        .editor-chord-preview.piano-mode svg {
+            width: 220px;
+            height: 95px;
+            display: block;
+        }
+        .editor-chord-preview.piano-mode svg text {
+            fill: var(--piano-text-color, #ede8dc) !important;
+        }
     
