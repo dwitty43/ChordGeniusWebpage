@@ -150,6 +150,16 @@
                                 <span class="toggle-desc">Hover chords in Stage View to see visual voicing guides</span>
                             </span>
                         </label>
+                        <div class="voicing-mode-container" style="margin-top: 12px; display: flex; align-items: center; justify-content: space-between; padding-left: 2px;">
+                            <span class="toggle-text" style="flex: 1;">
+                                <span class="toggle-title">Voicing Mode</span>
+                                <span class="toggle-desc">Choose between guitar and piano keyboard visual guides</span>
+                            </span>
+                            <select id="voicingMode" style="width: 100px; padding: 4px 8px; font-size: 13px; height: 32px; background-position: right 8px center; background-size: 12px; padding-right: 24px; margin-left: 12px;">
+                                <option value="guitar">Guitar</option>
+                                <option value="piano">Piano</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="grid-buttons">
                         <select id="searchFormat">
@@ -749,7 +759,7 @@ document.getElementById('downloadSearchBtn').addEventListener('click', async () 
         const res = await fetch('/api/binder', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ setlist: singleSongQueue, format, bpm: bpmVal, timeSignature: timeSigVal, columns: document.getElementById('searchColumns').value })
+            body: JSON.stringify({ setlist: singleSongQueue, format, bpm: bpmVal, timeSignature: timeSigVal, columns: document.getElementById('searchColumns').value, voicing: localStorage.getItem('cg_voicing_mode') || 'guitar' })
         });
         if(!res.ok) throw new Error((await res.json()).error);
         const blob = await res.blob();
@@ -801,6 +811,7 @@ uploadBtn.addEventListener('click', async ()=>{
     fd.append('capo', capo);
     fd.append('timeSignature', timeSigVal);
     fd.append('columns', document.getElementById('uploadColumns').value);
+    fd.append('voicing', localStorage.getItem('cg_voicing_mode') || 'guitar');
     try {
         const res=await fetch('/api/import',{method:'POST',body:fd});
         if(!res.ok) throw new Error((await res.json()).error||"Conversion failed.");
@@ -904,6 +915,128 @@ function saveSetlistQueue() {
     localStorage.setItem('cg_setlist', JSON.stringify(setlistQueue));
 }
 
+// --- Circle of Fifths helpers ---
+const sharps = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+const flats  = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+
+function getNoteIndexLocal(note) {
+    let cleanNote = note;
+    if (cleanNote === 'B#') cleanNote = 'C';
+    if (cleanNote === 'E#') cleanNote = 'F';
+    if (cleanNote === 'Cb') cleanNote = 'B';
+    if (cleanNote === 'Fb') cleanNote = 'E';
+
+    let index = sharps.indexOf(cleanNote);
+    if (index === -1) index = flats.indexOf(cleanNote);
+    return index;
+}
+
+function getKeyCircleCoordinateLocal(keyString) {
+    if (!keyString) return null;
+    const cleanKey = keyString.trim();
+    const match = cleanKey.match(/^([A-G][#b]?)(m|min|minor|maj|major)?$/i);
+    if (!match) return null;
+    let root = match[1];
+    let rootIndex = getNoteIndexLocal(root);
+    if (rootIndex === -1) return null;
+    
+    const isMinor = /m|min|minor/i.test(match[2] || '');
+    if (isMinor) {
+        rootIndex = (rootIndex + 3) % 12;
+    }
+    
+    return (rootIndex * 7) % 12;
+}
+
+function getCircleOfFifthsDistanceLocal(key1, key2) {
+    const c1 = getKeyCircleCoordinateLocal(key1);
+    const c2 = getKeyCircleCoordinateLocal(key2);
+    if (c1 === null || c2 === null) return null;
+    const diff = Math.abs(c1 - c2);
+    return Math.min(diff, 12 - diff);
+}
+
+function getTranspositionRemediesLocal(key1, key2) {
+    const c1 = getKeyCircleCoordinateLocal(key1);
+    if (c1 === null) return [];
+    
+    const match2 = key2.trim().match(/^([A-G][#b]?)(m|min|minor|maj|major)?$/i);
+    if (!match2) return [];
+    const root2 = match2[1];
+    const quality2 = match2[2] || '';
+    const isMinor2 = /m|min|minor/i.test(quality2);
+    const rootIndex2 = getNoteIndexLocal(root2);
+    if (rootIndex2 === -1) return [];
+    
+    const candidates = [];
+    
+    for (let i = 0; i < 12; i++) {
+        const isFlatKey = ['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Dm', 'Gm', 'Cm', 'Fm', 'Bbm', 'Ebm'].includes(sharps[i]);
+        const candRoot = isFlatKey ? flats[i] : sharps[i];
+        const candKey = candRoot + (isMinor2 ? 'm' : '');
+        
+        const cCand = getKeyCircleCoordinateLocal(candKey);
+        if (cCand === null) continue;
+        
+        const diffCircle = Math.abs(c1 - cCand);
+        const distCircle = Math.min(diffCircle, 12 - diffCircle);
+        
+        if (distCircle >= 3) continue;
+        
+        let semitoneShift = (i - rootIndex2 + 12) % 12;
+        if (semitoneShift > 6) semitoneShift -= 12;
+        
+        if (semitoneShift === 0) continue;
+        
+        candidates.push({
+            key: candKey,
+            semitoneShift: semitoneShift,
+            circleDistance: distCircle
+        });
+    }
+    
+    candidates.sort((a, b) => Math.abs(a.semitoneShift) - Math.abs(b.semitoneShift));
+    return candidates;
+}
+
+// Function to apply transposition remedy
+async function applyTransitionRemedy(songIdx, recommendedKey) {
+    const song = setlistQueue[songIdx];
+    if (!song) return;
+    
+    const originalKey = song.targetKey;
+    const targetKey = recommendedKey;
+    
+    try {
+        showStatus(`Transposing ${song.title} to recommended key ${targetKey}...`, 'active');
+        const res = await fetch('/api/transpose', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                text: song.text,
+                originalKey: originalKey,
+                targetKey: targetKey,
+                capo: 0,
+                simplify: false
+            })
+        });
+        if (!res.ok) throw new Error("Failed to transpose chart.");
+        
+        const data = await res.json();
+        
+        // Update song in setlist queue
+        song.text = data.text;
+        song.targetKey = targetKey;
+        song.capo = '0'; // reset capo
+        
+        saveSetlistQueue();
+        renderSetlist();
+        showStatus(`Transposed ${song.title} successfully!`, 'success');
+    } catch (e) {
+        showStatus(`Transposition failed: ${e.message}`, 'error');
+    }
+}
+
 // 2. The function to draw the array to the screen
 function renderSetlist() {
     const container = document.getElementById('setlistQueueContainer');
@@ -928,6 +1061,73 @@ function renderSetlist() {
     container.innerHTML = '';
     
     setlistQueue.forEach((song, idx) => {
+        // Check for jarring transition from previous song
+        if (idx > 0) {
+            const prevSong = setlistQueue[idx - 1];
+            const dist = getCircleOfFifthsDistanceLocal(prevSong.targetKey, song.targetKey);
+            
+            if (dist !== null && dist >= 3) {
+                // Warning item
+                const warningItem = document.createElement('div');
+                warningItem.style = `
+                    margin: 2px 4px;
+                    padding: 10px 14px;
+                    background: rgba(239, 68, 68, 0.08);
+                    border: 1px solid rgba(239, 68, 68, 0.25);
+                    border-radius: 10px;
+                    font-size: 12px;
+                    color: #f87171;
+                    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.05);
+                `;
+                
+                const remedies = getTranspositionRemediesLocal(prevSong.targetKey, song.targetKey);
+                let remediesHtml = '';
+                if (remedies.length > 0) {
+                    const topRemedies = remedies.slice(0, 2);
+                    const remedySpans = topRemedies.map(r => {
+                        const origIndex = getNoteIndexLocal(song.originalKey.replace(/m|min|minor$/i, ''));
+                        const recIndex = getNoteIndexLocal(r.key.replace(/m|min|minor$/i, ''));
+                        let capoText = '';
+                        if (origIndex !== -1 && recIndex !== -1) {
+                            const capoVal = (recIndex - origIndex + 12) % 12;
+                            if (capoVal > 0) {
+                                capoText = ` (Capo ${capoVal})`;
+                            }
+                        }
+                        return `<span style="cursor: pointer; text-decoration: underline; color: #fbbf24; font-weight: 700; margin: 0 2px;" onclick="applyTransitionRemedy(${idx}, '${r.key}')">${r.key}</span>${capoText}`;
+                    });
+                    remediesHtml = `<div style="margin-top: 6px; font-size: 11.5px; opacity: 0.9;">
+                        <strong>Remedy:</strong> Try transposing to: ${remedySpans.join(' or ')}
+                    </div>`;
+                }
+                
+                warningItem.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 8px; font-weight: 700;">
+                        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" style="flex-shrink:0;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                        <span>Jarring Key Shift! (${prevSong.targetKey} &rarr; ${song.targetKey} is ${dist} steps)</span>
+                    </div>
+                    ${remediesHtml}
+                `;
+                container.appendChild(warningItem);
+            } else if (dist !== null) {
+                // Subtle connector indicator for smooth key shifts
+                const smoothConnector = document.createElement('div');
+                smoothConnector.style = `
+                    text-align: center;
+                    font-size: 10px;
+                    color: #10b981;
+                    font-weight: 700;
+                    margin: -2px 0;
+                    opacity: 0.85;
+                    letter-spacing: 0.05em;
+                `;
+                smoothConnector.innerHTML = `&darr; Smooth transition: ${dist} step${dist === 1 ? '' : 's'} &darr;`;
+                container.appendChild(smoothConnector);
+            }
+        }
+
         const item = document.createElement('div');
         item.className = 'history-item';
         let metaText = `Original: ${song.originalKey} &rarr; Target: ${song.targetKey}`;
@@ -1050,7 +1250,8 @@ document.getElementById('downloadBinderBtn').addEventListener('click', async () 
                 setlist: setlistQueue, 
                 format: format, 
                 columns: document.getElementById('binderColumns').value,
-                title: binderTitle
+                title: binderTitle,
+                voicing: localStorage.getItem('cg_voicing_mode') || 'guitar'
             })
         });
         
@@ -1126,7 +1327,7 @@ document.getElementById('modalDownloadBtn').addEventListener('click', async () =
         const res = await fetch('/api/binder', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ setlist: singleSongQueue, format, bpm: bpmVal, timeSignature: timeSigVal, columns: columnsVal })
+            body: JSON.stringify({ setlist: singleSongQueue, format, bpm: bpmVal, timeSignature: timeSigVal, columns: columnsVal, voicing: localStorage.getItem('cg_voicing_mode') || 'guitar' })
         });
         if(!res.ok) throw new Error((await res.json()).error);
         const blob = await res.blob();
@@ -1372,7 +1573,8 @@ interactivePreview.addEventListener('mouseover', (e) => {
     hoverTimeout = setTimeout(async () => {
         if (!document.getElementById('enableTooltips').checked) return;
         try {
-            const res = await fetch(`/api/chord-svg?chord=${encodeURIComponent(chord)}`);
+            const voicing = localStorage.getItem('cg_voicing_mode') || 'guitar';
+            const res = await fetch(`/api/chord-svg?chord=${encodeURIComponent(chord)}&voicing=${voicing}`);
             if (!res.ok) return;
             const svgText = await res.text();
 
@@ -1382,11 +1584,17 @@ interactivePreview.addEventListener('mouseover', (e) => {
                 document.body.appendChild(activeTooltip);
             }
 
+            if (voicing === 'piano') {
+                activeTooltip.classList.add('piano-mode');
+            } else {
+                activeTooltip.classList.remove('piano-mode');
+            }
+
             activeTooltip.innerHTML = svgText;
 
             const rect = target.getBoundingClientRect();
-            const tooltipWidth = 100;
-            const tooltipHeight = 110;
+            const tooltipWidth = voicing === 'piano' ? 240 : 100;
+            const tooltipHeight = voicing === 'piano' ? 115 : 110;
 
             const left = rect.left + window.scrollX + (rect.width - tooltipWidth) / 2;
             let top = rect.top + window.scrollY - tooltipHeight - 8;
@@ -1421,6 +1629,18 @@ if (storedEnableTooltips !== null) {
 }
 enableTooltipsCheckbox.addEventListener('change', () => {
     localStorage.setItem('cg_enable_tooltips', enableTooltipsCheckbox.checked);
+});
+
+// Initialize Voicing Mode settings
+const voicingModeSelect = document.getElementById('voicingMode');
+const storedVoicingMode = localStorage.getItem('cg_voicing_mode');
+if (storedVoicingMode !== null) {
+    voicingModeSelect.value = storedVoicingMode;
+} else {
+    voicingModeSelect.value = 'guitar';
+}
+voicingModeSelect.addEventListener('change', () => {
+    localStorage.setItem('cg_voicing_mode', voicingModeSelect.value);
 });
 
 // ── RESET BUTTONS ──

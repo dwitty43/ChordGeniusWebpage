@@ -243,4 +243,9 @@ Verify the layout is completely responsive and bug-free using this standard brow
 ```
 
 ---
+> [!NOTE]
+> **Dynamic Skill Creation & Maintenance**: As new features, subsystems, or workflows are established (e.g. databases, payment flows, or advanced authentication), developer agents are encouraged and authorized to create new skill documentation files in the `skills/` directory.
+> **Self-Updating Codebase:** Whenever you add new functionality, expand APIs, or change layouts, you MUST update the corresponding skill documentation files (like `backend_and_scraper_skill.md` or `frontend_and_styling_skill.md`) to keep them current. This prevents the documentation from decaying and maintains low-token efficiency.
+
+---
 *Created by Antigravity. To run this layout framework or implement new draggable panels, open this file with IsSkillFile: true and apply the steps sequentially.*

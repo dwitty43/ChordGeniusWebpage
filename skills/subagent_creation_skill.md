@@ -104,7 +104,12 @@ Once the **Verifier Subagent** completes its audit and implements any necessary 
    git commit -m "feat: TSK-101 convert page layout restructure - verified by QA_Verifier"
    git push origin main
    ```
-3. **Parent Alert:** Once pushed, the verifier alerts the parent, and the task is officially transitioned to `[x] DONE` on [scrum_board.md](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/scrum_board.md) and synchronized to the live [Notion Scrum Board](https://www.notion.so/ChordGenius-Interactive-Scrum-Board-371d7bb87f1b81439181f3b9b068249b).
+3. **Parent Alert:** Once pushed, the verifier alerts the parent, and the task is officially transitioned to `[x] DONE` on [docs/scrum_board.md](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md) and synchronized to the live [Notion Scrum Board](https://www.notion.so/ChordGenius-Interactive-Scrum-Board-371d7bb87f1b81439181f3b9b068249b) following the guidelines in [skills/scrum_board_synchronization_skill.md](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/skills/scrum_board_synchronization_skill.md).
+
+---
+> [!NOTE]
+> **Dynamic Skill Creation & Maintenance**: As new features, subsystems, or workflows are established (e.g. databases, payment flows, or advanced authentication), developer agents are encouraged and authorized to create new skill documentation files in the `skills/` directory.
+> **Self-Updating Codebase:** Whenever you add new functionality, expand APIs, or change layouts, you MUST update the corresponding skill documentation files (like `backend_and_scraper_skill.md` or `frontend_and_styling_skill.md`) to keep them current. This prevents the documentation from decaying and maintains low-token efficiency.
 
 ---
 *Created by Antigravity. To run this workflow on a new task, open this file with IsSkillFile: true and follow the guidelines sequentially.*

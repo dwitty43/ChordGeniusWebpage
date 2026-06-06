@@ -1,5 +1,5 @@
 // Run with: node --env-file=.env scratch/test_scraping_api.js
-const { getFirstSearchResult, fetchUGPage, extractTabData } = require('../engine');
+const { getFirstSearchResult, fetchUGPage, extractTabData } = require('../backend/engine');
 
 (async () => {
     console.log("🧪 Starting Scraping API Integration Test...");

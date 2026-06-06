@@ -65,6 +65,74 @@ function getPlayKey(targetKey, capoFret) {
     return playRoot + quality;
 }
 
+function getKeyCircleCoordinate(keyString) {
+    if (!keyString) return null;
+    const cleanKey = keyString.trim();
+    const match = cleanKey.match(/^([A-G][#b]?)(m|min|minor|maj|major)?$/i);
+    if (!match) return null;
+    let root = match[1];
+    let rootIndex = getNoteIndex(root);
+    if (rootIndex === -1) return null;
+    
+    const isMinor = /m|min|minor/i.test(match[2] || '');
+    if (isMinor) {
+        rootIndex = (rootIndex + 3) % 12;
+    }
+    
+    return (rootIndex * 7) % 12;
+}
+
+function getCircleOfFifthsDistance(key1, key2) {
+    const c1 = getKeyCircleCoordinate(key1);
+    const c2 = getKeyCircleCoordinate(key2);
+    if (c1 === null || c2 === null) return null;
+    const diff = Math.abs(c1 - c2);
+    return Math.min(diff, 12 - diff);
+}
+
+function getTranspositionRemedies(key1, key2) {
+    const c1 = getKeyCircleCoordinate(key1);
+    if (c1 === null) return [];
+    
+    const match2 = key2.trim().match(/^([A-G][#b]?)(m|min|minor|maj|major)?$/i);
+    if (!match2) return [];
+    const root2 = match2[1];
+    const quality2 = match2[2] || '';
+    const isMinor2 = /m|min|minor/i.test(quality2);
+    const rootIndex2 = getNoteIndex(root2);
+    if (rootIndex2 === -1) return [];
+    
+    const candidates = [];
+    
+    for (let i = 0; i < 12; i++) {
+        const isFlatKey = ['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Dm', 'Gm', 'Cm', 'Fm', 'Bbm', 'Ebm'].includes(sharps[i]);
+        const candRoot = isFlatKey ? flats[i] : sharps[i];
+        const candKey = candRoot + (isMinor2 ? 'm' : '');
+        
+        const cCand = getKeyCircleCoordinate(candKey);
+        if (cCand === null) continue;
+        
+        const diffCircle = Math.abs(c1 - cCand);
+        const distCircle = Math.min(diffCircle, 12 - diffCircle);
+        
+        if (distCircle >= 3) continue;
+        
+        let semitoneShift = (i - rootIndex2 + 12) % 12;
+        if (semitoneShift > 6) semitoneShift -= 12;
+        
+        if (semitoneShift === 0) continue;
+        
+        candidates.push({
+            key: candKey,
+            semitoneShift: semitoneShift,
+            circleDistance: distCircle
+        });
+    }
+    
+    candidates.sort((a, b) => Math.abs(a.semitoneShift) - Math.abs(b.semitoneShift));
+    return candidates;
+}
+
 function parseChord(chordString) {
     const parts = chordString.split('/'); 
     return parts.map(part => {
@@ -335,6 +403,15 @@ async function fastSearchUGDirect(query) {
 }
 
 async function getFirstSearchResult(query) {
+    if (typeof query === 'string' && /tabs\.ultimate-guitar\.com/i.test(query)) {
+        let url = query.trim();
+        if (!/^https?:\/\//i.test(url)) {
+            url = 'https://' + url;
+        }
+        console.log(`[Engine] Direct Ultimate Guitar URL pattern detected: ${url}`);
+        return url;
+    }
+
     let tabUrl = null;
 
     // Attempt 1: Extremely fast HTTP fetch to DuckDuckGo Lite (takes < 200ms, bypasses Puppeteer completely)
@@ -659,7 +736,29 @@ function wrapSongLinesForTwoColumns(lines, limit = 42) {
 }
 
 // --- TEXT PROCESSING ---
+function cleanWhitespace(text) {
+    if (!text || typeof text !== 'string') return text || '';
+    const noTabs = text.replace(/\t/g, '    ');
+    const lines = noTabs.split(/\r?\n/);
+    const cleanedLines = [];
+    let prevWasEmpty = false;
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trimEnd();
+        if (line === '') {
+            if (!prevWasEmpty) {
+                cleanedLines.push(line);
+                prevWasEmpty = true;
+            }
+        } else {
+            cleanedLines.push(line);
+            prevWasEmpty = false;
+        }
+    }
+    return cleanedLines.join('\n');
+}
+
 function processAndAlignTabs(rawText, originalKey, targetKey, isPdf = false, simplify = false, capo = 0) {
+    rawText = cleanWhitespace(rawText);
     let lines = rawText.split('\n');
 
     // PDF Preprocessor: Rejoin split Y-axis superscript chord extensions
@@ -1221,7 +1320,189 @@ const chordDictionary = {
     'Gadd9': { frets: [3, 2, 0, 0, 0, 5], fingers: [1, 2, 0, 0, 0, 4], baseFret: 1 }
 };
 
-function getChordSvg(chordName) {
+function parseChordVoicing(chordName) {
+    const parts = chordName.split('/');
+    const mainChord = parts[0];
+    const bassNote = parts[1];
+
+    const rootMatch = mainChord.match(/^([A-G][#b]?|[b#]?[1-7])/i);
+    if (!rootMatch) return null;
+
+    const rootStr = rootMatch[1];
+    let quality = mainChord.slice(rootStr.length);
+
+    let rootChroma = 0;
+    const noteToChroma = { 'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3, 'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8, 'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11 };
+    
+    if (/^[b#]?[1-7]$/.test(rootStr)) {
+        rootChroma = nashvilleToHalfSteps[rootStr.toLowerCase()];
+    } else {
+        const rootClean = rootStr.charAt(0).toUpperCase() + rootStr.slice(1).toLowerCase();
+        rootChroma = noteToChroma[rootClean];
+    }
+    if (rootChroma === undefined) rootChroma = 0;
+
+    let offsets = [0];
+    quality = quality.toLowerCase().replace(/[\(\)]/g, '');
+
+    if (quality.startsWith('maj7') || quality.startsWith('maj9') || quality.startsWith('maj11') || quality.startsWith('maj13') || quality.startsWith('m7+') || quality === 'm(maj7)' || quality === 'mmaj7') {
+        offsets = [0, 4, 7, 11];
+    } else if (quality.startsWith('maj') || quality === 'm(maj9)' || quality === '') {
+        offsets = [0, 4, 7];
+    } else if (quality.startsWith('m7b5') || quality.startsWith('min7b5') || quality.startsWith('ø')) {
+        offsets = [0, 3, 6, 10];
+    } else if (quality.startsWith('m9') || quality.startsWith('min9') || quality.startsWith('m11') || quality.startsWith('m13')) {
+        offsets = [0, 3, 7, 10, 14];
+    } else if (quality.startsWith('m7') || quality.startsWith('min7') || quality.startsWith('m/7')) {
+        offsets = [0, 3, 7, 10];
+    } else if (quality.startsWith('m') || quality.startsWith('min')) {
+        offsets = [0, 3, 7];
+    } else if (quality.startsWith('7') || quality.startsWith('9') || quality.startsWith('11') || quality.startsWith('13')) {
+        offsets = [0, 4, 7, 10];
+    } else if (quality.startsWith('sus4') || quality.startsWith('sus')) {
+        offsets = [0, 5, 7];
+    } else if (quality.startsWith('sus2')) {
+        offsets = [0, 2, 7];
+    } else if (quality.startsWith('add9') || quality.startsWith('add2')) {
+        offsets = [0, 2, 4, 7];
+    } else if (quality.startsWith('dim7')) {
+        offsets = [0, 3, 6, 9];
+    } else if (quality.startsWith('dim') || quality === '°') {
+        offsets = [0, 3, 6];
+    } else if (quality.startsWith('aug') || quality === '+' || quality === '+5') {
+        offsets = [0, 4, 8];
+    } else if (quality.startsWith('6')) {
+        offsets = [0, 4, 7, 9];
+    } else if (quality.startsWith('5')) {
+        offsets = [0, 7];
+    } else {
+        offsets = [0, 4, 7];
+    }
+
+    let bassChroma = null;
+    if (bassNote) {
+        if (/^[b#]?[1-7]$/.test(bassNote)) {
+            bassChroma = nashvilleToHalfSteps[bassNote.toLowerCase()];
+        } else {
+            const bassClean = bassNote.charAt(0).toUpperCase() + bassNote.slice(1).toLowerCase();
+            bassChroma = noteToChroma[bassClean];
+        }
+    }
+
+    return { rootChroma, offsets, bassChroma };
+}
+
+function getPianoChordSvg(chordName) {
+    const parsed = parseChordVoicing(chordName);
+    if (!parsed) return null;
+
+    const { rootChroma, offsets, bassChroma } = parsed;
+
+    const highlightedChromas = new Set();
+    highlightedChromas.add(rootChroma);
+    for (const offset of offsets) {
+        highlightedChromas.add((rootChroma + offset) % 12);
+    }
+    if (bassChroma !== null) {
+        highlightedChromas.add(bassChroma);
+    }
+
+    const width = 220;
+    const height = 95;
+    const leftMargin = 10;
+    const topMargin = 25;
+    const whiteKeyWidth = 14;
+    const whiteKeyHeight = 55;
+    const blackKeyWidth = 8;
+    const blackKeyHeight = 35;
+
+    const keys = [
+        { midi: 0, isBlack: false, whiteIndex: 0, chroma: 0, name: 'C3' },
+        { midi: 1, isBlack: true, chroma: 1, name: 'C#3' },
+        { midi: 2, isBlack: false, whiteIndex: 1, chroma: 2, name: 'D3' },
+        { midi: 3, isBlack: true, chroma: 3, name: 'D#3' },
+        { midi: 4, isBlack: false, whiteIndex: 2, chroma: 4, name: 'E3' },
+        { midi: 5, isBlack: false, whiteIndex: 3, chroma: 5, name: 'F3' },
+        { midi: 6, isBlack: true, chroma: 6, name: 'F#3' },
+        { midi: 7, isBlack: false, whiteIndex: 4, chroma: 7, name: 'G3' },
+        { midi: 8, isBlack: true, chroma: 8, name: 'G#3' },
+        { midi: 9, isBlack: false, whiteIndex: 5, chroma: 9, name: 'A3' },
+        { midi: 10, isBlack: true, chroma: 10, name: 'A#3' },
+        { midi: 11, isBlack: false, whiteIndex: 6, chroma: 11, name: 'B3' },
+        
+        { midi: 12, isBlack: false, whiteIndex: 7, chroma: 0, name: 'C4' },
+        { midi: 13, isBlack: true, chroma: 1, name: 'C#4' },
+        { midi: 14, isBlack: false, whiteIndex: 8, chroma: 2, name: 'D4' },
+        { midi: 15, isBlack: true, chroma: 3, name: 'D#4' },
+        { midi: 16, isBlack: false, whiteIndex: 9, chroma: 4, name: 'E4' },
+        { midi: 17, isBlack: false, whiteIndex: 10, chroma: 5, name: 'F4' },
+        { midi: 18, isBlack: true, chroma: 6, name: 'F#4' },
+        { midi: 19, isBlack: false, whiteIndex: 11, chroma: 7, name: 'G4' },
+        { midi: 20, isBlack: true, chroma: 8, name: 'G#4' },
+        { midi: 21, isBlack: false, whiteIndex: 12, chroma: 9, name: 'A4' },
+        { midi: 22, isBlack: true, chroma: 10, name: 'A#4' },
+        { midi: 23, isBlack: false, whiteIndex: 13, chroma: 11, name: 'B4' }
+    ];
+
+    let whiteKeysHtml = '';
+    for (const key of keys) {
+        if (!key.isBlack) {
+            const x = leftMargin + key.whiteIndex * whiteKeyWidth;
+            const y = topMargin;
+            whiteKeysHtml += `<rect class="piano-white-key" x="${x}" y="${y}" width="${whiteKeyWidth}" height="${whiteKeyHeight}" fill="var(--piano-white-fill, #ffffff)" stroke="var(--piano-white-stroke, #1e2130)" stroke-width="1.2" rx="1.5" ry="1.5" />`;
+        }
+    }
+
+    let blackKeysHtml = '';
+    const blackKeyPositions = {
+        1: 0, 3: 1, 6: 3, 8: 4, 10: 5, 13: 7, 15: 8, 18: 10, 20: 11, 22: 12
+    };
+
+    for (const key of keys) {
+        if (key.isBlack) {
+            const whiteIndexBefore = blackKeyPositions[key.midi];
+            const x = leftMargin + (whiteIndexBefore + 1) * whiteKeyWidth - blackKeyWidth / 2;
+            const y = topMargin;
+            blackKeysHtml += `<rect class="piano-black-key" x="${x}" y="${y}" width="${blackKeyWidth}" height="${blackKeyHeight}" fill="var(--piano-black-fill, #1e2130)" stroke="var(--piano-black-stroke, #080a10)" stroke-width="1" rx="1" ry="1" />`;
+        }
+    }
+
+    let highlightsHtml = '';
+    for (const key of keys) {
+        if (highlightedChromas.has(key.chroma)) {
+            let cx, cy;
+            if (key.isBlack) {
+                const whiteIndexBefore = blackKeyPositions[key.midi];
+                cx = leftMargin + (whiteIndexBefore + 1) * whiteKeyWidth;
+                cy = topMargin + blackKeyHeight - 8;
+            } else {
+                cx = leftMargin + key.whiteIndex * whiteKeyWidth + whiteKeyWidth / 2;
+                cy = topMargin + whiteKeyHeight - 10;
+            }
+
+            const isRoot = (key.chroma === rootChroma);
+
+            if (isRoot) {
+                highlightsHtml += `<circle cx="${cx}" cy="${cy}" r="3.5" fill="#fbbf24" stroke="#d97706" stroke-width="1" />`;
+            } else {
+                highlightsHtml += `<circle cx="${cx}" cy="${cy}" r="3.5" fill="rgba(251, 191, 36, 0.25)" stroke="#fbbf24" stroke-width="1.5" />`;
+            }
+        }
+    }
+
+    return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" class="piano-svg" xmlns="http://www.w3.org/2000/svg">` +
+        `<text x="${width / 2}" y="15" font-family="Arial, sans-serif" font-size="12px" font-weight="bold" text-anchor="middle" fill="var(--piano-text-color, #ede8dc)">${chordName}</text>` +
+        whiteKeysHtml +
+        blackKeysHtml +
+        highlightsHtml +
+        `</svg>`;
+}
+
+function getChordSvg(chordName, voicing = 'guitar') {
+    if (voicing === 'piano') {
+        return getPianoChordSvg(chordName);
+    }
+
     let chord = chordDictionary[chordName];
     if (!chord) {
         let rootOnly = chordName.split('/')[0];
@@ -1302,7 +1583,7 @@ function getChordSvg(chordName) {
         `</svg>`;
 }
 
-async function createPdfChart(finalChartText, songTitle, originalKey, targetKey, bpm, capo = 0, timeSignature = '', columns = '1') {
+async function createPdfChart(finalChartText, songTitle, originalKey, targetKey, bpm, capo = 0, timeSignature = '', columns = '1', voicing = 'guitar') {
     const lines = finalChartText.split('\n');
     
     // Check if we are dealing with a Setlist Binder
@@ -1325,7 +1606,7 @@ async function createPdfChart(finalChartText, songTitle, originalKey, targetKey,
     const svgCards = [];
     const sortedChords = Array.from(uniqueChords).sort();
     for (const chord of sortedChords) {
-        const svg = getChordSvg(chord);
+        const svg = getChordSvg(chord, voicing);
         if (svg) {
             svgCards.push(`<div class="chord-diagram-card">${svg}</div>`);
         }
@@ -1547,6 +1828,13 @@ async function createPdfChart(finalChartText, songTitle, originalKey, targetKey,
             sup { font-size: 75%; }
             ${containerStyle}
             ${headerStyle}
+            :root {
+                --piano-white-fill: #ffffff;
+                --piano-white-stroke: #475569;
+                --piano-black-fill: #334155;
+                --piano-black-stroke: #0f172a;
+                --piano-text-color: #0f172a;
+            }
             .chord-diagram-container { display: flex; flex-wrap: wrap; gap: 15px; border-top: 1px solid #ccc; padding-top: 20px; margin-top: 40px; page-break-inside: avoid; break-inside: avoid; }
             .chord-diagram-card { text-align: center; font-size: 12px; }
         </style>
@@ -1744,6 +2032,7 @@ function lineBasedToChordPro(lineBasedText, title = '', key = '') {
 }
 
 module.exports = { 
+    cleanWhitespace,
     wrapSongLinesForTwoColumns,
     getFirstSearchResult, 
     fetchUGPage, 
@@ -1754,5 +2043,8 @@ module.exports = {
     chordProToLineBased,
     lineBasedToChordPro,
     getPlayKey,
-    getChordSvg
+    getChordSvg,
+    getKeyCircleCoordinate,
+    getCircleOfFifthsDistance,
+    getTranspositionRemedies
 }

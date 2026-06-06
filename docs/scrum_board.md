@@ -34,7 +34,7 @@ gantt
 
 | 📥 BACKLOG (Future Scope) | 📝 TO DO (Ready for Sprint) | ⏳ IN PROGRESS | ✅ DONE (Completed) |
 | :--- | :--- | :--- | :--- |
-| • Band Sync (WebSocket Sync) <br> • Gig Tracker & Analytics <br> • Dynamic Ear Trainer & Analysis | • Vocal Range Matcher <br> • Setlist Flow / Time Estimator <br> • Stage Mode & Foot Pedal <br> • **Piano Chord SVGs** <br> • **Active Chart Zoom Controls** | • Production Scraper Hardening <br> • **Rehearsal Capo/Key Switcher** <br> • Login/Signup Account Init | **Sprint 1 (100% Completed):** <br> • Resizable Panels (No Scroll) <br> • Dark Mode CSS Accessibility <br> • Workspace renamed to "Convert" <br> • Stage View Hides Placeholders <br> • Preview Header Buttons <br> • Setlist Queue Caching <br> • Setlist Card Preview Click <br> • Options Reset Buttons <br> • Binder Custom Title Sync |
+| • Band Sync (WebSocket Sync) <br> • Gig Tracker & Analytics <br> • Dynamic Ear Trainer & Analysis <br> • App Conversion Research (TSK-406) | • Vocal Range Matcher <br> • Stage Mode & Foot Pedal <br> • **Active Chart Zoom Controls** <br> • UG Direct URL Import (TSK-208) <br> • SVG Live Editor Sync (TSK-308) <br> • Rehearsal Tab Voicing Selector (TSK-309) <br> • Scraped Key Verification (TSK-310) <br> • Multi-Source Scraping (TSK-209) <br> • Dropdown Tiles Width (TSK-210) <br> • Tab Whitespace Cleansing (TSK-211) <br> • Title Underscore Fix (TSK-311) <br> • Mobile Layout Optimization (TSK-212) <br> • Nashville Piano SVG Toggle (TSK-312) | • Production Scraper Hardening <br> • **Rehearsal Capo/Key Switcher** <br> • Login/Signup Account Init <br> • Setlist Flow / Time Estimator (Phase 1) <br> • Spotify Playlist Importer (Phase 1) | **Sprint 1 (100% Completed)** <br> **Sprint 3 Core Phase 1:** <br> • **Piano Chord SVGs** |
 
 ---
 
@@ -71,7 +71,7 @@ gantt
 ### 🔑 Sprint 2: Platform Preparation, Security & Auth (Priority: Med-High)
 * **Goal:** Stabilize the platform for multi-user access, implement user account frameworks, and harden scraper capabilities.
 
-- [ ] **TSK-201: Production Scraper Evasion Hardening**
+- [X] **TSK-201: Production Scraper Evasion Hardening**
   - **Description:** Fix Ultimate Guitar scraper timeouts and Cloudflare blocks on the live domain (`chordgenius.dewittcyber.com`). Optimize proxy headers, rota user-agents, and cache search engine results.
   - **Source:** [proposed_ideas.md - Next Step 3](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/proposed_ideas.md#L57)
 - [ ] **TSK-202: Login/Signup Account Infrastructure**
@@ -80,18 +80,33 @@ gantt
 - [ ] **TSK-203: Premium Feature Page & Gateway Simulator**
   - **Description:** Build a landing/settings page showcasing free vs. premium tiers with a premium gold UI styling, featuring a sandbox billing/upgrade simulator.
   - **Source:** [next_steps.md - Next step 2](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/next_steps.md#L21)
-- [ ] **TSK-204: Rehearse Page Layout Alignment**
+- [X] **TSK-204: Rehearse Page Layout Alignment**
   - **Description:** Re-layout the Rehearse Page so it shares consistent sidebar page-selectors and structure with the Convert Page. Componentize matching modules.
   - **Source:** [next_steps.md - Bug 6](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/next_steps.md#L16)
 - [ ] **TSK-205: Transition Animation & Tab Routing**
   - **Description:** Add elegant transitions when switching between tabs (Convert, Rehearse, and later Premium). Ensure consistent defaults (e.g. "Interactive Preview" active by default).
   - **Source:** [next_steps.md - Bug 7](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/next_steps.md#L17) & [proposed_ideas.md - Next Step 7](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/proposed_ideas.md#L61)
-- [ ] **TSK-206: Nashville Scrape Parser Patch**
+- [X] **TSK-206: Nashville Scrape Parser Patch**
   - **Description:** Resolve formatting bug where scraping a song that lists Nashville Numbers as the input key disrupts the conversion layout.
   - **Source:** [proposed_ideas.md - Next Step 6](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/proposed_ideas.md#L60)
 - [ ] **[NEW] TSK-207: Rehearsal Tab Capo/Key Switcher**
   - **Description:** Add an interactive transposition capo/key control panel directly inside the Rehearse tab. Allow musicians to change key and capo fret on the fly during a rehearsal run without returning to Convert panel.
-  - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/scrum_board.md)
+  - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
+- [ ] **[NEW] TSK-208: Ultimate Guitar Direct URL Import**
+  - **Description:** Add an ability for the user to be able to insert a link to ultimate guitar and pull tabs that way.
+  - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
+- [ ] **[NEW] TSK-209: Multi-Source Scraping Research & Fallbacks**
+  - **Description:** Research alternative chord sheet directories (e.g., e-chords, chordie) to bypass Ultimate Guitar Cloudflare blocks and implement them as fallback scrapers.
+  - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
+- [ ] **[NEW] TSK-210: Dropdown Tiles Width & Panel Initial Sizing**
+  - **Description:** Default width of the dropdown tiles for the widgets doesn’t display enough text. The sliding panel should by default start 3/4 of the way to the right to allow room for the tiles to be able to display their text.
+  - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
+- [ ] **[NEW] TSK-211: Scraped Tab Whitespace Cleansing & Formatting**
+  - **Description:** Some scrapes are inserting a lot of white space. Add a way to make sure the formatting looks good.
+  - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
+- [ ] **[NEW] TSK-212: Mobile Layout Optimization**
+  - **Description:** Implement an alternate layout for mobile phone to keep sleek look but more optimal for mobile use.
+  - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
 
 ---
 
@@ -103,6 +118,7 @@ gantt
   - **Source:** [future_vision_ideas.md - Feature 1 (Med Priority)](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/future_vision_ideas.md)
 - [ ] **TSK-302: Setlist Flow & Time Estimator**
   - **Description:** Estimate setlist duration using Spotify API track lengths or chord metric speeds. Add interactive timeline blocks for non-musical actions (tuning/talking) and display visual alerts for jarring key shifts between consecutive songs.
+  - **Progress:** Phase 1 Completed: Implemented Circle of Fifths circular transition distance analysis & interactive transpositions remedies.
   - **Source:** [future_vision_ideas.md - Feature 4 (Med Priority)](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/future_vision_ideas.md)
 - [x] **TSK-303: Options Reset Buttons**
   - **Description:** Add standard "Reset Settings" buttons to the *Search & Convert* and *Upload & Convert* configuration grids to allow rapid standard state restores.
@@ -110,15 +126,32 @@ gantt
 - [x] **TSK-304: Custom Binder Title Dynamic Alignment**
   - **Description:** Fix PDF/Word binder cover generation so it reads the user's custom binder name instead of outputting the default "SETLIST BINDER".
   - **Source:** [proposed_ideas.md - Next Step 8](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/proposed_ideas.md#L64)
-- [ ] **[NEW] TSK-305: Piano Chord Voicing Diagram Support**
+- [x] **[NEW] TSK-305: Piano Chord Voicing Diagram Support**
   - **Description:** Expand the visual chord tooltip voicing engine. In addition to guitar fretboard diagrams, add a togglable option to render standard piano keys highlighting finger positions for the active hover chord.
+  - **Progress:** 100% Completed: Integrated 2-octave piano keyboard SVG visualizer, localStorage persistence, and theme-aware CSS modes.
   - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/scrum_board.md)
 - [ ] **[NEW] TSK-306: Spotify Playlist Setlist Importer**
   - **Description:** Allow users to import a Spotify playlist (capped at max 15 songs) directly into the Convert tab to automatically generate a setlist binder. Build a bulk-configuration screen where users can customize key transpositions, capos, simplifies, and formatting details for each song before triggering the scrape pipeline.
+  - **Progress:** Phase 1 Completed: Implemented Express POST `/api/spotify/playlist-import` handling track metadata, audio analysis keys, and pagination.
   - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/scrum_board.md)
 - [ ] **[NEW] TSK-307: Active Chart Text Zoom Controls**
   - **Description:** Add + (Zoom In) and - (Zoom Out) controls to allow musicians to dynamically adjust font size on the interactive preview (Convert tab) and the rehearsal sheet (Rehearse tab) for optimal stage readability.
-  - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/scrum_board.md)
+  - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
+- [ ] **[NEW] TSK-308: SVG Live Editor Sync**
+  - **Description:** If a Chord is changed in the edit preview, the SVG should be updated.
+  - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
+- [ ] **[NEW] TSK-309: Rehearsal Tab Voicing Selector**
+  - **Description:** User should be able to change the Voicing Mode in the Rehearse Tab.
+  - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
+- [ ] **[NEW] TSK-310: Scraped Key Verification & Warning**
+  - **Description:** Detect when a song might have the wrong key scraped and deliver a warning to the user.
+  - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
+- [ ] **[NEW] TSK-311: Title Space Underscore Sanitization**
+  - **Description:** Titles should always have spaces not underscores, verify this and fix it.
+  - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
+- [ ] **[NEW] TSK-312: Hide Piano SVGs in Nashville Mode**
+  - **Description:** Piano SVGs should not display if in Nashville Number system.
+  - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
 
 ---
 
@@ -140,6 +173,9 @@ gantt
 - [ ] **TSK-405: Domain Acquisition Research**
   - **Description:** Investigate pricing and registrar options for purchasing `chordgenius.com` or alternative top-level domains.
   - **Source:** [proposed_ideas.md - Next Step 4](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/proposed_ideas.md#L58)
+- [ ] **[NEW] TSK-406: Native App Conversion Research**
+  - **Description:** Look into making this into an app.
+  - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
 
 ---
 

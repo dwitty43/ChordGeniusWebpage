@@ -718,7 +718,8 @@ function setupRehearsalTooltips() {
         hoverTimeout = setTimeout(async () => {
             if (localStorage.getItem('cg_enable_tooltips') === 'false') return;
             try {
-                const res = await fetch(`/api/chord-svg?chord=${encodeURIComponent(chord)}`);
+                const voicing = localStorage.getItem('cg_voicing_mode') || 'guitar';
+                const res = await fetch(`/api/chord-svg?chord=${encodeURIComponent(chord)}&voicing=${voicing}`);
                 if (!res.ok) return;
                 const svgText = await res.text();
 
@@ -728,11 +729,17 @@ function setupRehearsalTooltips() {
                     document.body.appendChild(activeTooltip);
                 }
 
+                if (voicing === 'piano') {
+                    activeTooltip.classList.add('piano-mode');
+                } else {
+                    activeTooltip.classList.remove('piano-mode');
+                }
+
                 activeTooltip.innerHTML = svgText;
 
                 const rect = target.getBoundingClientRect();
-                const tooltipWidth = 100;
-                const tooltipHeight = 110;
+                const tooltipWidth = voicing === 'piano' ? 240 : 100;
+                const tooltipHeight = voicing === 'piano' ? 115 : 110;
 
                 const left = rect.left + window.scrollX + (rect.width - tooltipWidth) / 2;
                 let top = rect.top + window.scrollY - tooltipHeight - 8;

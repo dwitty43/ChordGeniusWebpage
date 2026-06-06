@@ -1,6 +1,6 @@
 const fs = require('fs');
 const pdf = require('pdf-parse');
-const { processAndAlignTabs } = require('../engine.js');
+const { processAndAlignTabs } = require('../backend/engine.js');
 
 async function run() {
     const dataBuffer = fs.readFileSync("C:\\Users\\Dwitt\\Downloads\\Late_Night_talking_Chart (1).pdf");

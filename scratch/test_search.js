@@ -1,4 +1,4 @@
-const { getFirstSearchResult } = require('../engine');
+const { getFirstSearchResult } = require('../backend/engine');
 
 console.log('Starting search test for "Gravity John Mayer"...');
 

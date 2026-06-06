@@ -1,4 +1,4 @@
-const { getFirstSearchResult, fetchUGPage, extractTabData } = require('../engine');
+const { getFirstSearchResult, fetchUGPage, extractTabData } = require('../backend/engine');
 
 async function run() {
     try {

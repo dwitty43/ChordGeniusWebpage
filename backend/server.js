@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const multer = require('multer');
 const mammoth = require('mammoth');
@@ -14,7 +15,10 @@ const {
     chordProToLineBased,
     lineBasedToChordPro,
     getPlayKey,
-    getChordSvg
+    getChordSvg,
+    getKeyCircleCoordinate,
+    getCircleOfFifthsDistance,
+    getTranspositionRemedies
 } = require('./engine'); 
 
 // --- SPOTIFY WEB API INTEGRATION ---
@@ -127,17 +131,17 @@ async function getSpotifyTrackMetadata(query) {
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, '../public')));
 
 const upload = multer({ storage: multer.memoryStorage() });
 
-async function deliverFile(res, finalChart, originalName, originalKey, targetKey, format, bpm, capo = 0, timeSignature = '', columns = '1') {
+async function deliverFile(res, finalChart, originalName, originalKey, targetKey, format, bpm, capo = 0, timeSignature = '', columns = '1', voicing = 'guitar') {
     let fileBuffer;
     let contentType;
     let extension;
 
     if (format === 'pdf') {
-        const rawPdf = await createPdfChart(finalChart, originalName, originalKey, targetKey, bpm, capo, timeSignature, columns);
+        const rawPdf = await createPdfChart(finalChart, originalName, originalKey, targetKey, bpm, capo, timeSignature, columns, voicing);
         fileBuffer = Buffer.from(rawPdf);
         contentType = 'application/pdf';
         extension = 'pdf';
@@ -173,13 +177,23 @@ app.get('/api/convert', async (req, res) => {
     const capo = parseInt(req.query.capo, 10) || 0;
     const timeSignature = req.query.timeSignature || '';
     const columns = req.query.columns || '1';
+    const voicing = req.query.voicing || 'guitar';
 
     if (!query) return res.status(400).json({ error: "Please provide a song query." });
 
     try {
         console.log(`[API] Searching for: ${query}`);
         
-        const tabUrl = await getFirstSearchResult(query); 
+        let tabUrl;
+        if (typeof query === 'string' && /tabs\.ultimate-guitar\.com/i.test(query)) {
+            tabUrl = query.trim();
+            if (!/^https?:\/\//i.test(tabUrl)) {
+                tabUrl = 'https://' + tabUrl;
+            }
+            console.log(`[API] Skipping search for direct Ultimate Guitar URL: ${tabUrl}`);
+        } else {
+            tabUrl = await getFirstSearchResult(query);
+        }
         const html = await fetchUGPage(tabUrl);
         const tabData = extractTabData(html);
         
@@ -200,7 +214,7 @@ app.get('/api/convert', async (req, res) => {
         console.log(`[API] Transposing chart...`);
         const finalChart = processAndAlignTabs(tabData.rawTabText, songKey, targetKey, false, simplify, capo);
         
-        await deliverFile(res, finalChart, query, songKey, targetKey, format, finalBpm, capo, finalTimeSig, columns);
+        await deliverFile(res, finalChart, query, songKey, targetKey, format, finalBpm, capo, finalTimeSig, columns, voicing);
 
     } catch (error) {
         console.error(`[API Error]`, error.message);
@@ -210,7 +224,7 @@ app.get('/api/convert', async (req, res) => {
 
 // --- ROUTE 4: BATCH SETLIST BINDER EXPORT ---
 app.post('/api/binder', async (req, res) => {
-    const { setlist, format, bpm, timeSignature, columns, title } = req.body;
+    const { setlist, format, bpm, timeSignature, columns, title, voicing } = req.body;
     if (!setlist || setlist.length === 0) return res.status(400).json({ error: "Setlist is empty." });
 
     try {
@@ -226,7 +240,8 @@ app.post('/api/binder', async (req, res) => {
                 song.bpm || bpm,
                 parseInt(song.capo, 10) || 0,
                 song.timeSignature || timeSignature || '',
-                columns || '1'
+                columns || '1',
+                voicing || 'guitar'
             );
         }
 
@@ -272,7 +287,36 @@ app.post('/api/binder', async (req, res) => {
             combinedText += `Key: ${keyText}\n\n`;
             combinedText += song.text;
         }
-        await deliverFile(res, combinedText, title || "Setlist Binder", "Mixed", "Mixed", format, bpm, 0, timeSignature || '', columns || '1');
+        await deliverFile(res, combinedText, title || "Setlist Binder", "Mixed", "Mixed", format, bpm, 0, timeSignature || '', columns || '1', voicing || 'guitar');
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// --- NEW ROUTE: DIRECT CHORD CHART TRANSPOSITION ---
+app.post('/api/transpose', (req, res) => {
+    const { text, originalKey, targetKey, capo, simplify } = req.body;
+    if (!text || !originalKey) {
+        return res.status(400).json({ error: "Missing text or originalKey" });
+    }
+    try {
+        const finalChart = processAndAlignTabs(text, originalKey, targetKey || '', false, simplify === true, parseInt(capo, 10) || 0);
+        res.json({ text: finalChart });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// --- NEW ROUTE: CIRCLE OF FIFTHS TRANSITION DISTANCE & REMEDIES ---
+app.get('/api/transition-remedies', (req, res) => {
+    const { key1, key2 } = req.query;
+    if (!key1 || !key2) {
+        return res.status(400).json({ error: "Missing key1 or key2 query parameters" });
+    }
+    try {
+        const distance = getCircleOfFifthsDistance(key1, key2);
+        const remedies = getTranspositionRemedies(key1, key2);
+        res.json({ distance, remedies });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -283,7 +327,16 @@ app.get('/api/preview', async (req, res) => {
     let { q: query, key: songKey, targetKey, simplify, capo: capoParam } = req.query;
     if (songKey === 'nashville') songKey = '';
     try {
-        const tabUrl = await getFirstSearchResult(query); 
+        let tabUrl;
+        if (typeof query === 'string' && /tabs\.ultimate-guitar\.com/i.test(query)) {
+            tabUrl = query.trim();
+            if (!/^https?:\/\//i.test(tabUrl)) {
+                tabUrl = 'https://' + tabUrl;
+            }
+            console.log(`[API] Skipping search for direct Ultimate Guitar URL: ${tabUrl}`);
+        } else {
+            tabUrl = await getFirstSearchResult(query);
+        }
         const html = await fetchUGPage(tabUrl);
         const tabData = extractTabData(html);
         
@@ -307,6 +360,7 @@ app.get('/api/preview', async (req, res) => {
             originalKey: finalKey, 
             targetKey: targetKey || 'Nashville', 
             text: finalChart, 
+            originalText: tabData.rawTabText,
             capo: capo, 
             playKey: playKey,
             bpm: spotifyMeta ? spotifyMeta.bpm : '',
@@ -329,6 +383,7 @@ app.post('/api/import', upload.single('chartFile'), async (req, res) => {
     const capo = parseInt(req.body.capo, 10) || 0;
     const timeSignature = req.body.timeSignature || '';
     const columns = req.body.columns || '1';
+    const voicing = req.body.voicing || 'guitar';
 
     if (!file) return res.status(400).json({ error: "Please upload a .txt, .docx, .pdf, .pro, or .cho" });
 
@@ -388,7 +443,7 @@ app.post('/api/import', upload.single('chartFile'), async (req, res) => {
         console.log(`[API] Transposing uploaded chart...`);
         const finalChart = processAndAlignTabs(extractedText, finalSongKey, targetKey, isPdf, simplify, capo);
         
-        await deliverFile(res, finalChart, originalName, finalSongKey, targetKey, format, finalBpm, capo, finalTimeSig, columns);
+        await deliverFile(res, finalChart, originalName, finalSongKey, targetKey, format, finalBpm, capo, finalTimeSig, columns, voicing);
 
     } catch (error) {
         console.error(`[API Error]`, error.message);
@@ -460,6 +515,7 @@ app.post('/api/import-preview', upload.single('chartFile'), async (req, res) => 
             originalKey: finalSongKey,
             targetKey: targetKey || 'Nashville',
             text: finalChart,
+            originalText: extractedText,
             capo: capo,
             playKey: playKey,
             bpm: spotifyMeta ? spotifyMeta.bpm : '',
@@ -476,11 +532,12 @@ app.post('/api/import-preview', upload.single('chartFile'), async (req, res) => 
 // --- ROUTE 6: CHORD SVG GENERATOR ---
 app.get('/api/chord-svg', (req, res) => {
     const chord = req.query.chord;
+    const voicing = req.query.voicing || 'guitar';
     if (!chord) {
         return res.status(400).send('Please provide a chord query parameter.');
     }
     try {
-        const svg = getChordSvg(chord);
+        const svg = getChordSvg(chord, voicing);
         if (!svg) {
             return res.status(404).send('Chord not found');
         }
@@ -489,6 +546,143 @@ app.get('/api/chord-svg', (req, res) => {
     } catch (error) {
         console.error(`[API Error] chord-svg:`, error.message);
         res.status(500).send(error.message);
+    }
+});
+
+// --- ROUTE 7: SPOTIFY PLAYLIST IMPORT ---
+app.post('/api/spotify/playlist-import', async (req, res) => {
+    let playlistId = req.body.playlistId;
+    const playlistUrl = req.body.playlistUrl;
+    
+    // Support parsing ID from playlist URL or URI
+    if (playlistUrl) {
+        const urlMatch = playlistUrl.match(/playlist\/([a-zA-Z0-9]+)/);
+        const uriMatch = playlistUrl.match(/spotify:playlist:([a-zA-Z0-9]+)/);
+        if (urlMatch) {
+            playlistId = urlMatch[1];
+        } else if (uriMatch) {
+            playlistId = uriMatch[1];
+        } else if (!playlistId) {
+            playlistId = playlistUrl;
+        }
+    }
+    
+    if (!playlistId) {
+        return res.status(400).json({ error: "Please provide a valid Spotify playlistId or playlistUrl in the request body." });
+    }
+    
+    // Pagination parameters - support up to 15 tracks per request
+    const limit = Math.min(parseInt(req.body.limit || req.query.limit || 15, 10), 15);
+    const offset = Math.max(parseInt(req.body.offset || req.query.offset || 0, 10), 0);
+    
+    const token = await getSpotifyToken();
+    if (!token) {
+        return res.status(401).json({
+            error: "Spotify API client credentials not configured. Please check server environment or configure SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET."
+        });
+    }
+    
+    try {
+        console.log(`[Spotify] Fetching playlist tracks for ID: ${playlistId}, limit: ${limit}, offset: ${offset}`);
+        
+        const playlistRes = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=${limit}&offset=${offset}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (!playlistRes.ok) {
+            const errText = await playlistRes.text();
+            console.error(`[Spotify Error] Playlist tracks fetch failed (Status ${playlistRes.status}): ${errText}`);
+            return res.status(playlistRes.status).json({
+                error: `Failed to fetch Spotify playlist: ${playlistRes.statusText}`,
+                details: errText
+            });
+        }
+        
+        const playlistData = await playlistRes.json();
+        const items = playlistData.items || [];
+        
+        const tracks = items
+            .filter(item => item && item.track)
+            .map(item => item.track);
+            
+        const trackIds = tracks.map(t => t.id).filter(id => id).join(',');
+        
+        let audioFeatures = [];
+        if (trackIds) {
+            const featuresRes = await fetch(`https://api.spotify.com/v1/audio-features?ids=${trackIds}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (featuresRes.ok) {
+                const featuresData = await featuresRes.json();
+                audioFeatures = featuresData.audio_features || [];
+            } else {
+                console.warn(`[Spotify Warning] Failed to fetch audio features: ${featuresRes.statusText}`);
+            }
+        }
+        
+        const featuresMap = {};
+        audioFeatures.forEach(feat => {
+            if (feat && feat.id) {
+                featuresMap[feat.id] = feat;
+            }
+        });
+        
+        const spotifyKeys = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+        
+        function formatDuration(ms) {
+            if (typeof ms !== 'number') return '0:00';
+            const totalSeconds = Math.floor(ms / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        const formattedTracks = tracks.map(track => {
+            const features = featuresMap[track.id] || null;
+            let detectedKey = '';
+            let bpm = null;
+            let timeSignature = null;
+            
+            if (features) {
+                const keyVal = features.key;
+                const modeVal = features.mode;
+                if (keyVal >= 0 && keyVal < 12) {
+                    detectedKey = spotifyKeys[keyVal];
+                    if (modeVal === 0) {
+                        detectedKey += 'm';
+                    }
+                }
+                bpm = Math.round(features.tempo);
+                timeSignature = features.time_signature;
+            }
+            
+            return {
+                title: track.name,
+                artist: track.artists ? track.artists.map(a => a.name).join(', ') : '',
+                artists: track.artists ? track.artists.map(a => a.name) : [],
+                originalKey: detectedKey || null,
+                durationMs: track.duration_ms,
+                durationFormatted: formatDuration(track.duration_ms),
+                bpm,
+                timeSignature,
+                spotifyId: track.id
+            };
+        });
+        
+        res.json({
+            tracks: formattedTracks,
+            pagination: {
+                total: playlistData.total,
+                limit,
+                offset,
+                hasNext: offset + limit < playlistData.total,
+                hasPrevious: offset > 0
+            }
+        });
+        
+    } catch (error) {
+        console.error(`[Spotify Error] Playlist import failed:`, error.message);
+        res.status(500).json({ error: error.message });
     }
 });
 

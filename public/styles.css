@@ -1722,46 +1722,78 @@
             border: 1px solid rgba(138, 94, 16, 0.2);
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
         }
-        .chord-tooltip svg {
+        .chord-tooltip:not(.piano-mode) svg {
             width: 80px;
             height: 90px;
             display: block;
         }
-        .chord-tooltip svg line {
+        .chord-tooltip:not(.piano-mode) svg line {
             stroke: #ede8dc !important;
         }
-        .chord-tooltip svg text {
+        .chord-tooltip:not(.piano-mode) svg text {
             fill: #ede8dc !important;
         }
-        .chord-tooltip svg circle {
+        .chord-tooltip:not(.piano-mode) svg circle {
             stroke: #ede8dc !important;
         }
-        .chord-tooltip svg circle[fill="#000000"], .chord-tooltip svg circle:not([fill]) {
+        .chord-tooltip:not(.piano-mode) svg circle[fill="#000000"], .chord-tooltip:not(.piano-mode) svg circle:not([fill]) {
             fill: #ede8dc !important;
         }
-        .chord-tooltip svg circle[fill="none"] {
+        .chord-tooltip:not(.piano-mode) svg circle[fill="none"] {
             fill: none !important;
         }
-        .chord-tooltip svg text[fill="#FFFFFF"] {
+        .chord-tooltip:not(.piano-mode) svg text[fill="#FFFFFF"] {
             fill: #0c0800 !important;
         }
-        [data-theme="light"] .chord-tooltip svg line {
+        [data-theme="light"] .chord-tooltip:not(.piano-mode) svg line {
             stroke: #000000 !important;
         }
-        [data-theme="light"] .chord-tooltip svg text {
+        [data-theme="light"] .chord-tooltip:not(.piano-mode) svg text {
             fill: #000000 !important;
         }
-        [data-theme="light"] .chord-tooltip svg circle {
+        [data-theme="light"] .chord-tooltip:not(.piano-mode) svg circle {
             stroke: #000000 !important;
         }
-        [data-theme="light"] .chord-tooltip svg circle[fill="#000000"] {
+        [data-theme="light"] .chord-tooltip:not(.piano-mode) svg circle[fill="#000000"] {
             fill: #000000 !important;
         }
-        [data-theme="light"] .chord-tooltip svg circle[fill="none"] {
+        [data-theme="light"] .chord-tooltip:not(.piano-mode) svg circle[fill="none"] {
             fill: none !important;
         }
-        [data-theme="light"] .chord-tooltip svg text[fill="#FFFFFF"] {
+        [data-theme="light"] .chord-tooltip:not(.piano-mode) svg text[fill="#FFFFFF"] {
             fill: #FFFFFF !important;
+        }
+
+        /* ── PIANO WORKSPACE CHORD VOICINGS ── */
+        .chord-tooltip.piano-mode {
+            width: 240px;
+            height: 115px;
+            padding: 10px;
+        }
+        .chord-tooltip.piano-mode svg {
+            width: 220px;
+            height: 95px;
+            display: block;
+        }
+        .chord-tooltip.piano-mode svg text {
+            fill: var(--piano-text-color, #ede8dc) !important;
+        }
+        /* Dark Theme Variables (default) */
+        :root {
+            --piano-white-fill: #ffffff;
+            --piano-white-stroke: #64748b;
+            --piano-black-fill: #0f172a;
+            --piano-black-stroke: #334155;
+            --piano-text-color: #ede8dc;
+        }
+        
+        /* Light Theme Variables */
+        [data-theme="light"] {
+            --piano-white-fill: #ffffff;
+            --piano-white-stroke: #475569;
+            --piano-black-fill: #334155;
+            --piano-black-stroke: #0f172a;
+            --piano-text-color: #0f172a;
         }
 
         /* ── PLACEHOLDER ── */
