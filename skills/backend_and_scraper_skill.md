@@ -42,6 +42,11 @@ When scraping Ultimate Guitar (`ultimate-guitar.com`), direct server-side reques
     *   **JSON-LD Parsing**: Script tags with `type="application/ld+json"` are scanned. If a `MusicRecording` type is found, it formats as `"Artist - Title"`. If a `MusicComposition` type is found, it extracts the name and strips trailing `(chords)`.
     *   **Title Tag Fallback**: If JSON-LD doesn't yield a title, it extracts the `<title>` tag and formats it (e.g. `"Song Chords by Artist @ Ultimate-Guitar.Com"` becomes `"Artist - Song"`).
     *   **Sanitization Rule**: All underscores (`_`) are replaced with spaces (` `) and trimmed. This is applied to all titles before delivering files or returning JSON previews. In `deliverFile`, the filename keeps its underscore structure while the rendered title inside the document uses spaces.
+6.  **E-Chords Fallback Scraper**:
+    *   **Search Fallback**: If Ultimate Guitar search routes fail, the engine falls back to `fastSearchEChords(query)`. This helper queries DuckDuckGo Lite for `site:e-chords.com/chords/ [query]` and scans the search results for the pattern `https://www.e-chords.com/chords/[artist]/[song]`, returning the first matched link.
+    *   **Direct URL Routing**: Direct E-Chords URLs bypass search and are loaded directly by the page fetcher.
+    *   **Unified Route Parsing**: Scraped content from both sources is resolved through `extractAnyTabData(html, url)`, which checks if the URL is an E-Chords link and routes to either `extractEChordsTabData(html)` or `extractTabData(html)`.
+    *   **E-Chords Tab Extraction**: The plain-text chord chart is extracted from the `<pre>` tag. Metadata (title, artist, and musicalKey) is extracted by parsing script elements with `type="application/ld+json"` matching `MusicComposition` or `MusicRecording` types.
 
 ---
 

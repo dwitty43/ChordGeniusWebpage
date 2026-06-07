@@ -271,6 +271,54 @@ async function fastSearchDDGLite(query) {
     }
 }
 
+// A fast, HTTP-only search function that queries DuckDuckGo Lite for E-Chords links matching the query
+async function fastSearchEChords(query) {
+    try {
+        console.log("[Engine] Performing fast E-Chords DuckDuckGo Lite fetch search...");
+        const encodedQuery = encodeURIComponent("site:e-chords.com/chords/ " + query);
+        const url = `https://lite.duckduckgo.com/lite/?q=${encodedQuery}`;
+        const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+        
+        const res = await fetch(url, {
+            headers: {
+                'User-Agent': userAgent,
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.9'
+            }
+        });
+        
+        if (!res.ok) {
+            console.log(`[Engine] E-Chords DDG Lite fetch returned status ${res.status}`);
+            return null;
+        }
+        
+        const html = await res.text();
+        const $ = cheerio.load(html);
+        let found = null;
+        
+        $('a').each((i, el) => {
+            let href = $(el).attr('href');
+            if (!href) return;
+            
+            try { href = decodeURIComponent(href); } catch(e) {}
+            
+            const match = href.match(/(https?:\/\/(?:www\.)?e-chords\.com\/chords\/[^"'\s&?#\/]+\/[^"'\s&?#\/]+)/i);
+            if (match) {
+                found = match[1];
+                return false; // Break cheerio loop
+            }
+        });
+        
+        if (found) {
+            console.log(`[Engine] Fast E-Chords DDG Lite fetch found tab URL: ${found}`);
+        }
+        return found;
+    } catch (e) {
+        console.log(`[Engine] E-Chords DuckDuckGo Lite fast fetch failed: ${e.message}`);
+        return null;
+    }
+}
+
 // A fast fetch to external Scraping APIs (ZenRows/ScrapingBee) to bypass Cloudflare
 async function fetchUGPageViaAPI(targetUrl) {
     const zenrowsKey = process.env.ZENROWS_API_KEY;
@@ -403,6 +451,15 @@ async function fastSearchUGDirect(query) {
 }
 
 async function getFirstSearchResult(query) {
+    if (typeof query === 'string' && /e-chords\.com/i.test(query)) {
+        let url = query.trim();
+        if (!/^https?:\/\//i.test(url)) {
+            url = 'https://' + url;
+        }
+        console.log(`[Engine] Direct E-Chords URL pattern detected: ${url}`);
+        return url;
+    }
+
     if (typeof query === 'string' && /tabs\.ultimate-guitar\.com/i.test(query)) {
         let url = query.trim();
         if (!/^https?:\/\//i.test(url)) {
@@ -472,7 +529,16 @@ async function getFirstSearchResult(query) {
         console.log(`[Engine] Yahoo failed: ${e.message}`);
     }
 
-    throw new Error(`Could not find an Ultimate Guitar chords link for "${query}".`);
+    // Try E-Chords fallback if UG search routes fail
+    try {
+        console.log(`[Engine] Ultimate Guitar searches failed. Trying E-Chords fallback for "${query}"...`);
+        tabUrl = await fastSearchEChords(query);
+        if (tabUrl) return tabUrl;
+    } catch (e) {
+        console.log(`[Engine] E-Chords search fallback failed: ${e.message}`);
+    }
+
+    throw new Error(`Could not find a chords link on Ultimate Guitar or E-Chords for "${query}".`);
 }
 
 // Removed duplicate USER_AGENTS declaration from here (now at the top of the file)
@@ -650,6 +716,111 @@ function extractTabData(html) {
     }
     
     return { rawTabText: preTag.text(), songKey, songTitle };
+}
+
+function extractEChordsTabData(html) {
+    const $ = cheerio.load(html);
+    const preTag = $('pre').first();
+    if (!preTag || preTag.length === 0) {
+        throw new Error("Could not find the <pre> tag containing the chords.");
+    }
+    const rawTabText = preTag.text();
+
+    let songKey = null;
+    let title = '';
+    let byArtistName = null;
+    let composerName = null;
+
+    $('script[type="application/ld+json"]').each((i, el) => {
+        try {
+            const rawJson = $(el).html();
+            if (!rawJson) return;
+            const data = JSON.parse(rawJson);
+            
+            function traverse(obj) {
+                if (!obj || typeof obj !== 'object') return;
+                if (Array.isArray(obj)) {
+                    obj.forEach(traverse);
+                    return;
+                }
+                const type = obj['@type'] || obj['type'];
+                if (type === 'MusicComposition' || type === 'MusicRecording') {
+                    if (obj.musicalKey) {
+                        songKey = obj.musicalKey;
+                    }
+                    if (obj.name) {
+                        title = obj.name;
+                    }
+                    if (obj.byArtist) {
+                        if (Array.isArray(obj.byArtist)) {
+                            byArtistName = obj.byArtist.map(a => typeof a === 'object' ? a.name : a).filter(Boolean).join(', ');
+                        } else if (typeof obj.byArtist === 'object') {
+                            byArtistName = obj.byArtist.name || '';
+                        } else if (typeof obj.byArtist === 'string') {
+                            byArtistName = obj.byArtist;
+                        }
+                    }
+                    if (obj.composer) {
+                        if (Array.isArray(obj.composer)) {
+                            composerName = obj.composer.map(c => typeof c === 'object' ? c.name : c).filter(Boolean).join(', ');
+                        } else if (typeof obj.composer === 'object') {
+                            composerName = obj.composer.name || '';
+                        } else if (typeof obj.composer === 'string') {
+                            composerName = obj.composer;
+                        }
+                    }
+                }
+                for (const key in obj) {
+                    if (obj.hasOwnProperty(key) && typeof obj[key] === 'object') {
+                        traverse(obj[key]);
+                    }
+                }
+            }
+            
+            traverse(data);
+        } catch (e) {
+            // Ignore parse errors
+        }
+    });
+
+    const artist = byArtistName || composerName || '';
+    let songTitle = "";
+    if (artist && title) {
+        songTitle = `${artist} - ${title}`;
+    } else if (title) {
+        songTitle = title;
+    } else {
+        let titleText = $('title').text().trim();
+        if (titleText) {
+            titleText = titleText.replace(/\s*\|\s*E-CHORDS/i, '').trim();
+            const match = titleText.match(/^(.+?)\s+Chords\s*-\s*(.+?)$/i);
+            if (match) {
+                const songName = match[1].trim();
+                const artistName = match[2].trim();
+                songTitle = `${artistName} - ${songName}`;
+            } else {
+                songTitle = titleText;
+            }
+        }
+    }
+
+    if (songTitle) {
+        songTitle = songTitle.replace(/_/g, ' ').trim();
+    }
+
+    return { 
+        rawTabText, 
+        songKey, 
+        songTitle, 
+        sourceSite: "e-chords" 
+    };
+}
+
+function extractAnyTabData(html, url) {
+    if (url && /e-chords\.com/i.test(url)) {
+        return extractEChordsTabData(html);
+    }
+    return extractTabData(html);
 }
 
 // --- HEURISTICS ---
@@ -2130,6 +2301,7 @@ module.exports = {
     getFirstSearchResult, 
     fetchUGPage, 
     extractTabData, 
+    extractAnyTabData,
     processAndAlignTabs, 
     createDocxChart, 
     createPdfChart,

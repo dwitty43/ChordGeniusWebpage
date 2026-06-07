@@ -9,6 +9,7 @@ const {
     getFirstSearchResult, 
     fetchUGPage, 
     extractTabData, 
+    extractAnyTabData,
     processAndAlignTabs, 
     createDocxChart,
     createPdfChart,
@@ -187,17 +188,17 @@ app.get('/api/convert', async (req, res) => {
         console.log(`[API] Searching for: ${query}`);
         
         let tabUrl;
-        if (typeof query === 'string' && /tabs\.ultimate-guitar\.com/i.test(query)) {
+        if (typeof query === 'string' && /(tabs\.ultimate-guitar\.com|e-chords\.com)/i.test(query)) {
             tabUrl = query.trim();
             if (!/^https?:\/\//i.test(tabUrl)) {
                 tabUrl = 'https://' + tabUrl;
             }
-            console.log(`[API] Skipping search for direct Ultimate Guitar URL: ${tabUrl}`);
+            console.log(`[API] Skipping search for direct URL: ${tabUrl}`);
         } else {
             tabUrl = await getFirstSearchResult(query);
         }
         const html = await fetchUGPage(tabUrl);
-        const tabData = extractTabData(html);
+        const tabData = extractAnyTabData(html, tabUrl);
         
         let spotifyMeta = null;
         if (!songKey || !bpm || !timeSignature) {
@@ -217,7 +218,7 @@ app.get('/api/convert', async (req, res) => {
         const finalChart = processAndAlignTabs(tabData.rawTabText, songKey, targetKey, false, simplify, capo);
         
         let title = query;
-        if (typeof query === 'string' && /tabs\.ultimate-guitar\.com/i.test(query)) {
+        if (typeof query === 'string' && /(tabs\.ultimate-guitar\.com|e-chords\.com)/i.test(query)) {
             title = tabData.songTitle || query;
         }
         title = title.replace(/_/g, ' ').trim();
@@ -338,17 +339,17 @@ app.get('/api/preview', async (req, res) => {
     if (songKey === 'nashville') songKey = '';
     try {
         let tabUrl;
-        if (typeof query === 'string' && /tabs\.ultimate-guitar\.com/i.test(query)) {
+        if (typeof query === 'string' && /(tabs\.ultimate-guitar\.com|e-chords\.com)/i.test(query)) {
             tabUrl = query.trim();
             if (!/^https?:\/\//i.test(tabUrl)) {
                 tabUrl = 'https://' + tabUrl;
             }
-            console.log(`[API] Skipping search for direct Ultimate Guitar URL: ${tabUrl}`);
+            console.log(`[API] Skipping search for direct URL: ${tabUrl}`);
         } else {
             tabUrl = await getFirstSearchResult(query);
         }
         const html = await fetchUGPage(tabUrl);
-        const tabData = extractTabData(html);
+        const tabData = extractAnyTabData(html, tabUrl);
         
         let spotifyMeta = null;
         try {
@@ -366,7 +367,7 @@ app.get('/api/preview', async (req, res) => {
         const playKey = capo > 0 ? getPlayKey(targetKey || finalKey, capo) : '';
         
         let title = query;
-        if (typeof query === 'string' && /tabs\.ultimate-guitar\.com/i.test(query)) {
+        if (typeof query === 'string' && /(tabs\.ultimate-guitar\.com|e-chords\.com)/i.test(query)) {
             title = tabData.songTitle || query;
         }
         title = title.replace(/_/g, ' ').trim();
