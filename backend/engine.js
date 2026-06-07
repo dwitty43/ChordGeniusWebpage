@@ -999,6 +999,9 @@ function processAndAlignTabs(rawText, originalKey, targetKey, isPdf = false, sim
                     } else if (lengthDiff < 0) {
                         const spacesToRemove = Math.min(Math.abs(lengthDiff), newSpaces.length);
                         newSpaces = newSpaces.slice(spacesToRemove);
+                        if (spaces.length > 0 && newSpaces.length === 0) {
+                            newSpaces = ' ';
+                        }
                     }
                     return newChord + newSpaces;
                 });

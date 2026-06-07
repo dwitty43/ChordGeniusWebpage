@@ -1028,7 +1028,12 @@ function updateRehearseZoomUI() {
     }
     const sheet = document.getElementById('rehearsalSheet');
     if (sheet) {
-        sheet.style.fontSize = (14 * rehearseZoom / 100) + "px";
+        const sizeStr = (14 * rehearseZoom / 100) + "px";
+        sheet.style.fontSize = sizeStr;
+        const content = sheet.querySelector('.sheet-content');
+        if (content) {
+            content.style.fontSize = sizeStr;
+        }
     }
 }
 document.getElementById('stageZoomInBtn').addEventListener('click', () => {
@@ -1071,6 +1076,26 @@ function findBestDiatonicKey(text) {
     return results[0];
 }
 
+function getBestCommonGuitarShape(soundingKeyIdx, mode) {
+    const commonShapes = [
+        { root: 'G', idx: 7 },
+        { root: 'C', idx: 0 },
+        { root: 'D', idx: 2 },
+        { root: 'E', idx: 4 }
+    ];
+    let bestShape = null;
+    let minCapo = 13;
+    for (const shape of commonShapes) {
+        const capo = (soundingKeyIdx - shape.idx + 12) % 12;
+        if (capo < minCapo) {
+            minCapo = capo;
+            bestShape = shape.root;
+        }
+    }
+    const suffix = mode === 'minor' ? 'm' : '';
+    return { playKey: bestShape + suffix, capo: minCapo };
+}
+
 function runKeyVerification() {
     const existing = document.getElementById('rehearseKeyWarning');
     if (existing) {
@@ -1078,6 +1103,12 @@ function runKeyVerification() {
     }
 
     if (!rehearseSong || !rehearseSong.originalText) return;
+
+    // Check if the key is currently Nashville
+    const stageTargetKeySelect = document.getElementById('stageTargetKey');
+    if (stageTargetKeySelect && stageTargetKeySelect.value === 'nashville') return;
+    if (rehearseSong.keyText && /^nashville$/i.test(rehearseSong.keyText.trim())) return;
+    if (rehearseSong.originalKey && /^nashville$/i.test(rehearseSong.originalKey.trim())) return;
 
     const bestFit = findBestDiatonicKey(rehearseSong.originalText);
     if (!bestFit) return;
@@ -1098,13 +1129,20 @@ function runKeyVerification() {
 
     if (keysDiffer) {
         const suffix = bestFit.mode === 'minor' ? 'm' : '';
-        const suggestedPlayKey = bestFit.root + suffix;
         const suggestedSoundingKeyIdx = (bestFitPlayKeyIdx + capoFret) % 12;
         const suggestedSoundingKey = CHROMATIC[suggestedSoundingKeyIdx] + suffix;
 
+        const voicing = localStorage.getItem('cg_voicing_mode') || 'guitar';
+        let warningText = `Based on chords, this song sounds in <strong>${suggestedSoundingKey}</strong>`;
+        
+        if (voicing === 'guitar') {
+            const bestGuitar = getBestCommonGuitarShape(suggestedSoundingKeyIdx, bestFit.mode);
+            warningText += ` (play shapes in <strong>${bestGuitar.playKey}</strong> with Capo <strong>${bestGuitar.capo}</strong>)`;
+        }
+
         const warningHTML = `
             <div id="rehearseKeyWarning" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); color: #f87171; padding: 12px 18px; border-radius: 8px; margin: 16px; font-size: 13px; display: flex; align-items: center; gap: 8px;">
-                <span>⚠️ Warning: The scraped key may be incorrect. Based on chords, this song sounds in <strong>${suggestedSoundingKey}</strong> (play shapes in <strong>${suggestedPlayKey}</strong> with Capo <strong>${capoFret}</strong>).</span>
+                <span>⚠️ Warning: The scraped key may be incorrect. ${warningText}.</span>
             </div>
         `;
         const sheet = document.getElementById('rehearsalSheet');
@@ -1244,6 +1282,7 @@ if (voicingSelect) {
     voicingSelect.addEventListener('change', () => {
         localStorage.setItem('cg_voicing_mode', voicingSelect.value);
         removeActiveTooltip();
+        runKeyVerification();
     });
 }
 

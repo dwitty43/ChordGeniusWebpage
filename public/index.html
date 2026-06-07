@@ -666,6 +666,7 @@ searchBtn.addEventListener('click', async () => {
         const activeSong = {
             source: 'search',
             query: document.getElementById('songQuery').value,
+            title: window.currentChartData.title,
             key: document.getElementById('songKey').value,
             targetKey: document.getElementById('targetKeySearch').value,
             bpm: window.currentChartData.bpm,
@@ -862,6 +863,7 @@ pvUploadBtn.addEventListener('click', async ()=>{
         const activeSong = {
             source: 'upload',
             query: fileInput.files[0] ? fileInput.files[0].name : '',
+            title: window.currentChartData.title,
             key: document.getElementById('uploadKey').value,
             targetKey: document.getElementById('targetKeyUpload').value,
             bpm: window.currentChartData.bpm,
@@ -1536,6 +1538,14 @@ if (modalTitleEl) {
     const handleTitleSync = () => {
         if (window.currentChartData) {
             window.currentChartData.title = modalTitleEl.innerText.trim();
+            const activeSongStr = localStorage.getItem('cg_active_song');
+            if (activeSongStr) {
+                try {
+                    const song = JSON.parse(activeSongStr);
+                    song.title = window.currentChartData.title;
+                    localStorage.setItem('cg_active_song', JSON.stringify(song));
+                } catch (e) {}
+            }
         }
     };
     modalTitleEl.addEventListener('input', handleTitleSync);
@@ -1682,6 +1692,26 @@ function parseKeyString(keyStr) {
     return { root, mode };
 }
 
+function getBestCommonGuitarShape(soundingKeyIdx, mode) {
+    const commonShapes = [
+        { root: 'G', idx: 7 },
+        { root: 'C', idx: 0 },
+        { root: 'D', idx: 2 },
+        { root: 'E', idx: 4 }
+    ];
+    let bestShape = null;
+    let minCapo = 13;
+    for (const shape of commonShapes) {
+        const capo = (soundingKeyIdx - shape.idx + 12) % 12;
+        if (capo < minCapo) {
+            minCapo = capo;
+            bestShape = shape.root;
+        }
+    }
+    const suffix = mode === 'minor' ? 'm' : '';
+    return { playKey: bestShape + suffix, capo: minCapo };
+}
+
 function runKeyVerification() {
     const existing = document.getElementById('previewKeyWarning');
     if (existing) {
@@ -1689,6 +1719,10 @@ function runKeyVerification() {
     }
 
     if (!window.currentChartData || !window.currentChartData.originalText) return;
+
+    // Check if the key is currently Nashville
+    if (window.currentChartData.targetKey && /^nashville$/i.test(window.currentChartData.targetKey.trim())) return;
+    if (window.currentChartData.originalKey && /^nashville$/i.test(window.currentChartData.originalKey.trim())) return;
 
     const bestFit = findBestDiatonicKey(window.currentChartData.originalText);
     if (!bestFit) return;
@@ -1709,13 +1743,20 @@ function runKeyVerification() {
 
     if (keysDiffer) {
         const suffix = bestFit.mode === 'minor' ? 'm' : '';
-        const suggestedPlayKey = bestFit.root + suffix;
         const suggestedSoundingKeyIdx = (bestFitPlayKeyIdx + capoFret) % 12;
         const suggestedSoundingKey = CHROMATIC[suggestedSoundingKeyIdx] + suffix;
 
+        const voicing = localStorage.getItem('cg_voicing_mode') || 'guitar';
+        let warningText = `Based on chords, this song sounds in <strong>${suggestedSoundingKey}</strong>`;
+        
+        if (voicing === 'guitar') {
+            const bestGuitar = getBestCommonGuitarShape(suggestedSoundingKeyIdx, bestFit.mode);
+            warningText += ` (play shapes in <strong>${bestGuitar.playKey}</strong> with Capo <strong>${bestGuitar.capo}</strong>)`;
+        }
+
         const warningHTML = `
             <div id="previewKeyWarning" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); color: #f87171; padding: 12px 18px; border-radius: 8px; margin: 16px; font-size: 13px; display: flex; align-items: center; gap: 8px;">
-                <span>⚠️ Warning: The scraped key may be incorrect. Based on chords, this song sounds in <strong>${suggestedSoundingKey}</strong> (play shapes in <strong>${suggestedPlayKey}</strong> with Capo <strong>${capoFret}</strong>).</span>
+                <span>⚠️ Warning: The scraped key may be incorrect. ${warningText}.</span>
             </div>
         `;
         const body = document.getElementById('modalBody');
@@ -1815,6 +1856,7 @@ if (storedVoicingMode !== null) {
 voicingModeSelect.addEventListener('change', () => {
     localStorage.setItem('cg_voicing_mode', voicingModeSelect.value);
     updateEditorChordPreview();
+    if (typeof runKeyVerification === 'function') runKeyVerification();
 });
 
 // ── SVG LIVE EDITOR SYNC ──
@@ -2012,14 +2054,15 @@ updateProStatusUI();
             const song = JSON.parse(cachedActiveSongStr);
             if (song && song.rawText) {
                 window.currentChartData = {
-                    title: song.query || 'Loaded Chart',
+                    title: song.title || song.query || 'Loaded Chart',
                     originalKey: song.key || '',
                     targetKey: song.targetKey || '',
                     bpm: song.bpm || '',
                     timeSignature: song.timeSignature || '',
                     text: song.rawText,
                     capo: song.capo || '0',
-                    playKey: song.playKey || ''
+                    playKey: song.playKey || '',
+                    originalText: song.originalText || song.rawText || ''
                 };
                 window.currentChartSource = song.source || 'search';
                 
@@ -2047,8 +2090,11 @@ updateProStatusUI();
                 }
                 
                 document.getElementById('liveEditor').value = song.rawText;
-                document.getElementById('modalTitle').textContent = song.query || 'Loaded Chart';
+                document.getElementById('modalTitle').textContent = song.title || song.query || 'Loaded Chart';
                 let subtitleText = `Transposed to: ${song.targetKey || ''}`;
+                if (song.capo && parseInt(song.capo, 10) > 0 && song.playKey) {
+                    subtitleText += ` | Capo: ${song.capo} (Play: ${song.playKey})`;
+                }
                 document.getElementById('modalSubtitle').textContent = subtitleText;
                 
                 if (song.bpm) localStorage.setItem('cg_last_bpm', song.bpm);
