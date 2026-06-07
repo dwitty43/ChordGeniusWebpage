@@ -34,7 +34,7 @@ gantt
 
 | 📥 BACKLOG (Future Scope) | 📝 TO DO (Ready for Sprint) | ⏳ IN PROGRESS | ✅ DONE (Completed) |
 | :--- | :--- | :--- | :--- |
-| • Band Sync (WebSocket Sync) <br> • Gig Tracker & Analytics <br> • Dynamic Ear Trainer & Analysis <br> • App Conversion Research (TSK-406) | • Vocal Range Matcher <br> • Stage Mode & Foot Pedal <br> • UG Direct URL Import (TSK-208) <br> • SVG Live Editor Sync (TSK-308) <br> • Rehearsal Tab Voicing Selector (TSK-309) <br> • Scraped Key Verification (TSK-310) <br> • Multi-Source Scraping (TSK-209) <br> • Dropdown Tiles Width (TSK-210) <br> • Tab Whitespace Cleansing (TSK-211) <br> • Title Underscore Fix (TSK-311) <br> • Mobile Layout Optimization (TSK-212) <br> • YouTube Rehearse Integration (TSK-313) <br> • Metronome Mute Button (TSK-314) | • Production Scraper Hardening <br> • **Rehearsal Capo/Key Switcher** <br> • Login/Signup Account Init <br> • Setlist Flow / Time Estimator (Phase 1) <br> • Spotify Playlist Importer (Phase 1) | **Sprint 1 (100% Completed)** <br> **Sprint 3 Core Phase 1:** <br> • **Piano Chord SVGs** <br> • **Active Chart Zoom Controls** (TSK-307) <br> • Nashville Piano SVG Toggle (TSK-312) <br> • Remove Inputs Toast (TSK-213) <br> • URL Scrape Title Resolution (TSK-214) |
+| • Band Sync (WebSocket Sync) <br> • Gig Tracker & Analytics <br> • Dynamic Ear Trainer & Analysis <br> • App Conversion Research (TSK-406) | • Vocal Range Matcher <br> • Stage Mode & Foot Pedal <br> • UG Direct URL Import (TSK-208) <br> • SVG Live Editor Sync (TSK-308) <br> • Rehearsal Tab Voicing Selector (TSK-309) <br> • Multi-Source Scraping (TSK-209) <br> • Dropdown Tiles Width (TSK-210) <br> • Tab Whitespace Cleansing (TSK-211) <br> • Title Underscore Fix (TSK-311) <br> • Mobile Layout Optimization (TSK-212) <br> • YouTube Rehearse Integration (TSK-313) | • Production Scraper Hardening <br> • **Rehearsal Capo/Key Switcher** <br> • Login/Signup Account Init <br> • Setlist Flow / Time Estimator (Phase 1) <br> • Spotify Playlist Importer (Phase 1) | **Sprint 1 (100% Completed)** <br> **Sprint 3 Core Phase 1:** <br> • **Piano Chord SVGs** <br> • **Active Chart Zoom Controls** (TSK-307) <br> • Nashville Piano SVG Toggle (TSK-312) <br> • Remove Inputs Toast (TSK-213) <br> • URL Scrape Title Resolution (TSK-214) <br> • **Scraped Key Verification** (TSK-310) <br> • **Metronome Mute Button** (TSK-314) |
 
 ---
 
@@ -149,7 +149,7 @@ gantt
 - [x] **[NEW] TSK-309: Rehearsal Tab Voicing Selector**
   - **Description:** User should be able to change the Voicing Mode in the Rehearse Tab.
   - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
-- [ ] **[NEW] TSK-310: Scraped Key Verification & Warning**
+- [x] **[NEW] TSK-310: Scraped Key Verification & Warning**
   - **Description:** Detect when a song might have the wrong key scraped and deliver a warning to the user.
   - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
 - [ ] **[NEW] TSK-311: Title Space Underscore Sanitization**
@@ -161,7 +161,7 @@ gantt
 - [ ] **[NEW] TSK-313: Rehearsal Tab YouTube Video Integration**
   - **Description:** In Rehearse, similar to how ultimate guitar has it, I want a youtube link to the song able to be played while rehearsing. This can maybe be done by using the initial scrape from UG and grab the youtube link.
   - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
-- [ ] **[NEW] TSK-314: Rehearse Metronome Audio Mute Button**
+- [x] **[NEW] TSK-314: Rehearse Metronome Audio Mute Button**
   - **Description:** There should be a mute button for the metronome so that autoscroll may progress without the sound.
   - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
 
