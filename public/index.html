@@ -661,10 +661,12 @@ searchBtn.addEventListener('click', async () => {
         window.currentChartData = await res.json();
         
         window.currentChartSource = 'search';
+        window.currentSetlistIndex = null;
 
         // Cache active song in localStorage
         const activeSong = {
             source: 'search',
+            setlistIndex: null,
             query: document.getElementById('songQuery').value,
             title: window.currentChartData.title,
             key: document.getElementById('songKey').value,
@@ -858,10 +860,12 @@ pvUploadBtn.addEventListener('click', async ()=>{
         
         window.currentChartData=await res.json();
         window.currentChartSource = 'upload';
+        window.currentSetlistIndex = null;
 
         // Cache active song in localStorage
         const activeSong = {
             source: 'upload',
+            setlistIndex: null,
             query: fileInput.files[0] ? fileInput.files[0].name : '',
             title: window.currentChartData.title,
             key: document.getElementById('uploadKey').value,
@@ -910,6 +914,7 @@ pvUploadBtn.addEventListener('click', async ()=>{
 
 // 1. Create the empty array to hold the songs, loaded from localStorage if present
 let setlistQueue = [];
+window.currentSetlistIndex = null;
 try {
     setlistQueue = JSON.parse(localStorage.getItem('cg_setlist') || '[]');
 } catch (e) {
@@ -1198,6 +1203,24 @@ window.previewSongFromSetlist = function(idx) {
     };
 
     window.currentChartSource = 'setlist';
+    window.currentSetlistIndex = idx;
+
+    // Cache active song in localStorage
+    const activeSong = {
+        source: 'setlist',
+        setlistIndex: idx,
+        query: song.title,
+        title: song.title,
+        key: song.originalKey,
+        targetKey: song.targetKey,
+        bpm: song.bpm || '',
+        timeSignature: song.timeSignature || '',
+        rawText: song.text,
+        format: document.getElementById('searchFormat').value,
+        capo: song.capo || '0',
+        playKey: song.playKey || ''
+    };
+    localStorage.setItem('cg_active_song', JSON.stringify(activeSong));
 
     // Populate modal elements
     document.getElementById('liveEditor').value = song.text;
@@ -1538,6 +1561,13 @@ if (modalTitleEl) {
     const handleTitleSync = () => {
         if (window.currentChartData) {
             window.currentChartData.title = modalTitleEl.innerText.trim();
+            if (window.currentSetlistIndex !== undefined && window.currentSetlistIndex !== null && typeof setlistQueue !== 'undefined') {
+                if (setlistQueue[window.currentSetlistIndex]) {
+                    setlistQueue[window.currentSetlistIndex].title = window.currentChartData.title;
+                    saveSetlistQueue();
+                    renderSetlist();
+                }
+            }
             const activeSongStr = localStorage.getItem('cg_active_song');
             if (activeSongStr) {
                 try {
@@ -1558,6 +1588,13 @@ if (liveEditorEl) {
     const handleEditorSync = () => {
         if (window.currentChartData) {
             window.currentChartData.text = liveEditorEl.value;
+            if (window.currentSetlistIndex !== undefined && window.currentSetlistIndex !== null && typeof setlistQueue !== 'undefined') {
+                if (setlistQueue[window.currentSetlistIndex]) {
+                    setlistQueue[window.currentSetlistIndex].text = liveEditorEl.value;
+                    saveSetlistQueue();
+                    renderSetlist();
+                }
+            }
             const activeSongStr = localStorage.getItem('cg_active_song');
             if (activeSongStr) {
                 try {
@@ -2106,6 +2143,7 @@ updateProStatusUI();
                     originalText: song.originalText || song.rawText || ''
                 };
                 window.currentChartSource = song.source || 'search';
+                window.currentSetlistIndex = song.setlistIndex !== undefined ? song.setlistIndex : null;
                 
                 if (song.source === 'search') {
                     document.getElementById('songQuery').value = song.query || '';
