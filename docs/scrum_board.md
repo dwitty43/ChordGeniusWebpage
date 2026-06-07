@@ -34,7 +34,7 @@ gantt
 
 | 📥 BACKLOG (Future Scope) | 📝 TO DO (Ready for Sprint) | ⏳ IN PROGRESS | ✅ DONE (Completed) |
 | :--- | :--- | :--- | :--- |
-| • Band Sync (WebSocket Sync) <br> • Gig Tracker & Analytics <br> • Dynamic Ear Trainer & Analysis <br> • App Conversion Research (TSK-406) | • Vocal Range Matcher <br> • Stage Mode & Foot Pedal <br> • UG Direct URL Import (TSK-208) <br> • SVG Live Editor Sync (TSK-308) <br> • Rehearsal Tab Voicing Selector (TSK-309) <br> • Multi-Source Scraping (TSK-209) <br> • Dropdown Tiles Width (TSK-210) <br> • Tab Whitespace Cleansing (TSK-211) <br> • Title Underscore Fix (TSK-311) <br> • Mobile Layout Optimization (TSK-212) <br> • YouTube Rehearse Integration (TSK-313) | • Production Scraper Hardening <br> • **Rehearsal Capo/Key Switcher** <br> • Login/Signup Account Init <br> • Setlist Flow / Time Estimator (Phase 1) <br> • Spotify Playlist Importer (Phase 1) | **Sprint 1 (100% Completed)** <br> **Sprint 3 Core Phase 1:** <br> • **Piano Chord SVGs** <br> • **Active Chart Zoom Controls** (TSK-307) <br> • Nashville Piano SVG Toggle (TSK-312) <br> • Remove Inputs Toast (TSK-213) <br> • URL Scrape Title Resolution (TSK-214) <br> • **Scraped Key Verification** (TSK-310) <br> • **Metronome Mute Button** (TSK-314) |
+| • Band Sync (WebSocket Sync) <br> • Gig Tracker & Analytics <br> • Dynamic Ear Trainer & Analysis <br> • App Conversion Research (TSK-406) | • Vocal Range Matcher <br> • Stage Mode & Foot Pedal <br> • UG Direct URL Import (TSK-208) <br> • SVG Live Editor Sync (TSK-308) <br> • Rehearsal Tab Voicing Selector (TSK-309) <br> • Multi-Source Scraping (TSK-209) <br> • Dropdown Tiles Width (TSK-210) <br> • Tab Whitespace Cleansing (TSK-211) <br> • Mobile Layout Optimization (TSK-212) <br> • YouTube Rehearse Integration (TSK-313) | • Production Scraper Hardening <br> • **Rehearsal Capo/Key Switcher** <br> • Login/Signup Account Init <br> • Setlist Flow / Time Estimator (Phase 1) <br> • Spotify Playlist Importer (Phase 1) | **Sprint 1 (100% Completed)** <br> **Sprint 3 Core Phase 1:** <br> • **Piano Chord SVGs** <br> • **Active Chart Zoom Controls** (TSK-307) <br> • Nashville Piano SVG Toggle (TSK-312) <br> • Remove Inputs Toast (TSK-213) <br> • URL Scrape Title Resolution (TSK-214) <br> • **Scraped Key Verification** (TSK-310) <br> • **Metronome Mute Button** (TSK-314) <br> • **Title Underscore Fix** (TSK-311) |
 
 ---
 
@@ -152,7 +152,7 @@ gantt
 - [x] **[NEW] TSK-310: Scraped Key Verification & Warning**
   - **Description:** Detect when a song might have the wrong key scraped and deliver a warning to the user.
   - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
-- [ ] **[NEW] TSK-311: Title Space Underscore Sanitization**
+- [x] **[NEW] TSK-311: Title Space Underscore Sanitization**
   - **Description:** Titles should always have spaces not underscores, verify this and fix it.
   - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
 - [x] **[NEW] TSK-312: Hide Piano SVGs in Nashville Mode**
