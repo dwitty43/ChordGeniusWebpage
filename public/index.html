@@ -1637,9 +1637,30 @@ const MINOR_QUALS = ['m','d','M','m','m','M','M'];
 
 const normalizeNote = r => ENHARMONIC[r] || r;
 
+function parseOriginalCapo(text) {
+    if (!text) return 0;
+    const lines = text.split(/\r?\n/);
+    const regex1 = /capo:?\s*(\d+)/i;
+    const regex2 = /capo\s+(?:at\s+)?(\d+)/i;
+    for (const line of lines) {
+        let match = line.match(regex1) || line.match(regex2);
+        if (match) {
+            return parseInt(match[1], 10);
+        }
+    }
+    return 0;
+}
+
 function parseChords(raw) {
     if (!raw) return [];
-    return raw.split(/[\s,;|/\n]+/).map(s => s.trim()).filter(Boolean).map(s => {
+    const lines = raw.split(/\r?\n/);
+    const chordLines = lines.filter(line => isChordLineFrontend(line));
+    const tokens = [];
+    chordLines.forEach(line => {
+        const lineTokens = line.split(/[\s,;|/\n]+/).map(s => s.trim()).filter(Boolean);
+        tokens.push(...lineTokens);
+    });
+    return tokens.map(s => {
         const m = s.match(/^([A-G][#b]?)(.*)/);
         if (!m) return null;
         const root = normalizeNote(m[1]);
@@ -1720,20 +1741,21 @@ function runKeyVerification() {
 
     if (!window.currentChartData || !window.currentChartData.originalText) return;
 
-    // Check if the key is currently Nashville
-    if (window.currentChartData.targetKey && /^nashville$/i.test(window.currentChartData.targetKey.trim())) return;
-    if (window.currentChartData.originalKey && /^nashville$/i.test(window.currentChartData.originalKey.trim())) return;
+    const targetKey = (window.currentChartData.targetKey || '').trim();
+    const originalKey = (window.currentChartData.originalKey || '').trim();
+
+    if (!targetKey || /^nashville$/i.test(targetKey) || /^nashville$/i.test(originalKey)) return;
 
     const bestFit = findBestDiatonicKey(window.currentChartData.originalText);
     if (!bestFit) return;
 
     const originalKeyObj = parseKeyString(window.currentChartData.originalKey);
-    const capoFret = parseInt(window.currentChartData.capo, 10) || 0;
+    const originalCapo = parseOriginalCapo(window.currentChartData.originalText);
 
     const originalKeyIdx = CHROMATIC.indexOf(originalKeyObj.root);
     if (originalKeyIdx === -1) return;
 
-    const expectedPlayKeyIdx = (originalKeyIdx - capoFret + 12) % 12;
+    const expectedPlayKeyIdx = (originalKeyIdx - originalCapo + 12) % 12;
     const expectedPlayKeyMode = originalKeyObj.mode;
 
     const bestFitPlayKeyIdx = CHROMATIC.indexOf(bestFit.root);
@@ -1743,7 +1765,7 @@ function runKeyVerification() {
 
     if (keysDiffer) {
         const suffix = bestFit.mode === 'minor' ? 'm' : '';
-        const suggestedSoundingKeyIdx = (bestFitPlayKeyIdx + capoFret) % 12;
+        const suggestedSoundingKeyIdx = (bestFitPlayKeyIdx + originalCapo) % 12;
         const suggestedSoundingKey = CHROMATIC[suggestedSoundingKeyIdx] + suffix;
 
         const voicing = localStorage.getItem('cg_voicing_mode') || 'guitar';

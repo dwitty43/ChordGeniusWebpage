@@ -609,8 +609,30 @@ const MINOR_NAMES = ['i','ii°','III','iv','v','VI','VII'];
 
 const normalizeNote = r => ENHARMONIC[r] || r;
 
+function parseOriginalCapo(text) {
+    if (!text) return 0;
+    const lines = text.split(/\r?\n/);
+    const regex1 = /capo:?\s*(\d+)/i;
+    const regex2 = /capo\s+(?:at\s+)?(\d+)/i;
+    for (const line of lines) {
+        let match = line.match(regex1) || line.match(regex2);
+        if (match) {
+            return parseInt(match[1], 10);
+        }
+    }
+    return 0;
+}
+
 function parseChords(raw) {
-    return raw.split(/[\s,;|/\n]+/).map(s => s.trim()).filter(Boolean).map(s => {
+    if (!raw) return [];
+    const lines = raw.split(/\r?\n/);
+    const chordLines = lines.filter(line => isChordLineFrontend(line));
+    const tokens = [];
+    chordLines.forEach(line => {
+        const lineTokens = line.split(/[\s,;|/\n]+/).map(s => s.trim()).filter(Boolean);
+        tokens.push(...lineTokens);
+    });
+    return tokens.map(s => {
         const m = s.match(/^([A-G][#b]?)(.*)/);
         if (!m) return null;
         const root = normalizeNote(m[1]);
@@ -789,7 +811,7 @@ function scrollLoop(time) {
     
     const speedFactor = parseFloat(scrollSpeedSlider.value) || 1.0;
     const baseSpeed = 0.007; // Proportional to BPM, smooth & natural scroll velocity
-    const velocity = (bpm / 120) * baseSpeed * speedFactor; // pixels per ms
+    const velocity = (bpm / 120) * baseSpeed * speedFactor * (rehearseZoom / 100); // pixels per ms
     
     scrollPosFloat += velocity * dt;
     rehearsalSheet.scrollTop = Math.floor(scrollPosFloat);
@@ -1106,20 +1128,22 @@ function runKeyVerification() {
 
     // Check if the key is currently Nashville
     const stageTargetKeySelect = document.getElementById('stageTargetKey');
-    if (stageTargetKeySelect && stageTargetKeySelect.value === 'nashville') return;
-    if (rehearseSong.keyText && /^nashville$/i.test(rehearseSong.keyText.trim())) return;
-    if (rehearseSong.originalKey && /^nashville$/i.test(rehearseSong.originalKey.trim())) return;
+    const targetKeyVal = stageTargetKeySelect ? stageTargetKeySelect.value : (rehearseSong.keyText || '');
+    const targetKey = targetKeyVal.trim();
+    const originalKey = (rehearseSong.originalKey || '').trim();
+
+    if (!targetKey || /^nashville$/i.test(targetKey) || /^nashville$/i.test(originalKey)) return;
 
     const bestFit = findBestDiatonicKey(rehearseSong.originalText);
     if (!bestFit) return;
 
     const originalKeyObj = parseKeyString(rehearseSong.originalKey);
-    const capoFret = parseInt(rehearseSong.capo, 10) || 0;
+    const originalCapo = parseOriginalCapo(rehearseSong.originalText);
 
     const originalKeyIdx = CHROMATIC.indexOf(originalKeyObj.root);
     if (originalKeyIdx === -1) return;
 
-    const expectedPlayKeyIdx = (originalKeyIdx - capoFret + 12) % 12;
+    const expectedPlayKeyIdx = (originalKeyIdx - originalCapo + 12) % 12;
     const expectedPlayKeyMode = originalKeyObj.mode;
 
     const bestFitPlayKeyIdx = CHROMATIC.indexOf(bestFit.root);
@@ -1129,7 +1153,7 @@ function runKeyVerification() {
 
     if (keysDiffer) {
         const suffix = bestFit.mode === 'minor' ? 'm' : '';
-        const suggestedSoundingKeyIdx = (bestFitPlayKeyIdx + capoFret) % 12;
+        const suggestedSoundingKeyIdx = (bestFitPlayKeyIdx + originalCapo) % 12;
         const suggestedSoundingKey = CHROMATIC[suggestedSoundingKeyIdx] + suffix;
 
         const voicing = localStorage.getItem('cg_voicing_mode') || 'guitar';
