@@ -47,16 +47,22 @@ The resizer element must sit between resizable panels:
 ```
 
 ### Dragging Smoothness Checklist
-1.  **Transition Disabling**: Accidental transition animations during drags cause cursor lag. When dragging is active, append `.resizing-active` to the parent container and enforce:
+1.  **Transition & Animation Disabling**: Accidental transition or loading animations during drags cause cursor lag. When dragging is active, append `.resizing-active` to the parent container and enforce:
     ```css
     .workspace-body.resizing-active .panel-left,
     .workspace-body.resizing-active .panel-right {
         transition: none !important;
+        animation: none !important;
     }
     ```
 2.  **Bounds Clamping**: Constrain the panel width to prevent side panels from collapsing fully or overlaying menus (e.g. Left Panel $\ge 300\text{px}$, Right Panel $\ge 350\text{px}$).
 3.  **Coordinate Math**: When computing mouse position offsets in drag event handlers, always check for undefined to prevent mobile touch coordinate collisions:
     `const clientX = (e.clientX !== undefined) ? e.clientX : (e.touches && e.touches[0] ? e.touches[0].clientX : 0);`
+
+### 🎬 Panel, Tab & Transition Animations
+1.  **Workstation Panel Load Animations**: All main workspace panels (`.panel-left`, `.panel-right`) must fade-in and slide-up smoothly on load (`panelFadeInUp` keyframes animation) to provide a polished tab-switching visual feedback. A slight staggered delay is applied to the right panel.
+2.  **Tab Switch Micro-Animations**: Inner toggled panels (such as `#liveEditor` and `#interactivePreview` inside the preview overlay, or Sign In/Sign Up forms on the login page) must use a subtle fade-in and translation micro-animation (`tabContentFadeIn` or `fadeIn`) when displayed.
+3.  **Stage View Default State**: Opening any chart preview (from search, file upload, or history/setlist queue) must default to the Stage View ("Interactive Preview"). All entry points must trigger `resetModalPreviewState()` to reset modal tabs to preview mode.
 
 ---
 

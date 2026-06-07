@@ -241,7 +241,7 @@
 
     if (proStatusBadge) {
         proStatusBadge.addEventListener('click', () => {
-            window.location.href = '/premium.html';
+            window.location.href = 'premium.html';
         });
     }
 
@@ -280,7 +280,7 @@
         setTimeout(() => {
             showStatus("🚀 Welcome back! Sync complete.", "success");
             setTimeout(() => {
-                window.location.href = '/';
+                window.location.href = 'index.html';
             }, 1200);
         }, 1000);
     });
@@ -297,9 +297,26 @@
         setTimeout(() => {
             showStatus("🎉 Account created successfully!", "success");
             setTimeout(() => {
-                window.location.href = '/';
+                window.location.href = 'index.html';
             }, 1200);
         }, 1000);
+    });
+
+    // Page transition transitions on sidebar navigation
+    document.querySelectorAll('.sidebar-nav a.nav-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const targetUrl = btn.getAttribute('href');
+            if (targetUrl && targetUrl !== '#' && !btn.classList.contains('active')) {
+                e.preventDefault();
+                const panelLeft = document.querySelector('.panel-left');
+                const panelRight = document.querySelector('.panel-right');
+                if (panelLeft) panelLeft.classList.add('page-exit');
+                if (panelRight) panelRight.classList.add('page-exit');
+                setTimeout(() => {
+                    window.location.href = targetUrl;
+                }, 200);
+            }
+        });
     });
 </script>
 </body>

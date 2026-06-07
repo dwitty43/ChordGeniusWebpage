@@ -322,8 +322,8 @@
                         </div>
                     </div>
                     <div class="modal-body" id="modalBody" style="display: flex; flex-direction: column; position: relative;">
-                        <textarea id="liveEditor" spellcheck="false" style="width: 100%; flex: 1; min-height: 500px; padding: 24px; font-family: 'Courier New', Courier, monospace; font-size: 14px; border: none; resize: none; outline: none; background: var(--input-bg); color: var(--text-main);"></textarea>
-                        <div id="interactivePreview" style="display: none; width: 100%; flex: 1; min-height: 500px; padding: 24px; font-family: 'Courier New', Courier, monospace; font-size: 14px; border: none; outline: none; overflow: auto; white-space: pre-wrap; background: var(--input-bg); color: var(--text-main);"></div>
+                        <textarea id="liveEditor" spellcheck="false" style="display: none; width: 100%; flex: 1; min-height: 500px; padding: 24px; font-family: 'Courier New', Courier, monospace; font-size: 14px; border: none; resize: none; outline: none; background: var(--input-bg); color: var(--text-main);"></textarea>
+                        <div id="interactivePreview" style="width: 100%; flex: 1; min-height: 500px; padding: 24px; font-family: 'Courier New', Courier, monospace; font-size: 14px; border: none; outline: none; overflow: auto; white-space: pre-wrap; background: var(--input-bg); color: var(--text-main);"></div>
                         <div id="editorChordPreview" class="editor-chord-preview"></div>
                     </div>
                 </div>
@@ -1236,7 +1236,7 @@ window.previewSongFromSetlist = function(idx) {
     // Clean up any old previews
     document.querySelectorAll('.modal-docx-preview, iframe, .modal-loading').forEach(el => el.remove());
 
-    // Reset preview state (which switches back to edit tab)
+    // Reset preview state (which ensures Stage View is active by default)
     if (typeof resetModalPreviewState === 'function') resetModalPreviewState();
 
     // Open modal
@@ -2085,12 +2085,7 @@ if (storedBpm || storedBeats) {
 const sidebarPremiumBtn = document.getElementById('sidebarPremiumBtn');
 const proStatusBadge = document.getElementById('proStatusBadge');
 
-if (sidebarPremiumBtn) {
-    sidebarPremiumBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        window.location.href = 'premium.html';
-    });
-}
+
 if (proStatusBadge) {
     proStatusBadge.addEventListener('click', (e) => {
         e.preventDefault();
@@ -2263,6 +2258,23 @@ updateProStatusUI();
     resizer.addEventListener('mousedown', startDrag);
     resizer.addEventListener('touchstart', startDrag, { passive: true });
 })();
+
+// Page transition transitions on sidebar navigation
+document.querySelectorAll('.sidebar-nav a.nav-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        const targetUrl = btn.getAttribute('href');
+        if (targetUrl && targetUrl !== '#' && !btn.classList.contains('active')) {
+            e.preventDefault();
+            const panelLeft = document.querySelector('.panel-left');
+            const panelRight = document.querySelector('.panel-right');
+            if (panelLeft) panelLeft.classList.add('page-exit');
+            if (panelRight) panelRight.classList.add('page-exit');
+            setTimeout(() => {
+                window.location.href = targetUrl;
+            }, 200);
+        }
+    });
+});
 </script>
 </body>
 </html>

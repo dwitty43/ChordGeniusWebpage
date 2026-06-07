@@ -1398,12 +1398,7 @@ function showStatus(text, type) {
 const sidebarPremiumBtn = document.getElementById('sidebarPremiumBtn');
 const proStatusBadge = document.getElementById('proStatusBadge');
 
-if (sidebarPremiumBtn) {
-    sidebarPremiumBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        window.location.href = 'premium.html';
-    });
-}
+
 if (proStatusBadge) {
     proStatusBadge.addEventListener('click', (e) => {
         e.preventDefault();
@@ -1508,6 +1503,23 @@ updateProStatusUI();
     resizer.addEventListener('mousedown', startDrag);
     resizer.addEventListener('touchstart', startDrag, { passive: true });
 })();
+
+// Page transition transitions on sidebar navigation
+document.querySelectorAll('.sidebar-nav a.nav-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        const targetUrl = btn.getAttribute('href');
+        if (targetUrl && targetUrl !== '#' && !btn.classList.contains('active')) {
+            e.preventDefault();
+            const panelLeft = document.querySelector('.panel-left');
+            const panelRight = document.querySelector('.panel-right');
+            if (panelLeft) panelLeft.classList.add('page-exit');
+            if (panelRight) panelRight.classList.add('page-exit');
+            setTimeout(() => {
+                window.location.href = targetUrl;
+            }, 200);
+        }
+    });
+});
 </script>
 </body>
 </html>

@@ -446,6 +446,7 @@
             width: 100%;
             margin-left: auto;
             margin-right: auto;
+            animation: tabFadeIn 0.2s ease-out;
         }
 
         /* ── PREMIUM UPGRADE SPECIFIC STYLES ── */
@@ -1182,7 +1183,50 @@
             from { opacity:0; transform:translateY(28px); }
             to { opacity:1; transform:translateY(0); }
         }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes panelFadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        @keyframes tabContentFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        @keyframes pageEntrance {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pageExit {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-8px); }
+        }
+
+        @keyframes tabFadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .panel-left.page-exit, .panel-right.page-exit {
+            animation: pageExit 0.2s cubic-bezier(0.25, 0.8, 0.25, 1) forwards !important;
+        }
         /* ── END OF CONVERT WORKSTATION DASHBOARD ── */
 
         @media (max-width: 1024px) {
@@ -1227,6 +1271,7 @@
             height: 100%;
             flex-shrink: 0;
             transition: width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            animation: pageEntrance 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) both;
         }
 
         .workspace-body.resizing-active {
@@ -1237,6 +1282,7 @@
         .workspace-body.resizing-active .panel-left,
         .workspace-body.resizing-active .panel-right {
             transition: none !important;
+            animation: none !important;
         }
 
         /* ── DRAGGABLE GUTTER DIVIDER ── */
@@ -1309,6 +1355,8 @@
             overflow: hidden;
             position: relative;
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            animation: pageEntrance 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) both;
+            animation-delay: 0.08s;
         }
 
         /* ── STATUS TOAST ── */
