@@ -1618,9 +1618,117 @@ function removeActiveTooltip() {
     }
 }
 
+const CHROMATIC = ['C','C#','D','Eb','E','F','F#','G','Ab','A','Bb','B'];
+const ENHARMONIC = {'Db':'C#','D#':'Eb','Gb':'F#','G#':'Ab','A#':'Bb','Cb':'B','E#':'F','B#':'C','Fb':'E'};
+const MAJOR_IVLS  = [0,2,4,5,7,9,11];
+const MAJOR_QUALS = ['M','m','m','M','M','m','d'];
+const MINOR_IVLS  = [0,2,3,5,7,8,10];
+const MINOR_QUALS = ['m','d','M','m','m','M','M'];
+
+const normalizeNote = r => ENHARMONIC[r] || r;
+
+function parseChords(raw) {
+    if (!raw) return [];
+    return raw.split(/[\s,;|/\n]+/).map(s => s.trim()).filter(Boolean).map(s => {
+        const m = s.match(/^([A-G][#b]?)(.*)/);
+        if (!m) return null;
+        const root = normalizeNote(m[1]);
+        const rest = m[2].toLowerCase();
+        let quality = 'M';
+        if (/^(m|min)(?!aj)/.test(rest)) quality = 'm';
+        else if (/dim/.test(rest)) quality = 'd';
+        return { root, quality, raw: s };
+    }).filter(Boolean);
+}
+
+function scoreKey(chords, rootNote, intervals, quals) {
+    const rootIdx = CHROMATIC.indexOf(rootNote);
+    let score = 0;
+    chords.forEach(chord => {
+        const ci = CHROMATIC.indexOf(chord.root);
+        const ivl = (ci - rootIdx + 12) % 12;
+        const di = intervals.indexOf(ivl);
+        if (di >= 0 && chord.quality === quals[di]) { score++; }
+    });
+    return { score };
+}
+
+function findBestDiatonicKey(text) {
+    const chords = parseChords(text);
+    if (!chords.length) return null;
+
+    let results = [];
+    CHROMATIC.forEach(root => {
+        const maj = scoreKey(chords, root, MAJOR_IVLS, MAJOR_QUALS);
+        results.push({ root, mode: 'major', score: maj.score });
+        const min = scoreKey(chords, root, MINOR_IVLS, MINOR_QUALS);
+        results.push({ root, mode: 'minor', score: min.score });
+    });
+    results.sort((a,b) => b.score - a.score || (a.mode==='major' ? -0.1 : 0.1));
+    return results[0];
+}
+
+function parseKeyString(keyStr) {
+    if (!keyStr) return { root: 'C', mode: 'major' };
+    const clean = keyStr.trim().replace(/^(key:\s*)/i, '');
+    const m = clean.match(/^([A-G][#b]?)(.*)/);
+    if (!m) return { root: 'C', mode: 'major' };
+    let root = m[1];
+    let mode = 'major';
+    if (m[2].toLowerCase().includes('m') && !m[2].toLowerCase().includes('maj')) {
+        mode = 'minor';
+    }
+    root = ENHARMONIC[root] || root;
+    return { root, mode };
+}
+
+function runKeyVerification() {
+    const existing = document.getElementById('previewKeyWarning');
+    if (existing) {
+        existing.remove();
+    }
+
+    if (!window.currentChartData || !window.currentChartData.originalText) return;
+
+    const bestFit = findBestDiatonicKey(window.currentChartData.originalText);
+    if (!bestFit) return;
+
+    const originalKeyObj = parseKeyString(window.currentChartData.originalKey);
+    const capoFret = parseInt(window.currentChartData.capo, 10) || 0;
+
+    const originalKeyIdx = CHROMATIC.indexOf(originalKeyObj.root);
+    if (originalKeyIdx === -1) return;
+
+    const expectedPlayKeyIdx = (originalKeyIdx - capoFret + 12) % 12;
+    const expectedPlayKeyMode = originalKeyObj.mode;
+
+    const bestFitPlayKeyIdx = CHROMATIC.indexOf(bestFit.root);
+    const bestFitPlayKeyMode = bestFit.mode;
+
+    const keysDiffer = (expectedPlayKeyIdx !== bestFitPlayKeyIdx) || (expectedPlayKeyMode !== bestFitPlayKeyMode);
+
+    if (keysDiffer) {
+        const suffix = bestFit.mode === 'minor' ? 'm' : '';
+        const suggestedPlayKey = bestFit.root + suffix;
+        const suggestedSoundingKeyIdx = (bestFitPlayKeyIdx + capoFret) % 12;
+        const suggestedSoundingKey = CHROMATIC[suggestedSoundingKeyIdx] + suffix;
+
+        const warningHTML = `
+            <div id="previewKeyWarning" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); color: #f87171; padding: 12px 18px; border-radius: 8px; margin: 16px; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+                <span>⚠️ Warning: The scraped key may be incorrect. Based on chords, this song sounds in <strong>${suggestedSoundingKey}</strong> (play shapes in <strong>${suggestedPlayKey}</strong> with Capo <strong>${capoFret}</strong>).</span>
+            </div>
+        `;
+        const body = document.getElementById('modalBody');
+        if (body) {
+            body.insertAdjacentHTML('afterbegin', warningHTML);
+        }
+    }
+}
+
 function resetModalPreviewState() {
     switchModalTab('preview');
     removeActiveTooltip();
+    runKeyVerification();
 }
 
 interactivePreview.addEventListener('mouseover', (e) => {
@@ -1631,7 +1739,7 @@ interactivePreview.addEventListener('mouseover', (e) => {
     const chord = target.getAttribute('data-chord');
     if (!chord) return;
 
-    if (/^[b#]?[1-7]/.test(chord)) return;
+    if (/^[b#]?[1-7]/i.test(chord)) return;
 
     if (hoverTimeout) clearTimeout(hoverTimeout);
 

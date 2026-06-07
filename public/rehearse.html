@@ -1091,16 +1091,16 @@ function runKeyVerification() {
     const expectedPlayKeyIdx = (originalKeyIdx - capoFret + 12) % 12;
     const expectedPlayKeyMode = originalKeyObj.mode;
 
-    const bestFitSoundingKeyIdx = CHROMATIC.indexOf(bestFit.root);
-    const bestFitPlayKeyIdx = (bestFitSoundingKeyIdx - capoFret + 12) % 12;
+    const bestFitPlayKeyIdx = CHROMATIC.indexOf(bestFit.root);
     const bestFitPlayKeyMode = bestFit.mode;
 
     const keysDiffer = (expectedPlayKeyIdx !== bestFitPlayKeyIdx) || (expectedPlayKeyMode !== bestFitPlayKeyMode);
 
     if (keysDiffer) {
         const suffix = bestFit.mode === 'minor' ? 'm' : '';
-        const suggestedSoundingKey = bestFit.root + suffix;
-        const suggestedPlayKey = CHROMATIC[bestFitPlayKeyIdx] + suffix;
+        const suggestedPlayKey = bestFit.root + suffix;
+        const suggestedSoundingKeyIdx = (bestFitPlayKeyIdx + capoFret) % 12;
+        const suggestedSoundingKey = CHROMATIC[suggestedSoundingKeyIdx] + suffix;
 
         const warningHTML = `
             <div id="rehearseKeyWarning" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); color: #f87171; padding: 12px 18px; border-radius: 8px; margin: 16px; font-size: 13px; display: flex; align-items: center; gap: 8px;">
