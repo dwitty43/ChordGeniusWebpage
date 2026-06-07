@@ -34,7 +34,7 @@ gantt
 
 | 📥 BACKLOG (Future Scope) | 📝 TO DO (Ready for Sprint) | ⏳ IN PROGRESS | ✅ DONE (Completed) |
 | :--- | :--- | :--- | :--- |
-| • Band Sync (WebSocket Sync) <br> • Gig Tracker & Analytics <br> • Dynamic Ear Trainer & Analysis <br> • App Conversion Research (TSK-406) | • Vocal Range Matcher <br> • Stage Mode & Foot Pedal <br> • UG Direct URL Import (TSK-208) <br> • SVG Live Editor Sync (TSK-308) <br> • Rehearsal Tab Voicing Selector (TSK-309) <br> • Multi-Source Scraping (TSK-209) <br> • Dropdown Tiles Width (TSK-210) <br> • Tab Whitespace Cleansing (TSK-211) <br> • Mobile Layout Optimization (TSK-212) <br> • YouTube Rehearse Integration (TSK-313) | • Production Scraper Hardening <br> • **Rehearsal Capo/Key Switcher** <br> • Login/Signup Account Init <br> • Setlist Flow / Time Estimator (Phase 1) <br> • Spotify Playlist Importer (Phase 1) | **Sprint 1 (100% Completed)** <br> **Sprint 3 Core Phase 1:** <br> • **Piano Chord SVGs** <br> • **Active Chart Zoom Controls** (TSK-307) <br> • Nashville Piano SVG Toggle (TSK-312) <br> • Remove Inputs Toast (TSK-213) <br> • URL Scrape Title Resolution (TSK-214) <br> • **Scraped Key Verification** (TSK-310) <br> • **Metronome Mute Button** (TSK-314) <br> • **Title Underscore Fix** (TSK-311) |
+| • Band Sync (WebSocket Sync) <br> • Gig Tracker & Analytics <br> • Dynamic Ear Trainer & Analysis <br> • App Conversion Research (TSK-406) | • Vocal Range Matcher <br> • Stage Mode & Foot Pedal <br> • UG Direct URL Import (TSK-208) <br> • SVG Live Editor Sync (TSK-308) <br> • Rehearsal Tab Voicing Selector (TSK-309) <br> • Dropdown Tiles Width (TSK-210) <br> • Tab Whitespace Cleansing (TSK-211) <br> • YouTube Rehearse Integration (TSK-313) | • Production Scraper Hardening <br> • **Rehearsal Capo/Key Switcher** <br> • Login/Signup Account Init <br> • Setlist Flow / Time Estimator (Phase 1) <br> • Spotify Playlist Importer (Phase 1) | **Sprint 1 (100% Completed)** <br> **Sprint 2 Completed Tasks:** <br> • Transition Animation & Tab Routing (TSK-205) <br> • Multi-Source Scraping (TSK-209) <br> • Mobile Layout Optimization (TSK-212) <br> **Sprint 3 Core Phase 1:** <br> • **Piano Chord SVGs** <br> • **Active Chart Zoom Controls** (TSK-307) <br> • Nashville Piano SVG Toggle (TSK-312) <br> • Remove Inputs Toast (TSK-213) <br> • URL Scrape Title Resolution (TSK-214) <br> • **Scraped Key Verification** (TSK-310) <br> • **Metronome Mute Button** (TSK-314) <br> • **Title Underscore Fix** (TSK-311) |
 
 ---
 
@@ -83,7 +83,7 @@ gantt
 - [X] **TSK-204: Rehearse Page Layout Alignment**
   - **Description:** Re-layout the Rehearse Page so it shares consistent sidebar page-selectors and structure with the Convert Page. Componentize matching modules.
   - **Source:** [next_steps.md - Bug 6](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/next_steps.md#L16)
-- [ ] **TSK-205: Transition Animation & Tab Routing**
+- [x] **TSK-205: Transition Animation & Tab Routing**
   - **Description:** Add elegant transitions when switching between tabs (Convert, Rehearse, and later Premium). Ensure consistent defaults (e.g. "Interactive Preview" active by default).
   - **Source:** [next_steps.md - Bug 7](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/next_steps.md#L17) & [proposed_ideas.md - Next Step 7](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/proposed_ideas.md#L61)
 - [X] **TSK-206: Nashville Scrape Parser Patch**
@@ -95,7 +95,7 @@ gantt
 - [x] **[NEW] TSK-208: Ultimate Guitar Direct URL Import**
   - **Description:** Add an ability for the user to be able to insert a link to ultimate guitar and pull tabs that way.
   - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
-- [ ] **[NEW] TSK-209: Multi-Source Scraping Research & Fallbacks**
+- [x] **[NEW] TSK-209: Multi-Source Scraping Research & Fallbacks**
   - **Description:** Research alternative chord sheet directories (e.g., e-chords, chordie) to bypass Ultimate Guitar Cloudflare blocks and implement them as fallback scrapers.
   - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
 - [x] **[NEW] TSK-210: Dropdown Tiles Width & Panel Initial Sizing**
@@ -104,7 +104,7 @@ gantt
 - [x] **[NEW] TSK-211: Scraped Tab Whitespace Cleansing & Formatting**
   - **Description:** Some scrapes are inserting a lot of white space. Add a way to make sure the formatting looks good.
   - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
-- [ ] **[NEW] TSK-212: Mobile Layout Optimization**
+- [x] **[NEW] TSK-212: Mobile Layout Optimization**
   - **Description:** Implement an alternate layout for mobile phone to keep sleek look but more optimal for mobile use.
   - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
 - [x] **[NEW] TSK-213: Remove Inputs Changed Conversion Toast**
