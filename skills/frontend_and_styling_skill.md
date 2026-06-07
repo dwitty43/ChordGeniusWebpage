@@ -89,13 +89,19 @@ The resizer element must sit between resizable panels:
 *   **In-Place Editing**: The `#modalTitle` div has `contenteditable="true"` enabling direct title modification.
 *   **Data Synchronization**: Any title edits trigger synchronization of `window.currentChartData.title` on `input` and `blur` events.
 
+### 6. Mobile Layouts & Pane Toggling
+*   **Pane Toggling (`.mobile-tabs-nav` / `.mobile-tab-btn`)**: Glassmorphism navigation tabs are sticky-docked at the top of the body panels on viewport widths under 768px.
+*   **Panel Display Classes (`.mobile-hidden`)**: Handled via JavaScript click event listeners on `.mobile-tab-btn` buttons, toggling visibility between controls and rendering panels on smaller devices.
+*   **Responsive Input Grids**: `.grid-inputs` collapses from 5 columns to 2 columns under 1024px, and down to 1 column under 768px to preserve input field legibility.
+
 ---
 
 ## 💡 Guidelines for Future Development Agents
 
-1.  **Responsive Layout Integrity**: Keep columns stacked vertically on screens $< 1024\text{px}$ using CSS media queries. Hide the draggable resizer gutter entirely on mobile.
+1.  **Responsive Layout Integrity**: Keep columns stacked vertically on screens $< 1024\text{px}$ using CSS media queries. Hide the draggable resizer gutter entirely on mobile. Set panels (`.panel-left`, `.panel-right`, `.rehearse-left`, `.rehearse-right`, `.login-right`) to `width: 100% !important; max-width: none !important; float: none !important; flex: none !important;` under 1024px.
 2.  **State Synchronization**: Synchronize user choices (e.g., zoom levels, playback speeds, instrument voicings) to `localStorage` so changes persist across page refreshes.
 3.  **Layout Audit**: Prior to committing layout changes, evaluate the layout dragging logic using the browser console mock mouse events described in the UI resizer skills.
+4.  **Mobile Navigation**: Ensure all mobile tab-nav elements are synchronized between the active tab classes and the panel `.mobile-hidden` class toggling.
 
 > [!NOTE]
 > **Dynamic Skill Creation & Maintenance**: As new features, subsystems, or workflows are established (e.g. databases, payment flows, or advanced authentication), developer agents are encouraged and authorized to create new skill documentation files in the `skills/` directory.

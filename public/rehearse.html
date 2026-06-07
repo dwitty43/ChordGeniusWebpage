@@ -58,6 +58,10 @@
 
     <!-- MAIN BODY PANELS -->
     <div class="workspace-body">
+        <div class="mobile-tabs-nav" style="display: none;">
+            <button id="mobileTabBtnControls" class="mobile-tab-btn active">Controls</button>
+            <button id="mobileTabBtnRehearse" class="mobile-tab-btn">Scroll Sheet</button>
+        </div>
         <!-- LEFT PANEL: CONTROLS (Pane 2) -->
         <div class="panel-left rehearse-left">
             <div class="panel-header">
@@ -1520,6 +1524,50 @@ document.querySelectorAll('.sidebar-nav a.nav-btn').forEach(btn => {
         }
     });
 });
+
+// ── MOBILE TABS TOGGLING ──
+const mobileTabBtnControls = document.getElementById('mobileTabBtnControls');
+const mobileTabBtnRehearse = document.getElementById('mobileTabBtnRehearse');
+const leftPanel = document.querySelector('.panel-left');
+const rightPanel = document.querySelector('.panel-right');
+
+function updateMobileTabs() {
+    if (window.innerWidth <= 767) {
+        if (mobileTabBtnControls.classList.contains('active')) {
+            leftPanel.classList.remove('mobile-hidden');
+            rightPanel.classList.add('mobile-hidden');
+        } else {
+            leftPanel.classList.add('mobile-hidden');
+            rightPanel.classList.remove('mobile-hidden');
+        }
+    } else {
+        leftPanel.classList.remove('mobile-hidden');
+        rightPanel.classList.remove('mobile-hidden');
+    }
+}
+
+if (mobileTabBtnControls && mobileTabBtnRehearse) {
+    mobileTabBtnControls.addEventListener('click', () => {
+        mobileTabBtnControls.classList.add('active');
+        mobileTabBtnRehearse.classList.remove('active');
+        updateMobileTabs();
+    });
+    
+    mobileTabBtnRehearse.addEventListener('click', () => {
+        mobileTabBtnRehearse.classList.add('active');
+        mobileTabBtnControls.classList.remove('active');
+        updateMobileTabs();
+    });
+    
+    window.addEventListener('resize', updateMobileTabs);
+    
+    // Initialize state
+    if (window.innerWidth <= 767 && rehearseSong) {
+        mobileTabBtnRehearse.classList.add('active');
+        mobileTabBtnControls.classList.remove('active');
+    }
+    updateMobileTabs();
+}
 </script>
 </body>
 </html>

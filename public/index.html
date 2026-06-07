@@ -64,6 +64,10 @@
 
     <!-- MAIN BODY PANELS -->
     <div class="workspace-body">
+        <div class="mobile-tabs-nav" style="display: none;">
+            <button id="mobileTabBtnControls" class="mobile-tab-btn active">Inputs</button>
+            <button id="mobileTabBtnStage" class="mobile-tab-btn">Stage View</button>
+        </div>
         <!-- LEFT PANEL: CONTROLS -->
         <div class="panel-left">
             <div class="panel-header">
@@ -2275,6 +2279,68 @@ document.querySelectorAll('.sidebar-nav a.nav-btn').forEach(btn => {
         }
     });
 });
+
+// ── MOBILE TABS TOGGLING ──
+const mobileTabBtnControls = document.getElementById('mobileTabBtnControls');
+const mobileTabBtnStage = document.getElementById('mobileTabBtnStage');
+const leftPanel = document.querySelector('.panel-left');
+const rightPanel = document.querySelector('.panel-right');
+
+function updateMobileTabs() {
+    if (window.innerWidth <= 767) {
+        if (mobileTabBtnControls.classList.contains('active')) {
+            leftPanel.classList.remove('mobile-hidden');
+            rightPanel.classList.add('mobile-hidden');
+        } else {
+            leftPanel.classList.add('mobile-hidden');
+            rightPanel.classList.remove('mobile-hidden');
+        }
+    } else {
+        leftPanel.classList.remove('mobile-hidden');
+        rightPanel.classList.remove('mobile-hidden');
+    }
+}
+
+if (mobileTabBtnControls && mobileTabBtnStage) {
+    mobileTabBtnControls.addEventListener('click', () => {
+        mobileTabBtnControls.classList.add('active');
+        mobileTabBtnStage.classList.remove('active');
+        updateMobileTabs();
+    });
+    
+    mobileTabBtnStage.addEventListener('click', () => {
+        mobileTabBtnStage.classList.add('active');
+        mobileTabBtnControls.classList.remove('active');
+        updateMobileTabs();
+    });
+    
+    window.addEventListener('resize', updateMobileTabs);
+    
+    // Initialize state
+    if (window.innerWidth <= 767 && document.getElementById('previewOverlay').classList.contains('open')) {
+        mobileTabBtnStage.classList.add('active');
+        mobileTabBtnControls.classList.remove('active');
+    }
+    updateMobileTabs();
+
+    // Auto-switch to Stage View tab on mobile when a preview is shown
+    const origPreviewSearch = document.getElementById('previewSearchBtn');
+    if (origPreviewSearch) {
+        origPreviewSearch.addEventListener('click', () => {
+            if (window.innerWidth <= 767) {
+                mobileTabBtnStage.click();
+            }
+        });
+    }
+    const origPreviewUpload = document.getElementById('previewUploadBtn');
+    if (origPreviewUpload) {
+        origPreviewUpload.addEventListener('click', () => {
+            if (window.innerWidth <= 767) {
+                mobileTabBtnStage.click();
+            }
+        });
+    }
+}
 </script>
 </body>
 </html>
