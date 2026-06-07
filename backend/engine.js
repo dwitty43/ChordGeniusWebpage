@@ -579,7 +579,77 @@ function extractTabData(html) {
     const preTag = $('pre').first();
     if (!preTag || preTag.length === 0) throw new Error("Could not find the <pre> tag containing the chords.");
     
-    return { rawTabText: preTag.text(), songKey };
+    let songTitle = "";
+    $('script[type="application/ld+json"]').each((i, el) => {
+        try {
+            const rawJson = $(el).html();
+            if (!rawJson) return;
+            const data = JSON.parse(rawJson);
+            let items = [];
+            if (Array.isArray(data)) {
+                items = data;
+            } else if (data && Array.isArray(data['@graph'])) {
+                items = data['@graph'];
+            } else if (data) {
+                items = [data];
+            }
+            for (const item of items) {
+                if (!item) continue;
+                const types = Array.isArray(item['@type']) 
+                    ? item['@type'] 
+                    : (Array.isArray(item.type) ? item.type : [item['@type'] || item.type || '']);
+                
+                if (types.includes('MusicRecording')) {
+                    let title = item.name || '';
+                    let artist = '';
+                    if (item.byArtist) {
+                        if (Array.isArray(item.byArtist)) {
+                            artist = item.byArtist.map(a => typeof a === 'object' ? a.name : a).filter(Boolean).join(', ');
+                        } else if (typeof item.byArtist === 'object') {
+                            artist = item.byArtist.name || '';
+                        } else if (typeof item.byArtist === 'string') {
+                            artist = item.byArtist;
+                        }
+                    }
+                    if (title && artist) {
+                        songTitle = `${artist} - ${title}`;
+                    } else if (title) {
+                        songTitle = title;
+                    }
+                } else if (types.includes('MusicComposition')) {
+                    let name = item.name || '';
+                    if (name) {
+                        name = name.replace(/\s*\(chords\)\s*$/i, '').trim();
+                        songTitle = name;
+                    }
+                }
+                if (songTitle) return false; // break cheerio each
+            }
+        } catch (e) {
+            // Ignore parse errors
+        }
+    });
+
+    if (!songTitle) {
+        let titleText = $('title').text().trim();
+        if (titleText) {
+            titleText = titleText.replace(/_/g, ' ');
+            const match = titleText.match(/^(.+?)\s+chords\s+by\s+(.+?)(?:\s*@\s*ultimate-guitar\.com)?$/i);
+            if (match) {
+                const songName = match[1].trim();
+                const artistName = match[2].trim();
+                songTitle = `${artistName} - ${songName}`;
+            } else {
+                songTitle = titleText.replace(/\s*@\s*ultimate-guitar\.com/i, '').trim();
+            }
+        }
+    }
+
+    if (songTitle) {
+        songTitle = songTitle.replace(/_/g, ' ').trim();
+    }
+    
+    return { rawTabText: preTag.text(), songKey, songTitle };
 }
 
 // --- HEURISTICS ---

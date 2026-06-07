@@ -38,6 +38,10 @@ When scraping Ultimate Guitar (`ultimate-guitar.com`), direct server-side reques
 2.  **API Proxies**: If configured (`USE_SCRAPING_API=true`), all Ultimate Guitar HTML fetches MUST route through ZenRows or ScrapingBee endpoints to bypass CAPTCHAs and blocks.
 3.  **UG Data Extraction**: The raw chord charts are extracted by searching the HTML for `window.UGAPP.store.page` script blocks containing the JSON data payload. Never rely on DOM selectors which break frequently.
 4.  **Direct URL Bypassing**: If the search query is a direct `tabs.ultimate-guitar.com` URL (with or without `https://`), the engine bypasses search catalog lookup, formats the URL properly, and directly scrapes or fetches it.
+5.  **Song Title Resolution & Underscore Sanitization**: The scraped HTML is parsed to extract clean song titles:
+    *   **JSON-LD Parsing**: Script tags with `type="application/ld+json"` are scanned. If a `MusicRecording` type is found, it formats as `"Artist - Title"`. If a `MusicComposition` type is found, it extracts the name and strips trailing `(chords)`.
+    *   **Title Tag Fallback**: If JSON-LD doesn't yield a title, it extracts the `<title>` tag and formats it (e.g. `"Song Chords by Artist @ Ultimate-Guitar.Com"` becomes `"Artist - Song"`).
+    *   **Sanitization Rule**: All underscores (`_`) are replaced with spaces (` `) and trimmed. This is applied to all titles before delivering files or returning JSON previews. In `deliverFile`, the filename keeps its underscore structure while the rendered title inside the document uses spaces.
 
 ---
 

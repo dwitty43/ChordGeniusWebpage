@@ -140,18 +140,20 @@ async function deliverFile(res, finalChart, originalName, originalKey, targetKey
     let contentType;
     let extension;
 
+    const renderedName = originalName.replace(/_/g, ' ').trim();
+
     if (format === 'pdf') {
-        const rawPdf = await createPdfChart(finalChart, originalName, originalKey, targetKey, bpm, capo, timeSignature, columns, voicing);
+        const rawPdf = await createPdfChart(finalChart, renderedName, originalKey, targetKey, bpm, capo, timeSignature, columns, voicing);
         fileBuffer = Buffer.from(rawPdf);
         contentType = 'application/pdf';
         extension = 'pdf';
     } else if (format === 'pro') {
-        const chordProText = lineBasedToChordPro(finalChart, originalName, targetKey || originalKey);
+        const chordProText = lineBasedToChordPro(finalChart, renderedName, targetKey || originalKey);
         fileBuffer = Buffer.from(chordProText, 'utf-8');
         contentType = 'text/plain';
         extension = 'pro';
     } else {
-        const rawDocx = await createDocxChart(finalChart, originalName, originalKey, targetKey, bpm, capo, timeSignature, columns);
+        const rawDocx = await createDocxChart(finalChart, renderedName, originalKey, targetKey, bpm, capo, timeSignature, columns);
         fileBuffer = Buffer.from(rawDocx);
         contentType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
         extension = 'docx';
@@ -214,7 +216,13 @@ app.get('/api/convert', async (req, res) => {
         console.log(`[API] Transposing chart...`);
         const finalChart = processAndAlignTabs(tabData.rawTabText, songKey, targetKey, false, simplify, capo);
         
-        await deliverFile(res, finalChart, query, songKey, targetKey, format, finalBpm, capo, finalTimeSig, columns, voicing);
+        let title = query;
+        if (typeof query === 'string' && /tabs\.ultimate-guitar\.com/i.test(query)) {
+            title = tabData.songTitle || query;
+        }
+        title = title.replace(/_/g, ' ').trim();
+
+        await deliverFile(res, finalChart, title, songKey, targetKey, format, finalBpm, capo, finalTimeSig, columns, voicing);
 
     } catch (error) {
         console.error(`[API Error]`, error.message);
@@ -249,7 +257,8 @@ app.post('/api/binder', async (req, res) => {
         for (let i = 0; i < setlist.length; i++) {
             const song = setlist[i];
             if (i > 0) combinedText += `\n\n\n\n\n`; 
-            combinedText += `=== SONG ${i + 1}: ${song.title.toUpperCase()} ===\n`;
+            const cleanSongTitle = (song.title || '').replace(/_/g, ' ').trim();
+            combinedText += `=== SONG ${i + 1}: ${cleanSongTitle.toUpperCase()} ===\n`;
             
             let keyText = song.targetKey;
             const isTargetNashville = !song.targetKey || /^nashville$|^1$/i.test(song.targetKey.trim());
@@ -268,7 +277,7 @@ app.post('/api/binder', async (req, res) => {
             } else if (isTargetNashville) {
                 keyText = isSourceNashville ? 'Nashville Numbers' : `${song.originalKey}`;
             }
-
+ 
             if (song.bpm) {
                 keyText += ` | BPM: ${song.bpm}`;
             }
@@ -287,7 +296,8 @@ app.post('/api/binder', async (req, res) => {
             combinedText += `Key: ${keyText}\n\n`;
             combinedText += song.text;
         }
-        await deliverFile(res, combinedText, title || "Setlist Binder", "Mixed", "Mixed", format, bpm, 0, timeSignature || '', columns || '1', voicing || 'guitar');
+        const cleanTitle = (title || "Setlist Binder").replace(/_/g, ' ').trim();
+        await deliverFile(res, combinedText, cleanTitle, "Mixed", "Mixed", format, bpm, 0, timeSignature || '', columns || '1', voicing || 'guitar');
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -355,8 +365,14 @@ app.get('/api/preview', async (req, res) => {
         const finalChart = processAndAlignTabs(tabData.rawTabText, finalKey, targetKey || '', false, isSimplify, capo);
         const playKey = capo > 0 ? getPlayKey(targetKey || finalKey, capo) : '';
         
+        let title = query;
+        if (typeof query === 'string' && /tabs\.ultimate-guitar\.com/i.test(query)) {
+            title = tabData.songTitle || query;
+        }
+        title = title.replace(/_/g, ' ').trim();
+
         res.json({ 
-            title: query, 
+            title: title, 
             originalKey: finalKey, 
             targetKey: targetKey || 'Nashville', 
             text: finalChart, 
@@ -511,7 +527,7 @@ app.post('/api/import-preview', upload.single('chartFile'), async (req, res) => 
         const playKey = capo > 0 ? getPlayKey(targetKey || finalSongKey, capo) : '';
 
         res.json({
-            title: originalName,
+            title: originalName.replace(/_/g, ' ').trim(),
             originalKey: finalSongKey,
             targetKey: targetKey || 'Nashville',
             text: finalChart,

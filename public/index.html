@@ -300,7 +300,7 @@
                 <div class="modal">
                     <div class="modal-header">
                         <div>
-                            <div class="modal-title" id="modalTitle">Chart Preview</div>
+                            <div class="modal-title" id="modalTitle" contenteditable="true" style="outline: none; border-bottom: 1px dashed var(--border); cursor: text; padding-bottom: 2px; display: inline-block;">Chart Preview</div>
                             <div class="modal-subtitle" id="modalSubtitle"></div>
                         </div>
                         <div style="display: flex; gap: 8px; align-items: center;">
@@ -310,6 +310,11 @@
                     <div class="modal-tabs" style="display: flex; background: var(--panel-bg); border-bottom: 1px solid var(--border); padding: 8px 24px; gap: 8px; align-items: center;">
                         <button id="modalTabPreview" class="nav-tab active" style="width: auto; padding: 6px 16px; border: none;">👁️ Stage View</button>
                         <button id="modalTabEdit" class="nav-tab" style="width: auto; padding: 6px 16px; border: none;">✏️ Editor</button>
+                        <div id="previewZoomControls" style="display: flex; gap: 4px; align-items: center; margin-left: 16px;">
+                            <button id="zoomOutBtn" class="previewBtn" style="width: 28px; height: 28px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer;">-</button>
+                            <span id="zoomLevelDisplay" style="font-size: 11px; font-weight: bold; color: var(--text-muted); min-width: 38px; text-align: center;">100%</span>
+                            <button id="zoomInBtn" class="previewBtn" style="width: 28px; height: 28px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer;">+</button>
+                        </div>
                         <div style="margin-left: auto; display: flex; gap: 8px; align-items: center;">
                             <button class="previewBtn" id="addSetlistBtn" style="width: auto; padding: 6px 14px; border-radius: 7px; font-size: 12px; font-weight: 700; cursor: pointer; border: 1px solid var(--border); background: var(--input-bg); color: var(--text-muted); transition: all 0.2s;">+ Add to Setlist</button>
                             <button class="gold-glow" id="takeToRehearsalBtn" style="width: auto; padding: 6px 14px; border-radius: 7px; font-size: 12px; font-weight: 700; cursor: pointer; color: #080a10;">⚡ Take to Rehearsal</button>
@@ -580,7 +585,6 @@ searchInputs.forEach(id => {
                 pvSearchBtn.classList.remove('gold-glow');
                 dlSearchBtn.disabled = true;
                 searchBlob = null;
-                showStatus("Inputs changed — please convert again.", "active");
             }
         });
     }
@@ -597,7 +601,6 @@ uploadInputs.forEach(id => {
                 pvUploadBtn.classList.remove('gold-glow');
                 dlUploadBtn.disabled = true;
                 uploadBlob = null;
-                showStatus("Inputs changed — please convert again.", "active");
             }
         });
     }
@@ -1527,18 +1530,64 @@ const modalTabPreview = document.getElementById('modalTabPreview');
 const liveEditor = document.getElementById('liveEditor');
 const interactivePreview = document.getElementById('interactivePreview');
 
+// Title editable sync listener
+const modalTitleEl = document.getElementById('modalTitle');
+if (modalTitleEl) {
+    const handleTitleSync = () => {
+        if (window.currentChartData) {
+            window.currentChartData.title = modalTitleEl.innerText.trim();
+        }
+    };
+    modalTitleEl.addEventListener('input', handleTitleSync);
+    modalTitleEl.addEventListener('blur', handleTitleSync);
+}
+
+// Zoom controls logic
+let convertZoom = parseInt(localStorage.getItem('cg_convert_zoom')) || 100;
+function applyPreviewZoom() {
+    const zoomLevelDisplay = document.getElementById('zoomLevelDisplay');
+    if (zoomLevelDisplay) {
+        zoomLevelDisplay.textContent = convertZoom + '%';
+    }
+    if (interactivePreview) {
+        interactivePreview.style.fontSize = (14 * convertZoom / 100) + 'px';
+    }
+}
+applyPreviewZoom();
+
+const zoomInBtn = document.getElementById('zoomInBtn');
+if (zoomInBtn) {
+    zoomInBtn.addEventListener('click', () => {
+        convertZoom = Math.min(200, convertZoom + 10);
+        localStorage.setItem('cg_convert_zoom', convertZoom);
+        applyPreviewZoom();
+    });
+}
+
+const zoomOutBtn = document.getElementById('zoomOutBtn');
+if (zoomOutBtn) {
+    zoomOutBtn.addEventListener('click', () => {
+        convertZoom = Math.max(50, convertZoom - 10);
+        localStorage.setItem('cg_convert_zoom', convertZoom);
+        applyPreviewZoom();
+    });
+}
+
 function switchModalTab(mode) {
+    const zoomControls = document.getElementById('previewZoomControls');
     if (mode === 'edit') {
         modalTabEdit.classList.add('active');
         modalTabPreview.classList.remove('active');
         liveEditor.style.display = 'block';
         interactivePreview.style.display = 'none';
+        if (zoomControls) zoomControls.style.display = 'none';
         updateEditorChordPreview();
     } else {
         modalTabPreview.classList.add('active');
         modalTabEdit.classList.remove('active');
         liveEditor.style.display = 'none';
         interactivePreview.style.display = 'block';
+        if (zoomControls) zoomControls.style.display = 'flex';
         interactivePreview.innerHTML = renderInteractivePreview(liveEditor.value);
         const previewCard = document.getElementById('editorChordPreview');
         if (previewCard) {
@@ -1581,6 +1630,8 @@ interactivePreview.addEventListener('mouseover', (e) => {
 
     const chord = target.getAttribute('data-chord');
     if (!chord) return;
+
+    if (/^[b#]?[1-7]/.test(chord)) return;
 
     if (hoverTimeout) clearTimeout(hoverTimeout);
 

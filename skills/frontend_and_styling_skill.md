@@ -65,6 +65,7 @@ The resizer element must sit between resizable panels:
 ### 1. Chord Tooltip Voicing Engine
 *   **Hover Event Hooks**: The chart parser surrounds chords with `span.chord-wrapper`. On mouseenter, a tooltip is generated using the `/api/chord-svg` endpoint.
 *   **Voicing Modes**: The user can toggle between `guitar` and `piano` chord shapes via a header toggle. The preference is stored in `localStorage` under `cg_voicing_mode` and included in the SVG API query.
+*   **Nashville Mode Suppressed Tooltips**: Tooltips are suppressed for Nashville number chords (matched by `/^[b#]?[1-7]/`) to avoid rendering invalid/blank chord diagrams.
 
 ### 2. Setlist Builder & Circular Transitions
 *   **Queue Caching**: Setlists are managed as a JavaScript array and cached in `localStorage` under `cg_setlist_queue`.
@@ -73,6 +74,14 @@ The resizer element must sit between resizable panels:
 ### 3. Rehearse Auto-Scroller & Metronome (`rehearse.html`)
 *   **Scroller**: Moves the viewport smoothly using `window.scrollBy({ top: scrollAmount, behavior: 'auto' })` on a recursive `requestAnimationFrame` or interval timer.
 *   **Metronome Engine**: Uses Web Audio API oscillator nodes or audio samples (click tracks) scheduled precisely. Flashes a glowing border (`--primary`) on the first beat of each bar to guide musicians.
+
+### 4. Interactive Zoom Controls
+*   **Zoom Actions**: Zoom controls (`#zoomInBtn`, `#zoomOutBtn`, `#zoomLevelDisplay`) modify the interactive preview's font size. Zoom values range from 50% to 200% in 10% steps.
+*   **State Persistence**: Zoom state is stored in `localStorage` under `cg_convert_zoom` and applied on initialization.
+
+### 5. Editable Chart Title
+*   **In-Place Editing**: The `#modalTitle` div has `contenteditable="true"` enabling direct title modification.
+*   **Data Synchronization**: Any title edits trigger synchronization of `window.currentChartData.title` on `input` and `blur` events.
 
 ---
 

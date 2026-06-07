@@ -110,7 +110,7 @@
 
                         <div class="beat-row" id="beatRow"></div>
 
-                        <div class="metro-controls">
+                        <div class="metro-controls" style="grid-template-columns: repeat(3, 1fr); gap: 8px;">
                             <button class="metro-btn" id="playBtn">
                                 <svg id="playIcon" width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                                 <svg id="stopIcon" style="display:none" width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>
@@ -119,6 +119,10 @@
                             <button class="metro-btn" id="tapBtn">
                                 <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/></svg>
                                 Tap Tempo
+                            </button>
+                            <button class="metro-btn" id="muteBtn" style="background: var(--card-bg); border: 1px solid var(--border); color: var(--text-muted);">
+                                <svg id="muteIcon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
+                                <span id="muteLabel">Mute</span>
                             </button>
                         </div>
 
@@ -264,13 +268,24 @@
         <!-- RIGHT PANEL: STAGE VIEW (Pane 3) -->
         <div class="panel-right rehearse-right">
             <div class="panel-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
-                <h2 id="stageSongTitle">Rehearsal Stage</h2>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <h2 id="stageSongTitle" style="margin: 0;">Rehearsal Stage</h2>
+                    <div id="rehearseZoomControls" style="display: flex; gap: 4px; align-items: center;">
+                        <button id="stageZoomOutBtn" class="previewBtn" style="width: 28px; height: 28px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; background: var(--input-bg); border: 1px solid var(--border); color: var(--text-muted);">-</button>
+                        <span id="stageZoomLevelDisplay" style="font-size: 11px; font-weight: bold; color: var(--text-muted); min-width: 38px; text-align: center;">100%</span>
+                        <button id="stageZoomInBtn" class="previewBtn" style="width: 28px; height: 28px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer; background: var(--input-bg); border: 1px solid var(--border); color: var(--text-muted);">+</button>
+                    </div>
+                </div>
                 <div style="display: flex; align-items: center; gap: 20px;">
                     <!-- Metronome Play Trigger -->
                     <button id="stagePlayBtn" class="metro-btn" style="width: auto; padding: 8px 16px; font-size: 13px; display: flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #080a10; border: none; border-radius: 8px; cursor: pointer; font-weight: 800;">
                         <svg id="stagePlayIcon" width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                         <svg id="stageStopIcon" style="display:none" width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>
                         <span id="stagePlayLabel">Start Click</span>
+                    </button>
+                    <button id="stageMuteBtn" class="previewBtn" style="width: auto; padding: 8px 12px; font-size: 13px; display: flex; align-items: center; gap: 4px; border-radius: 8px; cursor: pointer;">
+                        <svg id="stageMuteIcon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
+                        <span id="stageMuteLabel">Mute</span>
                     </button>
                     <div id="stageBeatRow" class="beat-row" style="margin: 0; align-items: center;"></div>
                     
@@ -372,6 +387,51 @@ function updateCapo(){
 
 // ── METRONOME ──
 let bpm=120, beats=4, beat=0, playing=false, nextT=0, timer=null, actx=null;
+let muted = localStorage.getItem('cg_metronome_muted') === 'true';
+const UNMUTED_PATH = '<path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>';
+const MUTED_PATH = '<path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z M16 9l6 6m0-6l-6 6"/>';
+
+function updateMuteUI() {
+    const muteBtn = document.getElementById('muteBtn');
+    const stageMuteBtn = document.getElementById('stageMuteBtn');
+    const muteIcon = document.getElementById('muteIcon');
+    const stageMuteIcon = document.getElementById('stageMuteIcon');
+    const muteLabel = document.getElementById('muteLabel');
+    const stageMuteLabel = document.getElementById('stageMuteLabel');
+
+    if (muted) {
+        if (muteBtn) {
+            muteBtn.style.color = '#ef4444';
+            muteBtn.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+            muteBtn.style.background = 'rgba(239, 68, 68, 0.05)';
+        }
+        if (stageMuteBtn) {
+            stageMuteBtn.style.color = '#ef4444';
+            stageMuteBtn.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+            stageMuteBtn.style.background = 'rgba(239, 68, 68, 0.05)';
+        }
+        if (muteIcon) muteIcon.innerHTML = MUTED_PATH;
+        if (stageMuteIcon) stageMuteIcon.innerHTML = MUTED_PATH;
+        if (muteLabel) muteLabel.textContent = 'Muted';
+        if (stageMuteLabel) stageMuteLabel.textContent = 'Muted';
+    } else {
+        if (muteBtn) {
+            muteBtn.style.color = 'var(--text-muted)';
+            muteBtn.style.borderColor = 'var(--border)';
+            muteBtn.style.background = 'var(--card-bg)';
+        }
+        if (stageMuteBtn) {
+            stageMuteBtn.style.color = '';
+            stageMuteBtn.style.borderColor = '';
+            stageMuteBtn.style.background = '';
+        }
+        if (muteIcon) muteIcon.innerHTML = UNMUTED_PATH;
+        if (stageMuteIcon) stageMuteIcon.innerHTML = UNMUTED_PATH;
+        if (muteLabel) muteLabel.textContent = 'Mute';
+        if (stageMuteLabel) stageMuteLabel.textContent = 'Mute';
+    }
+}
+
 const tempos=[[40,59,'Largo'],[60,65,'Larghetto'],[66,75,'Adagio'],[76,107,'Andante'],[108,119,'Moderato'],[120,155,'Allegro'],[156,175,'Vivace'],[176,199,'Presto'],[200,240,'Prestissimo']];
 const getCtx=()=>{if(!actx) actx=new(window.AudioContext||window.webkitAudioContext)();return actx;};
 const tempoName=b=>(tempos.find(([lo,hi])=>b>=lo&&b<=hi)||[,,'—'])[2];
@@ -399,6 +459,7 @@ function flash(b){
 }
 
 function click(t,accent){
+    if (muted) return;
     const c=getCtx(), o=c.createOscillator(), g=c.createGain();
     o.connect(g); g.connect(c.destination);
     o.type='sine'; o.frequency.setValueAtTime(accent?1800:1000,t);
@@ -478,6 +539,18 @@ document.addEventListener('keydown',e=>{
         playing?stop():start();
     }
 });
+
+// Metronome mute listeners
+const muteToggle = () => {
+    muted = !muted;
+    localStorage.setItem('cg_metronome_muted', muted);
+    updateMuteUI();
+};
+const muteBtnEl = document.getElementById('muteBtn');
+if (muteBtnEl) muteBtnEl.addEventListener('click', muteToggle);
+const stageMuteBtnEl = document.getElementById('stageMuteBtn');
+if (stageMuteBtnEl) stageMuteBtnEl.addEventListener('click', muteToggle);
+updateMuteUI();
 
 buildDots();
 const urlParams = new URLSearchParams(window.location.search);
@@ -761,6 +834,8 @@ function setupRehearsalTooltips() {
         const chord = target.getAttribute('data-chord');
         if (!chord) return;
 
+        if (/^[b#]?[1-7]/i.test(chord)) return;
+
         if (hoverTimeout) clearTimeout(hoverTimeout);
 
         hoverTimeout = setTimeout(async () => {
@@ -944,6 +1019,101 @@ if (rehearseSong) {
     }
 }
 
+// ── ACTIVE CHART TEXT ZOOM CONTROLS (TSK-307) ──
+let rehearseZoom = parseInt(localStorage.getItem('cg_rehearse_zoom')) || 100;
+function updateRehearseZoomUI() {
+    const display = document.getElementById('stageZoomLevelDisplay');
+    if (display) {
+        display.textContent = rehearseZoom + '%';
+    }
+    const sheet = document.getElementById('rehearsalSheet');
+    if (sheet) {
+        sheet.style.fontSize = (14 * rehearseZoom / 100) + "px";
+    }
+}
+document.getElementById('stageZoomInBtn').addEventListener('click', () => {
+    rehearseZoom = Math.min(200, rehearseZoom + 10);
+    localStorage.setItem('cg_rehearse_zoom', rehearseZoom);
+    updateRehearseZoomUI();
+});
+document.getElementById('stageZoomOutBtn').addEventListener('click', () => {
+    rehearseZoom = Math.max(50, rehearseZoom - 10);
+    localStorage.setItem('cg_rehearse_zoom', rehearseZoom);
+    updateRehearseZoomUI();
+});
+
+// ── KEY SCORING ALGORITHM & VERIFICATION (TSK-310) ──
+function parseKeyString(keyStr) {
+    if (!keyStr) return { root: 'C', mode: 'major' };
+    let normalized = ENHARMONIC[keyStr] || keyStr;
+    let root = normalized;
+    let mode = 'major';
+    if (normalized.endsWith('m')) {
+        root = normalized.slice(0, -1);
+        mode = 'minor';
+    }
+    root = ENHARMONIC[root] || root;
+    return { root, mode };
+}
+
+function findBestDiatonicKey(text) {
+    const chords = parseChords(text);
+    if (!chords.length) return null;
+
+    let results = [];
+    CHROMATIC.forEach(root => {
+        const maj = scoreKey(chords, root, MAJOR_IVLS, MAJOR_QUALS);
+        results.push({ root, mode: 'major', score: maj.score });
+        const min = scoreKey(chords, root, MINOR_IVLS, MINOR_QUALS);
+        results.push({ root, mode: 'minor', score: min.score });
+    });
+    results.sort((a,b) => b.score - a.score || (a.mode==='major' ? -0.1 : 0.1));
+    return results[0];
+}
+
+function runKeyVerification() {
+    const existing = document.getElementById('rehearseKeyWarning');
+    if (existing) {
+        existing.remove();
+    }
+
+    if (!rehearseSong || !rehearseSong.originalText) return;
+
+    const bestFit = findBestDiatonicKey(rehearseSong.originalText);
+    if (!bestFit) return;
+
+    const originalKeyObj = parseKeyString(rehearseSong.originalKey);
+    const capoFret = parseInt(rehearseSong.capo, 10) || 0;
+
+    const originalKeyIdx = CHROMATIC.indexOf(originalKeyObj.root);
+    if (originalKeyIdx === -1) return;
+
+    const expectedPlayKeyIdx = (originalKeyIdx - capoFret + 12) % 12;
+    const expectedPlayKeyMode = originalKeyObj.mode;
+
+    const bestFitSoundingKeyIdx = CHROMATIC.indexOf(bestFit.root);
+    const bestFitPlayKeyIdx = (bestFitSoundingKeyIdx - capoFret + 12) % 12;
+    const bestFitPlayKeyMode = bestFit.mode;
+
+    const keysDiffer = (expectedPlayKeyIdx !== bestFitPlayKeyIdx) || (expectedPlayKeyMode !== bestFitPlayKeyMode);
+
+    if (keysDiffer) {
+        const suffix = bestFit.mode === 'minor' ? 'm' : '';
+        const suggestedSoundingKey = bestFit.root + suffix;
+        const suggestedPlayKey = CHROMATIC[bestFitPlayKeyIdx] + suffix;
+
+        const warningHTML = `
+            <div id="rehearseKeyWarning" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); color: #f87171; padding: 12px 18px; border-radius: 8px; margin: 16px; font-size: 13px; display: flex; align-items: center; gap: 8px;">
+                <span>⚠️ Warning: The scraped key may be incorrect. Based on chords, this song sounds in <strong>${suggestedSoundingKey}</strong> (play shapes in <strong>${suggestedPlayKey}</strong> with Capo <strong>${capoFret}</strong>).</span>
+            </div>
+        `;
+        const sheet = document.getElementById('rehearsalSheet');
+        if (sheet) {
+            sheet.insertAdjacentHTML('beforebegin', warningHTML);
+        }
+    }
+}
+
 function renderSong() {
     const stageSongTitle = document.getElementById('stageSongTitle');
     if (!rehearseSong) {
@@ -956,6 +1126,10 @@ function renderSong() {
                 <a href="index.html" class="nav-btn" style="display: inline-flex; align-items: center; justify-content: center; margin-top: 16px; text-decoration: none; max-width: 200px; margin-left: auto; margin-right: auto; padding: 10px 20px; font-weight: 700; border-radius: 8px;">Go to Convert Tab</a>
             </div>
         `;
+        const existing = document.getElementById('rehearseKeyWarning');
+        if (existing) {
+            existing.remove();
+        }
         return;
     }
     
@@ -1015,6 +1189,8 @@ function renderSong() {
         <div class="sheet-content">${renderInteractivePreview(rehearseSong.text)}</div>
     `;
     
+    runKeyVerification();
+    updateRehearseZoomUI();
     setupRehearsalTooltips();
 }
 

@@ -34,7 +34,7 @@ gantt
 
 | 📥 BACKLOG (Future Scope) | 📝 TO DO (Ready for Sprint) | ⏳ IN PROGRESS | ✅ DONE (Completed) |
 | :--- | :--- | :--- | :--- |
-| • Band Sync (WebSocket Sync) <br> • Gig Tracker & Analytics <br> • Dynamic Ear Trainer & Analysis <br> • App Conversion Research (TSK-406) | • Vocal Range Matcher <br> • Stage Mode & Foot Pedal <br> • **Active Chart Zoom Controls** <br> • UG Direct URL Import (TSK-208) <br> • SVG Live Editor Sync (TSK-308) <br> • Rehearsal Tab Voicing Selector (TSK-309) <br> • Scraped Key Verification (TSK-310) <br> • Multi-Source Scraping (TSK-209) <br> • Dropdown Tiles Width (TSK-210) <br> • Tab Whitespace Cleansing (TSK-211) <br> • Title Underscore Fix (TSK-311) <br> • Mobile Layout Optimization (TSK-212) <br> • Nashville Piano SVG Toggle (TSK-312) | • Production Scraper Hardening <br> • **Rehearsal Capo/Key Switcher** <br> • Login/Signup Account Init <br> • Setlist Flow / Time Estimator (Phase 1) <br> • Spotify Playlist Importer (Phase 1) | **Sprint 1 (100% Completed)** <br> **Sprint 3 Core Phase 1:** <br> • **Piano Chord SVGs** |
+| • Band Sync (WebSocket Sync) <br> • Gig Tracker & Analytics <br> • Dynamic Ear Trainer & Analysis <br> • App Conversion Research (TSK-406) | • Vocal Range Matcher <br> • Stage Mode & Foot Pedal <br> • **Active Chart Zoom Controls** <br> • UG Direct URL Import (TSK-208) <br> • SVG Live Editor Sync (TSK-308) <br> • Rehearsal Tab Voicing Selector (TSK-309) <br> • Scraped Key Verification (TSK-310) <br> • Multi-Source Scraping (TSK-209) <br> • Dropdown Tiles Width (TSK-210) <br> • Tab Whitespace Cleansing (TSK-211) <br> • Title Underscore Fix (TSK-311) <br> • Mobile Layout Optimization (TSK-212) <br> • Nashville Piano SVG Toggle (TSK-312) <br> • Remove Inputs Toast (TSK-213) <br> • YouTube Rehearse Integration (TSK-313) <br> • Metronome Mute Button (TSK-314) <br> • URL Scrape Title Resolution (TSK-214) | • Production Scraper Hardening <br> • **Rehearsal Capo/Key Switcher** <br> • Login/Signup Account Init <br> • Setlist Flow / Time Estimator (Phase 1) <br> • Spotify Playlist Importer (Phase 1) | **Sprint 1 (100% Completed)** <br> **Sprint 3 Core Phase 1:** <br> • **Piano Chord SVGs** |
 
 ---
 
@@ -89,23 +89,29 @@ gantt
 - [X] **TSK-206: Nashville Scrape Parser Patch**
   - **Description:** Resolve formatting bug where scraping a song that lists Nashville Numbers as the input key disrupts the conversion layout.
   - **Source:** [proposed_ideas.md - Next Step 6](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/proposed_ideas.md#L60)
-- [ ] **[NEW] TSK-207: Rehearsal Tab Capo/Key Switcher**
+- [x] **[NEW] TSK-207: Rehearsal Tab Capo/Key Switcher**
   - **Description:** Add an interactive transposition capo/key control panel directly inside the Rehearse tab. Allow musicians to change key and capo fret on the fly during a rehearsal run without returning to Convert panel.
   - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
-- [ ] **[NEW] TSK-208: Ultimate Guitar Direct URL Import**
+- [x] **[NEW] TSK-208: Ultimate Guitar Direct URL Import**
   - **Description:** Add an ability for the user to be able to insert a link to ultimate guitar and pull tabs that way.
   - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
 - [ ] **[NEW] TSK-209: Multi-Source Scraping Research & Fallbacks**
   - **Description:** Research alternative chord sheet directories (e.g., e-chords, chordie) to bypass Ultimate Guitar Cloudflare blocks and implement them as fallback scrapers.
   - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
-- [ ] **[NEW] TSK-210: Dropdown Tiles Width & Panel Initial Sizing**
+- [x] **[NEW] TSK-210: Dropdown Tiles Width & Panel Initial Sizing**
   - **Description:** Default width of the dropdown tiles for the widgets doesn’t display enough text. The sliding panel should by default start 3/4 of the way to the right to allow room for the tiles to be able to display their text.
   - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
-- [ ] **[NEW] TSK-211: Scraped Tab Whitespace Cleansing & Formatting**
+- [x] **[NEW] TSK-211: Scraped Tab Whitespace Cleansing & Formatting**
   - **Description:** Some scrapes are inserting a lot of white space. Add a way to make sure the formatting looks good.
   - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
 - [ ] **[NEW] TSK-212: Mobile Layout Optimization**
   - **Description:** Implement an alternate layout for mobile phone to keep sleek look but more optimal for mobile use.
+  - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
+- [ ] **[NEW] TSK-213: Remove Inputs Changed Conversion Toast**
+  - **Description:** Get rid of the “Inputs changed - please convert again” toast.
+  - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
+- [ ] **[NEW] TSK-214: URL Scraped Title Resolution & Editable Title Preview**
+  - **Description:** If scraping using a URL, the song title should be extracted from the scraped page content rather than using the raw URL. Additionally, make the title editable in the Convert Page so that downloaded files use the customized title.
   - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
 
 ---
@@ -137,10 +143,10 @@ gantt
 - [ ] **[NEW] TSK-307: Active Chart Text Zoom Controls**
   - **Description:** Add + (Zoom In) and - (Zoom Out) controls to allow musicians to dynamically adjust font size on the interactive preview (Convert tab) and the rehearsal sheet (Rehearse tab) for optimal stage readability.
   - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
-- [ ] **[NEW] TSK-308: SVG Live Editor Sync**
+- [x] **[NEW] TSK-308: SVG Live Editor Sync**
   - **Description:** If a Chord is changed in the edit preview, the SVG should be updated.
   - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
-- [ ] **[NEW] TSK-309: Rehearsal Tab Voicing Selector**
+- [x] **[NEW] TSK-309: Rehearsal Tab Voicing Selector**
   - **Description:** User should be able to change the Voicing Mode in the Rehearse Tab.
   - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
 - [ ] **[NEW] TSK-310: Scraped Key Verification & Warning**
@@ -149,8 +155,14 @@ gantt
 - [ ] **[NEW] TSK-311: Title Space Underscore Sanitization**
   - **Description:** Titles should always have spaces not underscores, verify this and fix it.
   - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
-- [ ] **[NEW] TSK-312: Hide SVGs in Nashville Mode**
-  - **Description:** SVGs should not display if in Nashville Number system.
+- [ ] **[NEW] TSK-312: Hide Piano SVGs in Nashville Mode**
+  - **Description:** Piano SVGs should not display if in Nashville Number system.
+  - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
+- [ ] **[NEW] TSK-313: Rehearsal Tab YouTube Video Integration**
+  - **Description:** In Rehearse, similar to how ultimate guitar has it, I want a youtube link to the song able to be played while rehearsing. This can maybe be done by using the initial scrape from UG and grab the youtube link.
+  - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
+- [ ] **[NEW] TSK-314: Rehearse Metronome Audio Mute Button**
+  - **Description:** There should be a mute button for the metronome so that autoscroll may progress without the sound.
   - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
 
 ---
