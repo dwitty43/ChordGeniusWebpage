@@ -316,6 +316,15 @@
             align-items: center;
             gap: 12px;
             margin-bottom: 32px;
+            text-decoration: none;
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+        .workspace-sidebar .brand:hover {
+            transform: scale(1.02);
+            opacity: 0.95;
+        }
+        .workspace-sidebar .brand:active {
+            transform: scale(0.98);
         }
         .workspace-sidebar .brand-name {
             font-family: 'Outfit', sans-serif;
