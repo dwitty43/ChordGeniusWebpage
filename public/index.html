@@ -1552,6 +1552,25 @@ if (modalTitleEl) {
     modalTitleEl.addEventListener('blur', handleTitleSync);
 }
 
+// Live Editor sync listener
+const liveEditorEl = document.getElementById('liveEditor');
+if (liveEditorEl) {
+    const handleEditorSync = () => {
+        if (window.currentChartData) {
+            window.currentChartData.text = liveEditorEl.value;
+            const activeSongStr = localStorage.getItem('cg_active_song');
+            if (activeSongStr) {
+                try {
+                    const song = JSON.parse(activeSongStr);
+                    song.rawText = liveEditorEl.value;
+                    localStorage.setItem('cg_active_song', JSON.stringify(song));
+                } catch (e) {}
+            }
+        }
+    };
+    liveEditorEl.addEventListener('input', handleEditorSync);
+}
+
 // Zoom controls logic
 let convertZoom = parseInt(localStorage.getItem('cg_convert_zoom')) || 100;
 function applyPreviewZoom() {
