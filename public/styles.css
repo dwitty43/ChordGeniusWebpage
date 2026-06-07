@@ -316,8 +316,21 @@
             align-items: center;
             gap: 12px;
             margin-bottom: 32px;
-            text-decoration: none;
+            text-decoration: none !important;
+            border-bottom: none !important;
+            box-shadow: none !important;
+            outline: none !important;
             transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+        .workspace-sidebar .brand *,
+        .workspace-sidebar .brand:hover,
+        .workspace-sidebar .brand:focus,
+        .workspace-sidebar .brand:visited,
+        .workspace-sidebar .brand:active {
+            text-decoration: none !important;
+            border-bottom: none !important;
+            box-shadow: none !important;
+            outline: none !important;
         }
         .workspace-sidebar .brand:hover {
             transform: scale(1.02);
