@@ -13,18 +13,18 @@ Selecting a domain involves balancing upfront costs with long-term renewal fees,
 
 | TLD Extension | Registrar | 1st Year Promo | Annual Renewal | 3-Year TCO | 5-Year TCO | Features & Caveats |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **`chordgenius.com`** | **Cloudflare** | **$9.77** | **$9.77** | **$29.31** | **$48.85** | 🥇 **Best TCO.** Flat-rate wholesale. No DNS lock. |
+| **`chordgenius.com`** | **Cloudflare** | **$10.46** | **$10.46** | **$31.38** | **$52.30** | 🥇 **Best TCO.** Flat-rate wholesale. No DNS lock. *Note: Verisign wholesale price will rise to $10.97 (+$0.20 ICANN) on Nov 1, 2026.* |
 | | Porkbun | $11.08 | $11.08 | $33.24 | $55.40 | Free WHOIS privacy, 20 free email aliases. |
-| | Namecheap | $8.98 | $15.88 | $40.74 | $72.50 | Promos require coupon codes. Free basic DNS. |
+| | Namecheap | $8.98 | $18.48 | $45.94 | $82.90 | Promos require coupon codes. Free basic DNS. |
 | **`chordgenius.net`** | **Cloudflare** | **$12.13** | **$12.13** | **$36.39** | **$60.65** | At-cost pricing. Flat renewal. |
 | | Porkbun | $12.52 | $12.52 | $37.56 | $62.60 | Highly competitive. |
-| | Namecheap | $11.98 | $15.98 | $43.94 | $75.90 | Higher renewals erode intro savings. |
+| | Namecheap | $11.98 | $18.58 | $49.14 | $86.30 | Higher renewals erode intro savings. |
 | **`chordgenius.app`** | **Porkbun** | **$10.81** | $14.93 | **$40.67** | **$70.53** | 🥈 **Best Overall App TCO.** Includes 1st-year promo. |
 | | Cloudflare | $14.20 | **$14.20** | $42.60 | $71.00 | Pure wholesale. Neck-and-neck with Porkbun. |
-| | Namecheap | $12.98 | $21.98 | $56.94 | $100.90 | Steep renewal markup (~54% over wholesale). |
-| **`chordgenius.studio`**| **Porkbun** | **$11.84** | **$25.23** | **$62.30** | **$112.76** | 💎 **Best Studio Choice.** Highly recommended. |
+| | Namecheap | $12.98 | $22.98 | $58.94 | $104.90 | Steep renewal markup (~54% over wholesale). |
+| **`chordgenius.studio`**| **Porkbun** | **$11.84** | $25.23 | **$62.30** | **$112.76** | 🥇 **Best Studio TCO.** Porkbun's first-year discount makes it slightly cheaper than Cloudflare over 5 years. |
+| | Cloudflare | **$23.18** | **$23.18** | **$69.54** | **$115.90** | 💎 **Now Supported.** Pure wholesale cost. Requires Cloudflare Nameservers. |
 | | Namecheap | $12.98 | $52.98 | $118.94 | $224.90 | ⚠️ **Avoid.** Massive 110% markup on renewals. |
-| | Cloudflare | N/A | N/A | N/A | N/A | 🚫 **Not Supported.** `.studio` is absent from TLD list. |
 
 ---
 
@@ -32,8 +32,8 @@ Selecting a domain involves balancing upfront costs with long-term renewal fees,
 
 #### 1. Cloudflare Registrar
 * **Pricing Philosophy:** Strictly **at-cost**. Cloudflare charges exactly what the registry (e.g., Verisign for `.com`) sets, passing along zero retail markup.
-* **Pros:** Unbeatable multi-year TCO; unified dashboard if you already use Cloudflare for DNS/CDN; enterprise-grade two-factor authentication (2FA).
-* **Cons:** No live human support for free plans; **requires using Cloudflare Nameservers** (cannot point domain to non-Cloudflare nameservers directly while registered there); does not support specialized TLDs like `.studio`.
+* **Pros:** Unbeatable multi-year TCO; unified dashboard if you already use Cloudflare for DNS/CDN; enterprise-grade two-factor authentication (2FA); now supports specialized TLDs like `.studio`.
+* **Cons:** No live human support for free plans; **requires using Cloudflare Nameservers** (cannot point domain to non-Cloudflare nameservers directly while registered there); does not support registering domains identified as premium by the registry.
 
 #### 2. Porkbun
 * **Pricing Philosophy:** Honest, transparent, low-margin retail. Small markup added to fund operations.
@@ -54,8 +54,8 @@ Selecting a domain involves balancing upfront costs with long-term renewal fees,
    * **`chordgenius.studio`** aligns beautifully with the upgraded premium feel of "Chord Genius Studio" and represents a dedicated, expert workbench for musicians.
    * **`chordgenius.app`** emphasizes the interactive, software-centric capabilities (autoscroll, metronome, capo optimizer) but carries strict browser requirements.
 2. **Strategy:** 
-   * **If choosing `.com` or `.app`:** Register with **Porkbun** or **Cloudflare**. Porkbun offers a great balance of intro pricing and ease of use, while Cloudflare offers flat wholesale rates.
-   * **If choosing `.studio`:** Register with **Porkbun**. Cloudflare does not support `.studio`, and Namecheap's $52.98/year renewal is economically inefficient.
+    * **If choosing `.com` or `.app`:** Register with **Porkbun** or **Cloudflare**. Porkbun offers a great balance of intro pricing and ease of use, while Cloudflare offers flat wholesale rates.
+    * **If choosing `.studio`:** Register with **Porkbun** or **Cloudflare**. Porkbun's first-year discount ($11.84) makes it slightly cheaper than Cloudflare over 5 years ($112.76 vs $115.90) and allows custom nameservers. Cloudflare offers flat, zero-markup wholesale rates ($23.18/yr) and unified dashboard management. Namecheap's $52.98/year renewal is economically inefficient.
    * **HSTS Caution for `.app`:** `.app` is on Google's **HSTS Preload List**. Browsers will *strictly refuse* to load the domain over HTTP. Complete SSL provisioning is mandatory *before* any traffic goes live.
 
 ---
@@ -107,7 +107,7 @@ graph TD
 Transitioning the production application from the temporary subdomain `chordgenius.dewittcyber.com` to the new custom domain (e.g., `chordgenius.studio`) requires a systematic, zero-downtime deployment plan.
 
 ### 📅 Phase 1: Pre-Acquisition & DNS Delegation
-1. **Acquire the Domain:** Purchase your chosen domain (e.g., `chordgenius.studio`) via **Porkbun** (recommended for `.studio`) or **Cloudflare** (for `.com`).
+1. **Acquire the Domain:** Purchase your chosen domain (e.g., `chordgenius.studio`) via **Porkbun** (cheaper 5-year TCO and custom nameservers) or **Cloudflare** (flat at-cost wholesale pricing).
 2. **Add Domain to Cloudflare:**
    * Log into the Cloudflare Dashboard and select **Add a Site**.
    * Enter the new domain (e.g., `chordgenius.studio`) and choose the **Free Plan**.
@@ -225,6 +225,6 @@ gantt
 
 ### 🏆 Executive Action Plan
 To unlock premium branding and robust performance immediately, we recommend:
-1. **Purchase `chordgenius.studio`** via **Porkbun** for **$11.84** (securing long-term renewal cost control at **$25.23/yr**, saving **$112** over five years compared to Namecheap).
-2. **Optionally purchase `chordgenius.com`** via **Cloudflare Registrar** for **$9.77/yr** as a defensive brand acquisition, setting up an edge redirect to point `chordgenius.com` to `chordgenius.studio`.
+1. **Purchase `chordgenius.studio`** via **Porkbun** or **Cloudflare** (Porkbun offers an intro discount of **$11.84** and a standard renewal of **$25.23/yr**, making its 5-year TCO slightly cheaper than Cloudflare's flat **$23.18/yr** wholesale rate, while Cloudflare provides a single unified interface if already using their DNS/CDN proxy).
+2. **Optionally purchase `chordgenius.com`** via **Cloudflare Registrar** for **$10.46/yr** as a defensive brand acquisition, setting up an edge redirect to point `chordgenius.com` to `chordgenius.studio`.
 3. **Configure the Cloudflare Free Tier** as the Anycast DNS manager for both domains, enabling the Edge proxy, DDoS protection, and end-to-end **Full (Strict) SSL** to establish a secure, fast, and highly resilient architecture for **Chord Genius Studio**.
