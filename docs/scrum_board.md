@@ -26,6 +26,13 @@ gantt
     Hands-Free Stage Mode           :s4a, 2026-06-30, 6d
     WebSocket Band Sync             :s4b, after s4a, 8d
     Gig Tracker & Music Trainer     :s4c, after s4b, 8d
+    Binder Digitizer OCR Scanner    :s4d, after s4c, 7d
+    The Shred Coach Looper          :s4e, after s4d, 7d
+    Gig Request Portal & Tip Jar    :s4f, after s4e, 8d
+    Lyric Projection Casting        :s4g, after s4f, 5d
+    Virtual Jam Buddy Web Synth     :s4h, after s4g, 8d
+    section Sprint 34: Special Guitar & Tuning Lab (Low Priority)
+    Alternate Tuning Calculator     :s34a, 2026-10-01, 7d
 ```
 
 ---
@@ -34,7 +41,7 @@ gantt
 
 | 📥 BACKLOG (Future Scope) | 📝 TO DO (Ready for Sprint) | ⏳ IN PROGRESS | ✅ DONE (Completed) |
 | :--- | :--- | :--- | :--- |
-| • Band Sync (WebSocket Sync) <br> • Gig Tracker & Analytics <br> • Dynamic Ear Trainer & Analysis <br> • App Conversion Research (TSK-406) | • Vocal Range Matcher <br> • Stage Mode & Foot Pedal <br> • UG Direct URL Import (TSK-208) <br> • SVG Live Editor Sync (TSK-308) <br> • Rehearsal Tab Voicing Selector (TSK-309) <br> • Dropdown Tiles Width (TSK-210) <br> • Tab Whitespace Cleansing (TSK-211) <br> • YouTube Rehearse Integration (TSK-313) | • Production Scraper Hardening <br> • **Rehearsal Capo/Key Switcher** <br> • Login/Signup Account Init <br> • Setlist Flow / Time Estimator (Phase 1) <br> • Spotify Playlist Importer (Phase 1) | **Sprint 1 (100% Completed)** <br> **Sprint 2 Completed Tasks:** <br> • Transition Animation & Tab Routing (TSK-205) <br> • Multi-Source Scraping (TSK-209) <br> • Mobile Layout Optimization (TSK-212) <br> **Sprint 3 Core Phase 1:** <br> • **Piano Chord SVGs** <br> • **Active Chart Zoom Controls** (TSK-307) <br> • Nashville Piano SVG Toggle (TSK-312) <br> • Remove Inputs Toast (TSK-213) <br> • URL Scrape Title Resolution (TSK-214) <br> • **Scraped Key Verification** (TSK-310) <br> • **Metronome Mute Button** (TSK-314) <br> • **Title Underscore Fix** (TSK-311) |
+| • Band Sync (WebSocket Sync) <br> • Gig Tracker & Analytics <br> • Dynamic Ear Trainer & Analysis <br> • App Conversion Research (TSK-406) <br> • Binder Digitizer OCR Scanner (TSK-407) <br> • The Shred Coach Looper (TSK-408) <br> • Gig Request Portal & Tip Jar (TSK-409) <br> • Virtual Jam Buddy Synth (TSK-410) <br> • Lyric Projection Screen (TSK-411) <br> • Alternate Tuning Calculator (TSK-3401) | • Vocal Range Matcher <br> • Stage Mode & Foot Pedal <br> • UG Direct URL Import (TSK-208) <br> • SVG Live Editor Sync (TSK-308) <br> • Rehearsal Tab Voicing Selector (TSK-309) <br> • Dropdown Tiles Width (TSK-210) <br> • Tab Whitespace Cleansing (TSK-211) <br> • YouTube Rehearse Integration (TSK-313) <br> • User-Side Import (Option B) (TSK-215) | • Production Scraper Hardening <br> • **Rehearsal Capo/Key Switcher** <br> • Login/Signup Account Init <br> • Setlist Flow / Time Estimator (Phase 1) <br> • Spotify Playlist Importer (Phase 1) | **Sprint 1 (100% Completed)** <br> **Sprint 2 Completed Tasks:** <br> • Transition Animation & Tab Routing (TSK-205) <br> • Multi-Source Scraping (TSK-209) <br> • Mobile Layout Optimization (TSK-212) <br> **Sprint 3 Core Phase 1:** <br> • **Piano Chord SVGs** <br> • **Active Chart Zoom Controls** (TSK-307) <br> • Nashville Piano SVG Toggle (TSK-312) <br> • Remove Inputs Toast (TSK-213) <br> • URL Scrape Title Resolution (TSK-214) <br> • **Scraped Key Verification** (TSK-310) <br> • **Metronome Mute Button** (TSK-314) <br> • **Title Underscore Fix** (TSK-311) |
 
 ---
 
@@ -113,6 +120,9 @@ gantt
 - [x] **[NEW] TSK-214: URL Scraped Title Resolution & Editable Title Preview**
   - **Description:** If scraping using a URL, the song title should be extracted from the scraped page content rather than using the raw URL. Additionally, make the title editable in the Convert Page so that downloaded files use the customized title.
   - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
+- [ ] **[NEW] TSK-215: User-Side Client-Only Import (Option B)**
+  - **Description:** Shift the scraping responsibility from the backend server to the client's browser (e.g. via a browser extension or client-side copy-paste importer script) so the user logs in and imports songs locally, protecting ChordGenius from direct copyright distribution liability.
+  - **Source:** [Legal Risk Assessment (Option B)](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/refinement_innovation_proposal.md)
 
 ---
 
@@ -188,6 +198,30 @@ gantt
 - [ ] **[NEW] TSK-406: Native App Conversion Research**
   - **Description:** Look into making this into an app.
   - **Source:** [Notion ChordGenius Hub Ideas](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/scrum_board.md)
+- [ ] **[NEW] TSK-407: Binder Digitizer OCR Scanner**
+  - **Description:** Upload photos/scans of paper chord sheets, run client-side OCR (Tesseract.js), parse into structured ChordPro markup, and load in the editor.
+  - **Source:** [refinement_innovation_proposal.md - Feature 1](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/refinement_innovation_proposal.md)
+- [ ] **[NEW] TSK-408: The Shred Coach Looper & Speed Ramp**
+  - **Description:** Loop selected chord sheet sections with automatic tempo ramping (+5% BPM per cycle) or pitch modulation (modulating keys).
+  - **Source:** [refinement_innovation_proposal.md - Feature 2](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/refinement_innovation_proposal.md)
+- [ ] **[NEW] TSK-409: Gig Request Portal & Live Tip Jar**
+  - **Description:** Create a public-facing artist request portal with Venmo/Stripe tips, feeding requested songs in real-time to the active Stage Mode screen.
+  - **Source:** [refinement_innovation_proposal.md - Feature 4](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/refinement_innovation_proposal.md)
+- [ ] **[NEW] TSK-410: Virtual Jam Buddy Web Audio Synth**
+  - **Description:** Synthesize interactive MIDI backing tracks (drums, bass, pads) using browser Web Audio API, adjusting dynamically to tempo and keys.
+  - **Source:** [refinement_innovation_proposal.md - Feature 5](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/refinement_innovation_proposal.md)
+- [ ] **[NEW] TSK-411: Lyric Projection Screen (Congregation Mode)**
+  - **Description:** Open a secondary borderless window projecting large, clean, auto-scrolling lyrics for live sing-alongs, cast from the band leader's screen.
+  - **Source:** [refinement_innovation_proposal.md - Feature 7](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/refinement_innovation_proposal.md)
+
+---
+
+### 🌀 Sprint 34: Special Guitar & Tuning Lab (Priority: Low)
+* **Goal:** Expand instrument-specific chord voicing engines to support alternate guitar and string tunings.
+
+- [ ] **TSK-3401: Alternate Tuning Calculator (Tuning & Capo Lab)**
+  - **Description:** Algorithmic voicing recalculator for non-standard guitar tunings (Drop D, DADGAD, Open G, Eb Standard) with custom SVG diagram rendering.
+  - **Source:** [refinement_innovation_proposal.md - Feature 3](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/docs/refinement_innovation_proposal.md)
 
 ---
 
