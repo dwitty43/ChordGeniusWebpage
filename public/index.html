@@ -90,7 +90,7 @@
                     <div class="info-body" id="infoBody">
                         <p>Chord Genius is designed for professional transposition, capo calculation, and setlist binding.</p>
                         <ul>
-                            <li><strong>1. Search:</strong> Enter a song query to instantly scrape and transpose charts from the web.</li>
+                            <li><strong>1. Paste &amp; Convert:</strong> Paste a chord chart text block and enter the title to transpose and format it dynamically.</li>
                             <li><strong>2. Upload:</strong> Drag &amp; drop standard .txt, .docx, .pdf, or ChordPro (.pro) files.</li>
                             <li><strong>3. Custom Tuning:</strong> Transpose dynamically to any key, or select "Nashville Numbers". Use the Capo selector to let the optimizer do the fingering math for you.</li>
                             <li><strong>4. Interactive Stage:</strong> Once converted, review chord diagrams by hovering over the highlighted chords in the Stage View.</li>
@@ -103,11 +103,11 @@
                 <!-- SEARCH CONSOLE -->
                 <div class="console-box">
                     <div class="section-label">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/></svg>
-                        Search &amp; Convert
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                        Paste &amp; Convert
                     </div>
                     <div class="grid-inputs" style="margin-bottom: 24px;">
-                        <input type="text" id="songQuery" placeholder='Song, artist, or Ultimate Guitar URL (e.g. "Yellow – Coldplay")'>
+                        <input type="text" id="songQuery" placeholder="Song Title &amp; Artist (e.g. Coldplay - Yellow)">
                         <select id="songKey"></select>
                         <select id="targetKeySearch"></select>
                         <select id="capoSearch">
@@ -133,6 +133,7 @@
                             <option value="6">6/8</option>
                         </select>
                     </div>
+                    <textarea id="pasteChartText" placeholder="Paste chord chart text here..." style="background-color: var(--bg-dark); border: 1px solid var(--border); color: var(--text); font-family: monospace; padding: 12px; border-radius: 8px; height: 180px; width: 100%; resize: vertical; margin-bottom: 24px; box-sizing: border-box; outline: none;"></textarea>
                     <div class="toggle-row" style="margin-bottom: 20px;">
                         <label class="toggle-label" for="simplifyChords" style="margin-bottom: 8px;">
                             <div class="toggle-switch">
@@ -177,7 +178,7 @@
                         </select>
                         <button id="searchBtn">
                             <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                            Scrape
+                            Convert
                         </button>
                         <button id="previewSearchBtn" class="previewBtn" disabled>
                             Preview
@@ -280,12 +281,12 @@
                     </div>
                 </div>
 
-                <!-- RECENT SEARCHES -->
+                <!-- RECENT CONVERSIONS -->
                 <div class="console-box" id="historySection" style="display:none">
                     <div class="history-header">
                         <span class="history-label">
                             <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            Scrape Again
+                            Convert Again
                         </span>
                         <button class="history-clear" id="historyClear">Clear all</button>
                     </div>
@@ -530,6 +531,11 @@ function rerunHistory(entry) {
     document.getElementById('targetKeySearch').value = entry.targetKey || '';
     document.getElementById('searchFormat').value = entry.format || 'docx';
     document.getElementById('capoSearch').value = entry.capo || '0';
+    if (entry.originalText || entry.rawText) {
+        document.getElementById('pasteChartText').value = entry.originalText || entry.rawText;
+    } else {
+        document.getElementById('pasteChartText').value = '';
+    }
     if (entry.bpm) {
         document.getElementById('songBpm').value = entry.bpm;
         localStorage.setItem('cg_last_bpm', entry.bpm);
@@ -632,12 +638,13 @@ if (simplifyChords) {
 // ── SEARCH TO LIVE EDITOR ──
 const searchBtn = document.getElementById('searchBtn');
 searchBtn.addEventListener('click', async () => {
-    const query = document.getElementById('songQuery').value;
+    const pasteText = document.getElementById('pasteChartText').value;
+    if(!pasteText) return showStatus("Please paste a chord chart first!", "error");
+
+    const query = document.getElementById('songQuery').value || 'Untitled Song';
     const key = document.getElementById('songKey').value;
     const targetKey = document.getElementById('targetKeySearch').value;
     const format = document.getElementById('searchFormat').value;
-    
-    if(!query) return showStatus("Please enter a song name!", "error");
     
     const orig = searchBtn.innerHTML;
     searchBtn.innerHTML = '⏳ Processing...'; 
@@ -645,21 +652,33 @@ searchBtn.addEventListener('click', async () => {
     pvSearchBtn.disabled = true;
     pvSearchBtn.classList.remove('gold-glow');
     dlSearchBtn.disabled = true;
-    showStatus("Fetching data and loading into editor...", "active");
+    showStatus("Processing data and loading into editor...", "active");
     
     const isSimplify = document.getElementById('simplifyChords').checked;
     const capo = document.getElementById('capoSearch').value;
-    let url = `/api/preview?q=${encodeURIComponent(query)}&simplify=${isSimplify}&capo=${encodeURIComponent(capo)}`;
-    if(key) url += `&key=${encodeURIComponent(key)}`;
-    if(targetKey) url += `&targetKey=${encodeURIComponent(targetKey)}`;
     const inputBpm = document.getElementById('songBpm').value;
-    if(inputBpm) url += `&bpm=${encodeURIComponent(inputBpm)}`;
     const inputTimeSig = document.getElementById('songTimeSignature').value;
-    if(inputTimeSig) url += `&timeSignature=${encodeURIComponent(inputTimeSig)}`;
+
+    const payload = {
+        text: pasteText,
+        title: query,
+        originalKey: key,
+        targetKey: targetKey,
+        simplify: isSimplify,
+        capo: capo,
+        bpm: inputBpm,
+        timeSignature: inputTimeSig
+    };
     
     try {
-        const res = await fetch(url);
-        if(!res.ok) throw new Error((await res.json()).error || "Search failed.");
+        const res = await fetch('/api/paste-preview', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+        if(!res.ok) throw new Error((await res.json()).error || "Conversion failed.");
         
         // Save data globally for the Setlist builder & Modal
         window.currentChartData = await res.json();
@@ -678,6 +697,7 @@ searchBtn.addEventListener('click', async () => {
             bpm: window.currentChartData.bpm,
             timeSignature: window.currentChartData.timeSignature,
             rawText: window.currentChartData.text,
+            originalText: window.currentChartData.originalText,
             format: document.getElementById('searchFormat').value,
             capo: window.currentChartData.capo || '0',
             playKey: window.currentChartData.playKey || ''
@@ -717,13 +737,14 @@ searchBtn.addEventListener('click', async () => {
         
         const capoSearchVal = document.getElementById('capoSearch').value;
         addToHistory({
-            query, 
-            key, 
-            targetKey, 
-            format, 
+            query: activeSong.query || query, 
+            key: activeSong.key, 
+            targetKey: activeSong.targetKey, 
+            format: activeSong.format, 
             capo: capoSearchVal, 
             bpm: window.currentChartData.bpm, 
-            timeSignature: window.currentChartData.timeSignature
+            timeSignature: window.currentChartData.timeSignature,
+            originalText: window.currentChartData.originalText
         });
     } catch(e) {
         showStatus(`Error: ${e.message}`, "error");
@@ -2151,6 +2172,7 @@ updateProStatusUI();
                     document.getElementById('songBpm').value = song.bpm || '';
                     document.getElementById('songTimeSignature').value = song.timeSignature || '';
                     document.getElementById('searchFormat').value = song.format || 'docx';
+                    document.getElementById('pasteChartText').value = song.originalText || song.rawText || '';
                     
                     document.getElementById('previewSearchBtn').disabled = false;
                     document.getElementById('previewSearchBtn').classList.add('gold-glow');

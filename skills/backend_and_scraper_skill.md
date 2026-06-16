@@ -60,14 +60,18 @@ When scraping Ultimate Guitar (`ultimate-guitar.com`), direct server-side reques
 
 | Endpoint | Method | Input Parameters | Output Format | Purpose |
 | :--- | :--- | :--- | :--- | :--- |
-| `/api/convert` | GET | `q`, `key`, `targetKey`, `format`, `simplify`, `capo`, `voicing` | Binary File (`.docx`, `.pdf`, `.pro`) | Scrapes, transposes, and downloads a song chart. |
-| `/api/preview` | GET | `q`, `key`, `targetKey`, `simplify`, `capo` | JSON | Returns transposed text metadata along with `originalText` (raw scraped text) for live editor preview. |
+| `/api/convert` | GET | `q`, `key`, `targetKey`, `format`, `simplify`, `capo`, `voicing` | JSON (403) | **Disabled/Blocked** for legal compliance. Returns 403 Forbidden. |
+| `/api/preview` | GET | `q`, `key`, `targetKey`, `simplify`, `capo` | JSON (403) | **Disabled/Blocked** for legal compliance. Returns 403 Forbidden. |
+| `/api/paste-preview` | POST | `{ text, title, originalKey, targetKey, simplify, capo, bpm, timeSignature }` | JSON | Transposes pasted chord chart text and returns it along with metadata. |
 | `/api/transpose` | POST | `{ text, originalKey, targetKey, capo, simplify }` | JSON | Transposes a raw text block on the fly. |
 | `/api/transition-remedies` | GET | `key1`, `key2` | JSON | Calculates Circle transition distances and recommends capos/keys. |
 | `/api/import` | POST | Multipart Form (`chartFile`, `key`, `targetKey`, `format`, `capo`, `voicing`) | Binary File | Extracts text from uploaded PDF/Word/ChordPro, transposes, and downloads. |
 | `/api/import-preview` | POST | Multipart Form (`chartFile`, `key`, `targetKey`, `simplify`, `capo`) | JSON | Extracts, transposes, and returns text metadata with `originalText` (raw imported text) for previewing. |
 | `/api/chord-svg` | GET | `chord`, `voicing` (`guitar` or `piano`) | SVG XML | Generates inline SVG of chord shapes. |
 | `/api/spotify/playlist-import` | POST | `{ playlistId, playlistUrl, limit, offset }` | JSON | Paginated track import (max 15) with auto-detected BPMs/keys. |
+
+> [!IMPORTANT]
+> **Legal Compliance & Scraper Backups**: Web scraping endpoints are blocked for legal compliance. The original scraping modules are backed up at `backend/server.backup.js` and `backend/engine.backup.js`. See `docs/compliance_guidelines.md` for restoration instructions.
 
 ---
 

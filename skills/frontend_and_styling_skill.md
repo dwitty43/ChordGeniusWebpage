@@ -5,7 +5,7 @@ This document defines the client-side engineering structures, design token syste
 ---
 
 ## 📂 Frontend File Architecture
-*   [public/index.html](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/public/index.html): The primary workstation ("Convert" interface) containing the Search, Upload, Live Editor, Setlist Builder, and Chord Tooltip widgets.
+*   [public/index.html](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/public/index.html): The primary workstation ("Convert" interface) containing the Paste & Convert, Upload, Live Editor, Setlist Builder, and Chord Tooltip widgets.
 *   [public/rehearse.html](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/public/rehearse.html): The performance workstation ("Rehearse" page) containing the auto-scrolling engine, audio metronome, and on-the-fly transposition controls.
 *   [public/styles.css](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/public/styles.css): The unified stylesheet containing theme color tokens, custom scrollbars, transitions, and CSS layouts.
 *   [public/premium.html](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/public/premium.html) & [public/login.html](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/public/login.html): Secondary pages for billing simulation and user accounts.
@@ -62,7 +62,7 @@ The resizer element must sit between resizable panels:
 ### 🎬 Panel, Tab & Transition Animations
 1.  **Workstation Panel Load Animations**: All main workspace panels (`.panel-left`, `.panel-right`) must fade-in and slide-up smoothly on load (`panelFadeInUp` keyframes animation) to provide a polished tab-switching visual feedback. A slight staggered delay is applied to the right panel.
 2.  **Tab Switch Micro-Animations**: Inner toggled panels (such as `#liveEditor` and `#interactivePreview` inside the preview overlay, or Sign In/Sign Up forms on the login page) must use a subtle fade-in and translation micro-animation (`tabContentFadeIn` or `fadeIn`) when displayed.
-3.  **Stage View Default State**: Opening any chart preview (from search, file upload, or history/setlist queue) must default to the Stage View ("Interactive Preview"). All entry points must trigger `resetModalPreviewState()` to reset modal tabs to preview mode.
+3.  **Stage View Default State**: Opening any chart preview (from paste-convert, file upload, or history/setlist queue) must default to the Stage View ("Interactive Preview"). All entry points must trigger `resetModalPreviewState()` to reset modal tabs to preview mode.
 
 ---
 

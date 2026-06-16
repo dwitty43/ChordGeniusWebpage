@@ -170,7 +170,65 @@ async function deliverFile(res, finalChart, originalName, originalKey, targetKey
 
 // --- ROUTE 1: SEARCH ---
 app.get('/api/convert', async (req, res) => {
-    return res.status(403).json({ error: "Scraping has been disabled for legal compliance. Please use the Paste & Convert tool instead." });
+    const query = req.query.q;
+    let songKey = req.query.key;
+    if (songKey === 'nashville') songKey = '';
+    const targetKey = req.query.targetKey || ''; 
+    const format = req.query.format || 'docx';
+    const simplify = req.query.simplify === 'true';
+    const bpm = req.query.bpm || '';
+    const capo = parseInt(req.query.capo, 10) || 0;
+    const timeSignature = req.query.timeSignature || '';
+    const columns = req.query.columns || '1';
+    const voicing = req.query.voicing || 'guitar';
+
+    if (!query) return res.status(400).json({ error: "Please provide a song query." });
+
+    try {
+        console.log(`[API] Searching for: ${query}`);
+        
+        let tabUrl;
+        if (typeof query === 'string' && /(tabs\.ultimate-guitar\.com|e-chords\.com)/i.test(query)) {
+            tabUrl = query.trim();
+            if (!/^https?:\/\//i.test(tabUrl)) {
+                tabUrl = 'https://' + tabUrl;
+            }
+            console.log(`[API] Skipping search for direct URL: ${tabUrl}`);
+        } else {
+            tabUrl = await getFirstSearchResult(query);
+        }
+        const html = await fetchUGPage(tabUrl);
+        const tabData = extractAnyTabData(html, tabUrl);
+        
+        let spotifyMeta = null;
+        if (!songKey || !bpm || !timeSignature) {
+            spotifyMeta = await getSpotifyTrackMetadata(query);
+        }
+
+        if (!songKey) songKey = tabData.songKey || (spotifyMeta ? spotifyMeta.spotifyKey : null);
+
+        if (!songKey) {
+            return res.status(400).json({ error: "No key found on UG. Please provide a manual key.", needsManualKey: true });
+        }
+
+        const finalBpm = bpm || (spotifyMeta ? spotifyMeta.bpm : '');
+        const finalTimeSig = timeSignature || (spotifyMeta ? spotifyMeta.timeSignature : '');
+
+        console.log(`[API] Transposing chart...`);
+        const finalChart = processAndAlignTabs(tabData.rawTabText, songKey, targetKey, false, simplify, capo);
+        
+        let title = query;
+        if (typeof query === 'string' && /(tabs\.ultimate-guitar\.com|e-chords\.com)/i.test(query)) {
+            title = tabData.songTitle || query;
+        }
+        title = title.replace(/_/g, ' ').trim();
+
+        await deliverFile(res, finalChart, title, songKey, targetKey, format, finalBpm, capo, finalTimeSig, columns, voicing);
+
+    } catch (error) {
+        console.error(`[API Error]`, error.message);
+        if (!res.headersSent) res.status(500).json({ error: error.message });
+    }
 });
 
 // --- ROUTE 4: BATCH SETLIST BINDER EXPORT ---
@@ -277,39 +335,54 @@ app.get('/api/transition-remedies', (req, res) => {
 
 // --- ROUTE 3: RAW TEXT GENERATOR FOR EDITOR ---
 app.get('/api/preview', async (req, res) => {
-    return res.status(403).json({ error: "Scraping has been disabled for legal compliance. Please use the Paste & Convert tool instead." });
-});
-
-// --- NEW ROUTE: PASTE PREVIEW ---
-app.post('/api/paste-preview', (req, res) => {
-    const { text, title, originalKey, targetKey, simplify, capo, bpm, timeSignature } = req.body;
-    if (!text) {
-        return res.status(400).json({ error: "Please provide the chord chart text." });
-    }
-    
+    let { q: query, key: songKey, targetKey, simplify, capo: capoParam } = req.query;
+    if (songKey === 'nashville') songKey = '';
     try {
-        const parsedCapo = parseInt(capo, 10) || 0;
-        const isSimplify = simplify === true || simplify === 'true';
-        
-        // Process and transpose
-        const finalChart = processAndAlignTabs(text, originalKey || '', targetKey || '', false, isSimplify, parsedCapo);
-        
-        // Calculate playKey
-        let playKey = '';
-        if (parsedCapo > 0 && originalKey) {
-            playKey = getPlayKey(targetKey || originalKey, parsedCapo);
+        let tabUrl;
+        if (typeof query === 'string' && /(tabs\.ultimate-guitar\.com|e-chords\.com)/i.test(query)) {
+            tabUrl = query.trim();
+            if (!/^https?:\/\//i.test(tabUrl)) {
+                tabUrl = 'https://' + tabUrl;
+            }
+            console.log(`[API] Skipping search for direct URL: ${tabUrl}`);
+        } else {
+            tabUrl = await getFirstSearchResult(query);
         }
+        const html = await fetchUGPage(tabUrl);
+        const tabData = extractAnyTabData(html, tabUrl);
         
-        res.json({
-            title: title || 'Untitled Song',
-            originalKey: originalKey || '',
-            targetKey: targetKey || 'Nashville',
-            text: finalChart,
-            originalText: text,
-            capo: parsedCapo,
+        let spotifyMeta = null;
+        try {
+            spotifyMeta = await getSpotifyTrackMetadata(query);
+        } catch (e) {
+            console.log(`[Spotify] Preview metadata fetch failed: ${e.message}`);
+        }
+
+        const finalKey = songKey || tabData.songKey || (spotifyMeta ? spotifyMeta.spotifyKey : null);
+        if (!finalKey) return res.status(400).json({ error: "No key found." });
+
+        const isSimplify = simplify === 'true';
+        const capo = parseInt(capoParam, 10) || 0;
+        const finalChart = processAndAlignTabs(tabData.rawTabText, finalKey, targetKey || '', false, isSimplify, capo);
+        const playKey = capo > 0 ? getPlayKey(targetKey || finalKey, capo) : '';
+        
+        let title = query;
+        if (typeof query === 'string' && /(tabs\.ultimate-guitar\.com|e-chords\.com)/i.test(query)) {
+            title = tabData.songTitle || query;
+        }
+        title = title.replace(/_/g, ' ').trim();
+
+        res.json({ 
+            title: title, 
+            originalKey: finalKey, 
+            targetKey: targetKey || 'Nashville', 
+            text: finalChart, 
+            originalText: tabData.rawTabText,
+            capo: capo, 
             playKey: playKey,
-            bpm: bpm || '',
-            timeSignature: timeSignature || ''
+            bpm: spotifyMeta ? spotifyMeta.bpm : '',
+            timeSignature: spotifyMeta ? spotifyMeta.timeSignature : '',
+            spotifyKey: spotifyMeta ? spotifyMeta.spotifyKey : ''
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
