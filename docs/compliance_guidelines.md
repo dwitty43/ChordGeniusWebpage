@@ -13,28 +13,28 @@ Previously, ChordGenius featured backend scrapers that queried DuckDuckGo, Ultim
 
 ---
 
-## 📂 Backup Registry
+## 📂 Standalone Scraping Repository: ChordGeniusWScraping
 
-To ensure zero loss of legacy IP and reference implementations, exact copies of the original scraping-enabled backend modules were created prior to modification.
+To ensure zero loss of legacy IP and to allow personal scraping use, the entire original scraping-enabled codebase has been moved to a separate standalone repository:
+*   **Location**: `c:\Users\Dwitt\Projects\ChordGeniusWScraping`
+*   **State**: Reset to the exact commit prior to disabling the scraping engine (`bd1d8ddd1c67e81d68ff8a8ceef58d9e01276cd5`).
 
-### Backup Locations
-*   **`backend/server.backup.js`**: Contains the original Spotify metadata integration and search-based endpoints (`GET /api/convert` and `GET /api/preview`).
-*   **`backend/engine.backup.js`**: Contains the full Puppeteer-extra-stealth catalog search engine, DDG Lite parser, E-Chords fallback, and Google Web Cache fetch logic.
-
-### How to Restore the Scraping Engine
-If you are running ChordGenius in an isolated, private environment where scraping is legally permitted and configured with ZenRows/ScrapingBee keys, you can restore scraping functionality:
-
-1.  **Overwriting Server**: Replace `backend/server.js` with `backend/server.backup.js`.
-2.  **Overwriting Engine**: Replace `backend/engine.js` with `backend/engine.backup.js`.
-3.  **Environment Variables**: Ensure your `.env` contains the required keys:
+### How to Run the Scraping Repository
+If you are running the scraping version of ChordGenius in an isolated, private environment:
+1.  Navigate to the repository folder: `c:\Users\Dwitt\Projects\ChordGeniusWScraping`
+2.  Ensure your `.env` file contains the required API keys:
     ```bash
     ZENROWS_API_KEY=your_key
     SCRAPINGBEE_API_KEY=your_key
     USE_SCRAPING_API=true
     ```
-4.  **Install Puppeteer**: If not already present, ensure Puppeteer and stealth dependencies are installed:
+3.  Install all dependencies:
     ```bash
-    npm install puppeteer puppeteer-extra puppeteer-extra-plugin-stealth
+    npm install
+    ```
+4.  Start the scraping application:
+    ```bash
+    npm run dev
     ```
 
 ---

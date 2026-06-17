@@ -1819,54 +1819,6 @@ function runKeyVerification() {
     if (existing) {
         existing.remove();
     }
-
-    if (!window.currentChartData || !window.currentChartData.originalText) return;
-
-    const targetKey = (window.currentChartData.targetKey || '').trim();
-    const originalKey = (window.currentChartData.originalKey || '').trim();
-
-    if (!targetKey || /^nashville$/i.test(targetKey) || /^nashville$/i.test(originalKey)) return;
-
-    const bestFit = findBestDiatonicKey(window.currentChartData.originalText);
-    if (!bestFit) return;
-
-    const originalKeyObj = parseKeyString(window.currentChartData.originalKey);
-    const originalCapo = parseOriginalCapo(window.currentChartData.originalText);
-
-    const originalKeyIdx = CHROMATIC.indexOf(originalKeyObj.root);
-    if (originalKeyIdx === -1) return;
-
-    const expectedPlayKeyIdx = (originalKeyIdx - originalCapo + 12) % 12;
-    const expectedPlayKeyMode = originalKeyObj.mode;
-
-    const bestFitPlayKeyIdx = CHROMATIC.indexOf(bestFit.root);
-    const bestFitPlayKeyMode = bestFit.mode;
-
-    const keysDiffer = (expectedPlayKeyIdx !== bestFitPlayKeyIdx) || (expectedPlayKeyMode !== bestFitPlayKeyMode);
-
-    if (keysDiffer) {
-        const suffix = bestFit.mode === 'minor' ? 'm' : '';
-        const suggestedSoundingKeyIdx = (bestFitPlayKeyIdx + originalCapo) % 12;
-        const suggestedSoundingKey = CHROMATIC[suggestedSoundingKeyIdx] + suffix;
-
-        const voicing = localStorage.getItem('cg_voicing_mode') || 'guitar';
-        let warningText = `Based on chords, this song sounds in <strong>${suggestedSoundingKey}</strong>`;
-        
-        if (voicing === 'guitar') {
-            const bestGuitar = getBestCommonGuitarShape(suggestedSoundingKeyIdx, bestFit.mode);
-            warningText += ` (play shapes in <strong>${bestGuitar.playKey}</strong> with Capo <strong>${bestGuitar.capo}</strong>)`;
-        }
-
-        const warningHTML = `
-            <div id="previewKeyWarning" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.25); color: #f87171; padding: 12px 18px; border-radius: 8px; margin: 16px; font-size: 13px; display: flex; align-items: center; gap: 8px;">
-                <span>⚠️ Warning: The scraped key may be incorrect. ${warningText}.</span>
-            </div>
-        `;
-        const body = document.getElementById('modalBody');
-        if (body) {
-            body.insertAdjacentHTML('afterbegin', warningHTML);
-        }
-    }
 }
 
 function resetModalPreviewState() {
