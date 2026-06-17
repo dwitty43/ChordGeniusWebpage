@@ -1693,9 +1693,14 @@ modalTabPreview.addEventListener('click', () => switchModalTab('preview'));
 
 let hoverTimeout = null;
 let activeTooltip = null;
+let closeTooltipTimeout = null;
+if (!window.chordVoicingPreferences) {
+    window.chordVoicingPreferences = {};
+}
 
 function removeActiveTooltip() {
     if (hoverTimeout) clearTimeout(hoverTimeout);
+    if (closeTooltipTimeout) clearTimeout(closeTooltipTimeout);
     if (activeTooltip) {
         activeTooltip.style.opacity = '0';
         activeTooltip.style.transform = 'scale(0.9) translateY(10px)';
@@ -1827,6 +1832,68 @@ function resetModalPreviewState() {
     runKeyVerification();
 }
 
+// Render interactive tooltip chord content with pagination controls
+async function renderTooltipChord(chord, index) {
+    if (!activeTooltip) return;
+    try {
+        const voicing = localStorage.getItem('cg_voicing_mode') || 'guitar';
+        const res = await fetch(`/api/chord-svg?chord=${encodeURIComponent(chord)}&voicing=${voicing}&index=${index}`);
+        if (!res.ok) return;
+
+        const total = parseInt(res.headers.get('X-Chord-Voicing-Total') || '1', 10);
+        const actualIndex = parseInt(res.headers.get('X-Chord-Voicing-Index') || '0', 10);
+        const svgText = await res.text();
+
+        // Update chord voicing preference globally
+        window.chordVoicingPreferences[chord] = actualIndex;
+
+        if (voicing === 'piano') {
+            activeTooltip.classList.add('piano-mode');
+            activeTooltip.style.height = '115px';
+            activeTooltip.style.width = '240px';
+            activeTooltip.innerHTML = svgText;
+        } else {
+            activeTooltip.classList.remove('piano-mode');
+            activeTooltip.style.height = '130px';
+            activeTooltip.style.width = '100px';
+
+            let controlsHtml = '';
+            if (total > 1) {
+                controlsHtml = `
+                    <div class="voicing-controls">
+                        <button class="voicing-nav-btn prev-voicing" data-chord="${chord}" data-idx="${actualIndex - 1}">&larr;</button>
+                        <span class="voicing-indicator">${actualIndex + 1}/${total}</span>
+                        <button class="voicing-nav-btn next-voicing" data-chord="${chord}" data-idx="${actualIndex + 1}">&rarr;</button>
+                    </div>
+                `;
+            }
+            activeTooltip.innerHTML = controlsHtml + `<div class="svg-container" style="display: flex; justify-content: center; align-items: center; width: 100%;">${svgText}</div>`;
+
+            // Bind button click events
+            const prevBtn = activeTooltip.querySelector('.prev-voicing');
+            const nextBtn = activeTooltip.querySelector('.next-voicing');
+            if (prevBtn) {
+                prevBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const c = prevBtn.getAttribute('data-chord');
+                    const idx = parseInt(prevBtn.getAttribute('data-idx'), 10);
+                    renderTooltipChord(c, idx);
+                });
+            }
+            if (nextBtn) {
+                nextBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const c = nextBtn.getAttribute('data-chord');
+                    const idx = parseInt(nextBtn.getAttribute('data-idx'), 10);
+                    renderTooltipChord(c, idx);
+                });
+            }
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
 interactivePreview.addEventListener('mouseover', (e) => {
     if (!document.getElementById('enableTooltips').checked) return;
     const target = e.target.closest('.chord-hoverable');
@@ -1837,33 +1904,38 @@ interactivePreview.addEventListener('mouseover', (e) => {
 
     if (/^[b#]?[1-7]/i.test(chord)) return;
 
+    if (closeTooltipTimeout) clearTimeout(closeTooltipTimeout);
     if (hoverTimeout) clearTimeout(hoverTimeout);
 
     hoverTimeout = setTimeout(async () => {
         if (!document.getElementById('enableTooltips').checked) return;
         try {
             const voicing = localStorage.getItem('cg_voicing_mode') || 'guitar';
-            const res = await fetch(`/api/chord-svg?chord=${encodeURIComponent(chord)}&voicing=${voicing}`);
-            if (!res.ok) return;
-            const svgText = await res.text();
-
+            
             if (!activeTooltip) {
                 activeTooltip = document.createElement('div');
                 activeTooltip.className = 'chord-tooltip';
+                
+                // Add hover bridge listeners
+                activeTooltip.addEventListener('mouseenter', () => {
+                    if (closeTooltipTimeout) clearTimeout(closeTooltipTimeout);
+                });
+                activeTooltip.addEventListener('mouseleave', () => {
+                    if (closeTooltipTimeout) clearTimeout(closeTooltipTimeout);
+                    closeTooltipTimeout = setTimeout(() => {
+                        removeActiveTooltip();
+                    }, 350);
+                });
+                
                 document.body.appendChild(activeTooltip);
             }
 
-            if (voicing === 'piano') {
-                activeTooltip.classList.add('piano-mode');
-            } else {
-                activeTooltip.classList.remove('piano-mode');
-            }
-
-            activeTooltip.innerHTML = svgText;
+            const initialIndex = window.chordVoicingPreferences[chord] || 0;
+            await renderTooltipChord(chord, initialIndex);
 
             const rect = target.getBoundingClientRect();
             const tooltipWidth = voicing === 'piano' ? 240 : 100;
-            const tooltipHeight = voicing === 'piano' ? 115 : 110;
+            const tooltipHeight = voicing === 'piano' ? 115 : 130;
 
             const left = rect.left + window.scrollX + (rect.width - tooltipWidth) / 2;
             let top = rect.top + window.scrollY - tooltipHeight - 8;
@@ -1885,7 +1957,11 @@ interactivePreview.addEventListener('mouseover', (e) => {
 interactivePreview.addEventListener('mouseout', (e) => {
     const target = e.target.closest('.chord-hoverable');
     if (!target) return;
-    removeActiveTooltip();
+    
+    if (closeTooltipTimeout) clearTimeout(closeTooltipTimeout);
+    closeTooltipTimeout = setTimeout(() => {
+        removeActiveTooltip();
+    }, 350);
 });
 
 // Initialize Chord Hover Diagrams settings
@@ -1944,6 +2020,76 @@ function getChordAtCursor(text, pos) {
     return null;
 }
 
+async function renderEditorChordPreview(chord, index) {
+    const previewCard = document.getElementById('editorChordPreview');
+    if (!previewCard) return;
+    try {
+        const voicing = localStorage.getItem('cg_voicing_mode') || 'guitar';
+        const res = await fetch(`/api/chord-svg?chord=${encodeURIComponent(chord)}&voicing=${voicing}&index=${index}`);
+        if (!res.ok) {
+            previewCard.classList.remove('visible');
+            previewCard.style.display = 'none';
+            return;
+        }
+        
+        const total = parseInt(res.headers.get('X-Chord-Voicing-Total') || '1', 10);
+        const actualIndex = parseInt(res.headers.get('X-Chord-Voicing-Index') || '0', 10);
+        const svgText = await res.text();
+        
+        // Update preference globally
+        window.chordVoicingPreferences[chord] = actualIndex;
+        
+        if (voicing === 'piano') {
+            previewCard.classList.add('piano-mode');
+            previewCard.style.height = '115px';
+            previewCard.style.width = '240px';
+            previewCard.innerHTML = svgText;
+        } else {
+            previewCard.classList.remove('piano-mode');
+            previewCard.style.height = '130px';
+            previewCard.style.width = '100px';
+            
+            let controlsHtml = '';
+            if (total > 1) {
+                controlsHtml = `
+                    <div class="voicing-controls">
+                        <button class="voicing-nav-btn prev-voicing-editor" data-chord="${chord}" data-idx="${actualIndex - 1}">&larr;</button>
+                        <span class="voicing-indicator">${actualIndex + 1}/${total}</span>
+                        <button class="voicing-nav-btn next-voicing-editor" data-chord="${chord}" data-idx="${actualIndex + 1}">&rarr;</button>
+                    </div>
+                `;
+            }
+            previewCard.innerHTML = controlsHtml + `<div class="svg-container" style="display: flex; justify-content: center; align-items: center; width: 100%;">${svgText}</div>`;
+            
+            // Bind editor preview button click events
+            const prevBtn = previewCard.querySelector('.prev-voicing-editor');
+            const nextBtn = previewCard.querySelector('.next-voicing-editor');
+            if (prevBtn) {
+                prevBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const c = prevBtn.getAttribute('data-chord');
+                    const idx = parseInt(prevBtn.getAttribute('data-idx'), 10);
+                    renderEditorChordPreview(c, idx);
+                });
+            }
+            if (nextBtn) {
+                nextBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const c = nextBtn.getAttribute('data-chord');
+                    const idx = parseInt(nextBtn.getAttribute('data-idx'), 10);
+                    renderEditorChordPreview(c, idx);
+                });
+            }
+        }
+        previewCard.style.display = 'flex';
+        previewCard.classList.add('visible');
+    } catch (err) {
+        console.error(err);
+        previewCard.classList.remove('visible');
+        previewCard.style.display = 'none';
+    }
+}
+
 async function updateEditorChordPreview() {
     const previewCard = document.getElementById('editorChordPreview');
     if (!previewCard) return;
@@ -1960,30 +2106,8 @@ async function updateEditorChordPreview() {
     const chord = getChordAtCursor(text, pos);
 
     if (chord) {
-        try {
-            const voicing = localStorage.getItem('cg_voicing_mode') || 'guitar';
-            const res = await fetch(`/api/chord-svg?chord=${encodeURIComponent(chord)}&voicing=${voicing}`);
-            if (!res.ok) {
-                previewCard.classList.remove('visible');
-                previewCard.style.display = 'none';
-                return;
-            }
-            const svgText = await res.text();
-
-            if (voicing === 'piano') {
-                previewCard.classList.add('piano-mode');
-            } else {
-                previewCard.classList.remove('piano-mode');
-            }
-
-            previewCard.innerHTML = svgText;
-            previewCard.style.display = 'flex';
-            previewCard.classList.add('visible');
-        } catch (err) {
-            console.error(err);
-            previewCard.classList.remove('visible');
-            previewCard.style.display = 'none';
-        }
+        const initialIndex = window.chordVoicingPreferences[chord] || 0;
+        await renderEditorChordPreview(chord, initialIndex);
     } else {
         previewCard.classList.remove('visible');
         previewCard.style.display = 'none';

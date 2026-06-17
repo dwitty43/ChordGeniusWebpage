@@ -1773,7 +1773,7 @@
             position: absolute;
             z-index: 9999;
             opacity: 0;
-            pointer-events: none;
+            pointer-events: auto;
             transform: scale(0.9) translateY(10px);
             transition: opacity 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
             background: rgba(16, 19, 28, 0.85);
@@ -1786,10 +1786,51 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             width: 100px;
-            height: 110px;
+            height: 130px;
         }
+        
+        /* Voicing controls styling */
+        .voicing-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 4px;
+            border-bottom: 1px solid rgba(245, 158, 11, 0.15);
+            padding-bottom: 4px;
+            box-sizing: border-box;
+        }
+        .voicing-nav-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 11px;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        .voicing-nav-btn:hover {
+            color: var(--primary);
+            background: rgba(245, 158, 11, 0.15);
+        }
+        .voicing-nav-btn:active {
+            transform: scale(0.85);
+        }
+        .voicing-indicator {
+            font-size: 9px;
+            color: var(--text-muted);
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            font-family: 'Outfit', sans-serif;
+        }
+        
         [data-theme="light"] .chord-tooltip {
             background: rgba(255, 255, 255, 0.85);
             border: 1px solid rgba(138, 94, 16, 0.2);
@@ -2002,15 +2043,16 @@
             padding: 10px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             z-index: 1000;
-            pointer-events: none;
+            pointer-events: auto;
             transition: opacity 0.2s ease, transform 0.2s ease;
             opacity: 0;
             transform: translateY(-5px);
             display: none;
+            flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             width: 100px;
-            height: 110px;
+            height: 130px;
         }
         .editor-chord-preview.visible {
             opacity: 1;

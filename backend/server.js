@@ -17,6 +17,7 @@ const {
     lineBasedToChordPro,
     getPlayKey,
     getChordSvg,
+    getChordVoicingDetails,
     getKeyCircleCoordinate,
     getCircleOfFifthsDistance,
     getTranspositionRemedies
@@ -477,14 +478,24 @@ app.post('/api/import-preview', upload.single('chartFile'), async (req, res) => 
 app.get('/api/chord-svg', (req, res) => {
     const chord = req.query.chord;
     const voicing = req.query.voicing || 'guitar';
+    const index = parseInt(req.query.index || 0, 10);
     if (!chord) {
         return res.status(400).send('Please provide a chord query parameter.');
     }
     try {
-        const svg = getChordSvg(chord, voicing);
+        const svg = getChordSvg(chord, voicing, index);
         if (!svg) {
             return res.status(404).send('Chord not found');
         }
+        
+        // Retrieve pagination details
+        const details = getChordVoicingDetails(chord, index);
+        
+        // Expose custom headers for pagination controls
+        res.setHeader('X-Chord-Voicing-Index', details.index);
+        res.setHeader('X-Chord-Voicing-Total', details.total);
+        res.setHeader('Access-Control-Expose-Headers', 'X-Chord-Voicing-Index, X-Chord-Voicing-Total');
+        
         res.setHeader('Content-Type', 'image/svg+xml');
         res.send(svg);
     } catch (error) {
