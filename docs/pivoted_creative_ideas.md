@@ -132,3 +132,9 @@ These ideas are categorized into five key areas:
 *   **The Problem:** Musicians practicing ear training struggle to identify what chord progression is playing in a song section.
 *   **The Idea:** A practice tool where the musician hums a melody or plays a chord progression into their microphone. The app performs real-time frequency analysis to suggest the likely chord structure and Roman numerals (e.g., I - V - vi - IV).
 *   **Why Musicians Want It:** Improves ear training and speed of learning by analyzing live sound to provide immediate harmonic guesses.
+
+### 🎸 21. AI Audio-to-Guitar-Tab Creator
+*   **The Problem:** Transcribing a complex guitar solo, fingerstyle pattern, or riff from a recording is incredibly slow and tedious, requiring slowing down audio and guessing fret positions.
+*   **The Idea:** An AI-powered transcription tool where a musician uploads an audio file or links to a song. The system processes the audio to transcribe individual notes (polyphonic pitch tracking) and uses a guitar physics constraint model to determine the most ergonomic fret and string combinations, outputting a standard 6-string guitar tablature.
+*   **Why Musicians Want It:** It saves hours of manual ear transcription and instantly generates playable tabs from audio, serving as the ultimate tool for learning complex solos or arranging covers.
+
