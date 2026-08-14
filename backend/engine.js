@@ -1328,26 +1328,44 @@ function selectBestKey(candidates, scrapedKeyString) {
     const MAJOR_KEY_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
     const MINOR_KEY_NAMES = ['Cm', 'C#m', 'Dm', 'Ebm', 'Em', 'Fm', 'F#m', 'Gm', 'G#m', 'Am', 'Bbm', 'Bm'];
 
-    if (!candidates || candidates.length === 0) return scrapedKeyString || null;
+    if (!candidates || candidates.length === 0) {
+        if (scrapedKeyString) {
+            console.log(`[KeyDetector] No chords found to analyze. Trusting scraped key: ${scrapedKeyString}`);
+        }
+        return scrapedKeyString || null;
+    }
 
     const bestCandidate = candidates[0];
     const bestKeyString = bestCandidate.isMinor ? MINOR_KEY_NAMES[bestCandidate.index] : MAJOR_KEY_NAMES[bestCandidate.index];
 
-    if (!scrapedKeyString) return bestKeyString;
+    if (!scrapedKeyString) {
+        console.log(`[KeyDetector] No scraped key found. Using detected key: ${bestKeyString} (score: ${bestCandidate.score})`);
+        return bestKeyString;
+    }
 
     const scrapedClean = scrapedKeyString.trim();
     const scrapedIsMinor = /[m|min|minor]$/i.test(scrapedClean);
     const scrapedRoot = scrapedClean.replace(/m|min|minor$/i, '');
     const scrapedRootIndex = getNoteIndex(scrapedRoot);
 
-    if (scrapedRootIndex === -1) return bestKeyString;
+    if (scrapedRootIndex === -1) {
+        console.log(`[KeyDetector] Invalid scraped key: ${scrapedKeyString}. Using detected key: ${bestKeyString}`);
+        return bestKeyString;
+    }
 
     const scrapedCandidate = candidates.find(c => c.index === scrapedRootIndex && c.isMinor === scrapedIsMinor);
-    if (!scrapedCandidate) return bestKeyString;
+    if (!scrapedCandidate) {
+        console.log(`[KeyDetector] Scraped key ${scrapedClean} had 0 matching diatonic chords. Overriding with detected key: ${bestKeyString}`);
+        return bestKeyString;
+    }
 
+    const ratio = bestCandidate.score > 0 ? (scrapedCandidate.score / bestCandidate.score) : 0;
     if (scrapedCandidate.score >= bestCandidate.score * 0.7) {
+        console.log(`[KeyDetector] Scraped key ${scrapedClean} (score: ${scrapedCandidate.score}) validated against best detected key ${bestKeyString} (score: ${bestCandidate.score}, ratio: ${(ratio * 100).toFixed(1)}%). Keeping scraped key.`);
         return scrapedClean;
     }
+
+    console.log(`[KeyDetector] Scraped key ${scrapedClean} (score: ${scrapedCandidate.score}) is musically implausible compared to detected key ${bestKeyString} (score: ${bestCandidate.score}, ratio: ${(ratio * 100).toFixed(1)}%). Overriding with detected key: ${bestKeyString}`);
     return bestKeyString;
 }
 
