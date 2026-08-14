@@ -19,7 +19,9 @@ const {
     getChordSvg,
     getKeyCircleCoordinate,
     getCircleOfFifthsDistance,
-    getTranspositionRemedies
+    getTranspositionRemedies,
+    detectKeyFromTabText,
+    selectBestKey
 } = require('./engine'); 
 
 // --- SPOTIFY WEB API INTEGRATION ---
@@ -205,9 +207,11 @@ app.get('/api/convert', async (req, res) => {
             spotifyMeta = await getSpotifyTrackMetadata(query);
         }
 
-        if (!songKey) songKey = tabData.songKey || (spotifyMeta ? spotifyMeta.spotifyKey : null);
+        const scrapedOrSpotifyKey = tabData.songKey || (spotifyMeta ? spotifyMeta.spotifyKey : null);
+        const detectedCandidates = detectKeyFromTabText(tabData.rawTabText);
+        const finalKey = songKey || selectBestKey(detectedCandidates, scrapedOrSpotifyKey);
 
-        if (!songKey) {
+        if (!finalKey) {
             return res.status(400).json({ error: "No key found on UG. Please provide a manual key.", needsManualKey: true });
         }
 
@@ -215,7 +219,7 @@ app.get('/api/convert', async (req, res) => {
         const finalTimeSig = timeSignature || (spotifyMeta ? spotifyMeta.timeSignature : '');
 
         console.log(`[API] Transposing chart...`);
-        const finalChart = processAndAlignTabs(tabData.rawTabText, songKey, targetKey, false, simplify, capo);
+        const finalChart = processAndAlignTabs(tabData.rawTabText, finalKey, targetKey, false, simplify, capo);
         
         let title = query;
         if (typeof query === 'string' && /(tabs\.ultimate-guitar\.com|e-chords\.com)/i.test(query)) {
@@ -223,7 +227,7 @@ app.get('/api/convert', async (req, res) => {
         }
         title = title.replace(/_/g, ' ').trim();
 
-        await deliverFile(res, finalChart, title, songKey, targetKey, format, finalBpm, capo, finalTimeSig, columns, voicing);
+        await deliverFile(res, finalChart, title, finalKey, targetKey, format, finalBpm, capo, finalTimeSig, columns, voicing);
 
     } catch (error) {
         console.error(`[API Error]`, error.message);
@@ -358,7 +362,9 @@ app.get('/api/preview', async (req, res) => {
             console.log(`[Spotify] Preview metadata fetch failed: ${e.message}`);
         }
 
-        const finalKey = songKey || tabData.songKey || (spotifyMeta ? spotifyMeta.spotifyKey : null);
+        const scrapedOrSpotifyKey = tabData.songKey || (spotifyMeta ? spotifyMeta.spotifyKey : null);
+        const detectedCandidates = detectKeyFromTabText(tabData.rawTabText);
+        const finalKey = songKey || selectBestKey(detectedCandidates, scrapedOrSpotifyKey);
         if (!finalKey) return res.status(400).json({ error: "No key found." });
 
         const isSimplify = simplify === 'true';

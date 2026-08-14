@@ -1185,6 +1185,172 @@ function processAndAlignTabs(rawText, originalKey, targetKey, isPdf = false, sim
     return processedLines.join('\n');
 }
 
+// --- KEY DETECTION ENGINE ---
+function estimateKeyFromChords(chords) {
+    if (!chords || chords.length === 0) return null;
+
+    const MAJOR_KEY_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+    const MINOR_KEY_NAMES = ['Cm', 'C#m', 'Dm', 'Ebm', 'Em', 'Fm', 'F#m', 'Gm', 'G#m', 'Am', 'Bbm', 'Bm'];
+
+    // Parse all chords into { rootIndex, isMinor }
+    const parsedChords = chords.map(chordStr => {
+        const mainPart = chordStr.split('/')[0];
+        const match = mainPart.match(/^([A-G][#b]?)(.*)$/i);
+        if (!match) return null;
+        
+        const root = match[1];
+        const ext = match[2];
+        
+        const rootIndex = getNoteIndex(root);
+        if (rootIndex === -1) return null;
+        
+        // Minor if extension starts with 'm' (but not 'maj'), or contains 'min' or 'minor', or starts with 'dim' or 'o'
+        const isMinor = /^(m(?!aj)|min|minor|dim|o)/i.test(ext);
+        
+        return { rootIndex, isMinor };
+    }).filter(Boolean);
+
+    if (parsedChords.length === 0) return null;
+
+    const keyCandidates = [];
+    for (let k = 0; k < 12; k++) {
+        keyCandidates.push({ index: k, isMinor: false, score: 0 });
+        keyCandidates.push({ index: k, isMinor: true, score: 0 });
+    }
+
+    const firstChord = parsedChords[0];
+    const lastChord = parsedChords[parsedChords.length - 1];
+
+    for (let candidate of keyCandidates) {
+        const tk = candidate.index;
+        const isMinorKey = candidate.isMinor;
+        let score = 0;
+
+        for (let chord of parsedChords) {
+            const cr = chord.rootIndex;
+            const isMinorChord = chord.isMinor;
+            const diff = (cr - tk + 12) % 12;
+
+            let weight = 0;
+            if (!isMinorKey) {
+                // Major Key candidate
+                if (diff === 0) {
+                    weight = isMinorChord ? 0 : 12; // I
+                } else if (diff === 7) {
+                    weight = isMinorChord ? 2 : 10; // V or v
+                } else if (diff === 5) {
+                    weight = isMinorChord ? 3 : 10; // IV or iv
+                } else if (diff === 9) {
+                    weight = isMinorChord ? 8 : 3;  // vi or VI
+                } else if (diff === 2) {
+                    weight = isMinorChord ? 7 : 4;  // ii or II
+                } else if (diff === 4) {
+                    weight = isMinorChord ? 6 : 4;  // iii or III
+                } else if (diff === 10) {
+                    weight = isMinorChord ? 1 : 5;  // bVII
+                } else if (diff === 8) {
+                    weight = isMinorChord ? 1 : 3;  // bVI
+                } else if (diff === 3) {
+                    weight = isMinorChord ? 1 : 2;  // bIII
+                } else if (diff === 11) {
+                    weight = 2; // vii°
+                }
+            } else {
+                // Minor Key candidate
+                if (diff === 0) {
+                    weight = isMinorChord ? 12 : 1; // i or I
+                } else if (diff === 7) {
+                    weight = isMinorChord ? 7 : 10; // v or V
+                } else if (diff === 3) {
+                    weight = isMinorChord ? 1 : 10; // III
+                } else if (diff === 5) {
+                    weight = isMinorChord ? 8 : 4;  // iv or IV
+                } else if (diff === 8) {
+                    weight = isMinorChord ? 1 : 8;  // VI
+                } else if (diff === 10) {
+                    weight = isMinorChord ? 1 : 8;  // VII
+                } else if (diff === 2) {
+                    weight = isMinorChord ? 4 : 2;  // ii°
+                } else if (diff === 11) {
+                    weight = 1; // vii°
+                }
+            }
+            score += weight;
+        }
+
+        // First chord bonus
+        if (firstChord) {
+            const firstDiff = (firstChord.rootIndex - tk + 12) % 12;
+            if (firstDiff === 0 && firstChord.isMinor === isMinorKey) {
+                score += 15;
+            }
+        }
+
+        // Last chord bonus
+        if (lastChord) {
+            const lastDiff = (lastChord.rootIndex - tk + 12) % 12;
+            if (lastDiff === 0 && lastChord.isMinor === isMinorKey) {
+                score += 25;
+            }
+        }
+
+        candidate.score = score;
+    }
+
+    keyCandidates.sort((a, b) => b.score - a.score);
+    return keyCandidates;
+}
+
+function detectKeyFromTabText(tabText) {
+    if (!tabText) return null;
+    const lines = tabText.split('\n');
+    const chords = [];
+
+    for (let line of lines) {
+        if (isChordLine(line)) {
+            const tokens = line.trim().split(/\s+/);
+            for (let token of tokens) {
+                const cleanToken = token.replace(/[|()\[\]{}:\-~,\*]+/g, '').trim();
+                if (cleanToken && cleanToken !== 'NC' && cleanToken !== 'N.C.') {
+                    if (/^[A-G][#b]?/i.test(cleanToken)) {
+                        chords.push(cleanToken);
+                    }
+                }
+            }
+        }
+    }
+
+    if (chords.length === 0) return null;
+    return estimateKeyFromChords(chords);
+}
+
+function selectBestKey(candidates, scrapedKeyString) {
+    const MAJOR_KEY_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+    const MINOR_KEY_NAMES = ['Cm', 'C#m', 'Dm', 'Ebm', 'Em', 'Fm', 'F#m', 'Gm', 'G#m', 'Am', 'Bbm', 'Bm'];
+
+    if (!candidates || candidates.length === 0) return scrapedKeyString || null;
+
+    const bestCandidate = candidates[0];
+    const bestKeyString = bestCandidate.isMinor ? MINOR_KEY_NAMES[bestCandidate.index] : MAJOR_KEY_NAMES[bestCandidate.index];
+
+    if (!scrapedKeyString) return bestKeyString;
+
+    const scrapedClean = scrapedKeyString.trim();
+    const scrapedIsMinor = /[m|min|minor]$/i.test(scrapedClean);
+    const scrapedRoot = scrapedClean.replace(/m|min|minor$/i, '');
+    const scrapedRootIndex = getNoteIndex(scrapedRoot);
+
+    if (scrapedRootIndex === -1) return bestKeyString;
+
+    const scrapedCandidate = candidates.find(c => c.index === scrapedRootIndex && c.isMinor === scrapedIsMinor);
+    if (!scrapedCandidate) return bestKeyString;
+
+    if (scrapedCandidate.score >= bestCandidate.score * 0.7) {
+        return scrapedClean;
+    }
+    return bestKeyString;
+}
+
 // --- DOCUMENT GENERATORS ---
 function formatKeyDisplay(keyStr) {
     if (!keyStr) return '';
@@ -2311,5 +2477,8 @@ module.exports = {
     getChordSvg,
     getKeyCircleCoordinate,
     getCircleOfFifthsDistance,
-    getTranspositionRemedies
+    getTranspositionRemedies,
+    estimateKeyFromChords,
+    detectKeyFromTabText,
+    selectBestKey
 }
