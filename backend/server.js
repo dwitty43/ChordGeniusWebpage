@@ -315,8 +315,10 @@ app.post('/api/transpose', (req, res) => {
         return res.status(400).json({ error: "Missing text or originalKey" });
     }
     try {
-        const finalChart = processAndAlignTabs(text, originalKey, targetKey || '', false, simplify === true, parseInt(capo, 10) || 0);
-        res.json({ text: finalChart });
+        const capoVal = parseInt(capo, 10) || 0;
+        const finalChart = processAndAlignTabs(text, originalKey, targetKey || '', false, simplify === true, capoVal);
+        const playKey = capoVal > 0 ? getPlayKey(targetKey || originalKey, capoVal) : '';
+        res.json({ text: finalChart, playKey });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

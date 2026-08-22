@@ -613,19 +613,23 @@ uploadInputs.forEach(id => {
 const simplifyChords = document.getElementById('simplifyChords');
 if (simplifyChords) {
     simplifyChords.addEventListener('change', () => {
-        if (!pvSearchBtn.disabled) {
-            pvSearchBtn.disabled = true;
-            pvSearchBtn.classList.remove('gold-glow');
-            dlSearchBtn.disabled = true;
-            searchBlob = null;
+        if (window.currentChartData && window.currentChartData.originalText) {
+            retransposeCurrentSong();
+        } else {
+            if (!pvSearchBtn.disabled) {
+                pvSearchBtn.disabled = true;
+                pvSearchBtn.classList.remove('gold-glow');
+                dlSearchBtn.disabled = true;
+                searchBlob = null;
+            }
+            if (!pvUploadBtn.disabled) {
+                pvUploadBtn.disabled = true;
+                pvUploadBtn.classList.remove('gold-glow');
+                dlUploadBtn.disabled = true;
+                uploadBlob = null;
+            }
+            showStatus("Options changed — please convert again.", "active");
         }
-        if (!pvUploadBtn.disabled) {
-            pvUploadBtn.disabled = true;
-            pvUploadBtn.classList.remove('gold-glow');
-            dlUploadBtn.disabled = true;
-            uploadBlob = null;
-        }
-        showStatus("Options changed — please convert again.", "active");
     });
 }
 
@@ -1624,6 +1628,127 @@ function applyPreviewZoom() {
     }
 }
 applyPreviewZoom();
+
+// --- DYNAMIC RETRANSPOSITION ---
+async function retransposeCurrentSong() {
+    if (!window.currentChartData || !window.currentChartData.originalText) {
+        return;
+    }
+    
+    const source = window.currentChartSource || 'search';
+    let originalKey, targetKey, capo, simplify;
+    
+    if (source === 'search' || source === 'setlist') {
+        originalKey = document.getElementById('songKey').value || window.currentChartData.originalKey;
+        targetKey = document.getElementById('targetKeySearch').value;
+        capo = document.getElementById('capoSearch').value;
+    } else {
+        originalKey = document.getElementById('uploadKey').value || window.currentChartData.originalKey;
+        targetKey = document.getElementById('targetKeyUpload').value;
+        capo = document.getElementById('capoUpload').value;
+    }
+    
+    simplify = document.getElementById('simplifyChords').checked;
+    
+    showStatus("Transposing chart...", "active");
+    
+    try {
+        const res = await fetch('/api/transpose', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                text: window.currentChartData.originalText,
+                originalKey: originalKey,
+                targetKey: targetKey,
+                capo: capo,
+                simplify: simplify
+            })
+        });
+        
+        if (!res.ok) throw new Error((await res.json()).error || "Transposition failed.");
+        
+        const data = await res.json();
+        
+        // Update current chart data
+        window.currentChartData.text = data.text;
+        window.currentChartData.targetKey = targetKey || 'Nashville';
+        window.currentChartData.capo = capo;
+        window.currentChartData.playKey = data.playKey;
+        window.currentChartData.originalKey = originalKey;
+        
+        // Update live editor
+        if (liveEditor) {
+            liveEditor.value = data.text;
+        }
+        
+        // Update subtitle
+        let subtitleText = `Transposed to: ${window.currentChartData.targetKey}`;
+        const capoVal = parseInt(capo, 10);
+        if (capoVal && capoVal > 0 && data.playKey) {
+            subtitleText += ` | Capo: ${capoVal} (Play: ${data.playKey})`;
+        }
+        document.getElementById('modalSubtitle').textContent = subtitleText;
+        
+        // Update preview if it's currently showing
+        if (interactivePreview && interactivePreview.style.display !== 'none') {
+            interactivePreview.innerHTML = renderInteractivePreview(data.text);
+        }
+        
+        // Cache active song in localStorage
+        const activeSong = {
+            source: source,
+            setlistIndex: window.currentSetlistIndex,
+            query: source === 'search' ? document.getElementById('songQuery').value : '',
+            title: window.currentChartData.title,
+            key: originalKey,
+            targetKey: targetKey,
+            bpm: window.currentChartData.bpm,
+            timeSignature: window.currentChartData.timeSignature,
+            rawText: data.text,
+            format: document.getElementById('searchFormat').value,
+            capo: capo,
+            playKey: data.playKey || ''
+        };
+        localStorage.setItem('cg_active_song', JSON.stringify(activeSong));
+        
+        showStatus("Transposed successfully!", "success");
+    } catch (e) {
+        showStatus(`Transposition failed: ${e.message}`, "error");
+    }
+}
+
+// Add event listeners for dynamic retransposition
+document.getElementById('songKey').addEventListener('change', () => {
+    if (window.currentChartData && window.currentChartData.originalText && (window.currentChartSource === 'search' || window.currentChartSource === 'setlist')) {
+        retransposeCurrentSong();
+    }
+});
+document.getElementById('targetKeySearch').addEventListener('change', () => {
+    if (window.currentChartData && window.currentChartData.originalText && (window.currentChartSource === 'search' || window.currentChartSource === 'setlist')) {
+        retransposeCurrentSong();
+    }
+});
+document.getElementById('capoSearch').addEventListener('change', () => {
+    if (window.currentChartData && window.currentChartData.originalText && (window.currentChartSource === 'search' || window.currentChartSource === 'setlist')) {
+        retransposeCurrentSong();
+    }
+});
+
+document.getElementById('uploadKey').addEventListener('change', () => {
+    if (window.currentChartData && window.currentChartData.originalText && window.currentChartSource === 'upload') {
+        retransposeCurrentSong();
+    }
+});
+document.getElementById('targetKeyUpload').addEventListener('change', () => {
+    if (window.currentChartData && window.currentChartData.originalText && window.currentChartSource === 'upload') {
+        retransposeCurrentSong();
+    }
+});
+document.getElementById('capoUpload').addEventListener('change', () => {
+    if (window.currentChartData && window.currentChartData.originalText && window.currentChartSource === 'upload') {
+        retransposeCurrentSong();
+    }
+});
 
 const zoomInBtn = document.getElementById('zoomInBtn');
 if (zoomInBtn) {
