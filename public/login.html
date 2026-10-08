@@ -215,10 +215,11 @@
                     <input type="text" id="librarySearchInput" class="library-search-input" placeholder="🔍 Filter saved songs by title, artist, or key...">
                 </div>
 
-                <!-- Loading Spinner -->
-                <div id="savedSongsLoading" class="library-spinner-container" style="display: none;">
+                <!-- Loading Spinner (Visible by default until fetch completes) -->
+                <div id="savedSongsLoading" class="library-spinner-container" style="display: flex;">
                     <div class="library-spinner"></div>
-                    <div>Searching for your saved songs and scrapes...</div>
+                    <div style="font-weight: 600; color: var(--text-main); font-size: 14.5px;">Searching your cloud library...</div>
+                    <div style="font-size: 12px; color: var(--text-muted); margin-top: -8px;">Retrieving your saved chord sheets and scrapes</div>
                 </div>
 
                 <!-- List Container -->

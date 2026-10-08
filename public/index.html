@@ -340,6 +340,13 @@
                 <h3>Chord Genius Stage</h3>
                 <p>Search a song or import a chord chart on the left panel to load the active Stage View here. You can transpose, view hover voicings, and live-edit charts statically in real time!</p>
             </div>
+
+            <!-- LOADING PLACEHOLDER WHEN SCRAPING / PROCESSING -->
+            <div class="workstation-placeholder" id="stageLoadingPlaceholder" style="display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+                <div class="library-spinner" style="width: 44px; height: 44px; border-width: 4px; margin-bottom: 20px;"></div>
+                <h3 style="margin-bottom: 8px;">Scraping &amp; Formatting Chart...</h3>
+                <p style="max-width: 420px; margin: 0 auto; line-height: 1.6;">Retrieving tab from the web, detecting key signatures, and calculating Nashville Numbers.</p>
+            </div>
         </div>
     </div>
 </div>
@@ -645,12 +652,20 @@ searchBtn.addEventListener('click', async () => {
     if(!query) return showStatus("Please enter a song name!", "error");
     
     const orig = searchBtn.innerHTML;
-    searchBtn.innerHTML = '⏳ Processing...'; 
+    searchBtn.innerHTML = '<span class="toast-spinner" style="display: inline-block; vertical-align: middle; margin-right: 6px;"></span> Scraping...'; 
     searchBtn.disabled = true;
     pvSearchBtn.disabled = true;
     pvSearchBtn.classList.remove('gold-glow');
     dlSearchBtn.disabled = true;
-    showStatus("Fetching data and loading into editor...", "active");
+    showStatus("Fetching data and analyzing chords...", "active");
+
+    const stageLoading = document.getElementById('stageLoadingPlaceholder');
+    const stagePlaceholder = document.getElementById('noActiveSongPlaceholder');
+    const previewOverlay = document.getElementById('previewOverlay');
+
+    if (stageLoading) stageLoading.style.display = 'flex';
+    if (stagePlaceholder) stagePlaceholder.style.display = 'none';
+    if (previewOverlay) previewOverlay.classList.remove('open');
     
     const isSimplify = document.getElementById('simplifyChords').checked;
     const capo = document.getElementById('capoSearch').value;
@@ -714,11 +729,16 @@ searchBtn.addEventListener('click', async () => {
         // Clean up any old mammoth iframes if they exist
         document.querySelectorAll('.modal-docx-preview, iframe, .modal-loading').forEach(el => el.remove());
         
-        // THE FIX: Do not open the modal automatically. Just enable the buttons!
         document.getElementById('previewSearchBtn').disabled = false;
         document.getElementById('previewSearchBtn').classList.add('gold-glow');
         document.getElementById('downloadSearchBtn').disabled = false;
-        showStatus("Chart generated! Ready to preview or download.", "success");
+
+        // Reveal the active stage chart
+        if (typeof resetModalPreviewState === 'function') resetModalPreviewState();
+        if (previewOverlay) previewOverlay.classList.add('open');
+        if (stagePlaceholder) stagePlaceholder.style.display = 'none';
+
+        showStatus("Chart generated! Ready to preview, edit, or download.", "success");
         
         const capoSearchVal = document.getElementById('capoSearch').value;
         addToHistory({
@@ -732,7 +752,11 @@ searchBtn.addEventListener('click', async () => {
         });
     } catch(e) {
         showStatus(`Error: ${e.message}`, "error");
+        if (stagePlaceholder && (!previewOverlay || !previewOverlay.classList.contains('open'))) {
+            stagePlaceholder.style.display = 'flex';
+        }
     } finally {
+        if (stageLoading) stageLoading.style.display = 'none';
         searchBtn.innerHTML = orig;
         searchBtn.disabled = false;
     }
