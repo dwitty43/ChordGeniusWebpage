@@ -215,8 +215,14 @@
                     <input type="text" id="librarySearchInput" class="library-search-input" placeholder="🔍 Filter saved songs by title, artist, or key...">
                 </div>
 
+                <!-- Loading Spinner -->
+                <div id="savedSongsLoading" class="library-spinner-container" style="display: none;">
+                    <div class="library-spinner"></div>
+                    <div>Searching for your saved songs and scrapes...</div>
+                </div>
+
                 <!-- List Container -->
-                <div id="savedSongsEmptyMsg" style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 40px; border: 1px dashed var(--border); border-radius: 12px;">
+                <div id="savedSongsEmptyMsg" style="display: none; text-align: center; color: var(--text-muted); font-size: 13px; padding: 40px; border: 1px dashed var(--border); border-radius: 12px;">
                     You haven't saved any chord charts yet.<br>
                     Search or upload any song on the <a href="index.html" style="color: var(--primary);">Convert tab</a> and click <strong>⭐ Save Song</strong> to build your library!
                 </div>
@@ -364,6 +370,14 @@
 
     // ── LOAD SAVED SONGS ──
     async function loadSavedSongs() {
+        const loading = document.getElementById('savedSongsLoading');
+        const emptyMsg = document.getElementById('savedSongsEmptyMsg');
+        const list = document.getElementById('savedSongsList');
+
+        if (loading) loading.style.display = 'flex';
+        if (emptyMsg) emptyMsg.style.display = 'none';
+        if (list) list.innerHTML = '';
+
         try {
             const res = await fetch('/api/saved-songs', {
                 headers: { 'Authorization': `Bearer ${getToken()}` }
@@ -377,16 +391,27 @@
             document.getElementById('statSavedSongs').innerText = savedSongsData.length;
         } catch (err) {
             console.error('Error fetching saved songs:', err);
+        } finally {
+            if (loading) loading.style.display = 'none';
         }
     }
 
-    function renderSavedSongs(songs) {
+    function renderSavedSongs(songs, isFilter = false) {
         const list = document.getElementById('savedSongsList');
         const emptyMsg = document.getElementById('savedSongsEmptyMsg');
 
         if (!songs || songs.length === 0) {
-            list.innerHTML = '';
-            emptyMsg.style.display = 'block';
+            if (isFilter) {
+                list.innerHTML = `
+                    <div style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 32px; border: 1px dashed var(--border); border-radius: 12px;">
+                        No saved songs match your filter inquiry.
+                    </div>
+                `;
+                emptyMsg.style.display = 'none';
+            } else {
+                list.innerHTML = '';
+                emptyMsg.style.display = 'block';
+            }
             return;
         }
 
@@ -427,7 +452,7 @@
     document.getElementById('librarySearchInput').addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase().trim();
         if (!query) {
-            renderSavedSongs(savedSongsData);
+            renderSavedSongs(savedSongsData, false);
             return;
         }
         const filtered = savedSongsData.filter(s => 
@@ -435,7 +460,7 @@
             (s.original_key && s.original_key.toLowerCase().includes(query)) ||
             (s.target_key && s.target_key.toLowerCase().includes(query))
         );
-        renderSavedSongs(filtered);
+        renderSavedSongs(filtered, true);
     });
 
     // Open song in Stage View (Convert tab)
