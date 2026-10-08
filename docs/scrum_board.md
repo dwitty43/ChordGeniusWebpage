@@ -78,15 +78,15 @@ gantt
 ### 🔑 Sprint 2: Platform Preparation, Security & Auth (Priority: Med-High)
 * **Goal:** Stabilize the platform for multi-user access, implement user account frameworks, and harden scraper capabilities.
 
-- [X] **TSK-201: Production Scraper Evasion Hardening**
+- [x] **TSK-201: Production Scraper Evasion Hardening**
   - **Description:** Fix Ultimate Guitar scraper timeouts and Cloudflare blocks on the live domain (`chordgenius.dewittcyber.com`). Optimize proxy headers, rota user-agents, and cache search engine results.
   - **Source:** [proposed_ideas.md - Next Step 3](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/proposed_ideas.md#L57)
-- [ ] **TSK-202: Login/Signup Account Infrastructure**
-  - **Description:** Implement standard user signup and login page panels, saving credential states and setting up database routes.
+- [x] **TSK-202: Login/Signup Account Infrastructure & Musician Cloud Profiles**
+  - **Description:** Implement PostgreSQL database backend, JWT authentication, and user profile dashboard. Allows musicians to save scrapes/songs, manage setlists, and track search history across all devices.
   - **Source:** [next_steps.md - Next step 1](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/next_steps.md#L20)
-- [ ] **TSK-203: Premium Feature Page & Gateway Simulator**
-  - **Description:** Build a landing/settings page showcasing free vs. premium tiers with a premium gold UI styling, featuring a sandbox billing/upgrade simulator.
-  - **Source:** [next_steps.md - Next step 2](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/next_steps.md#L21)
+- [x] **TSK-203: 100% Free Forever Platform Pivot**
+  - **Description:** Removed subscription paywall simulation; converted platform to 100% free with all pro features unlocked forever and unlimited cloud saving.
+  - **Source:** User decision (October 2026)
 - [X] **TSK-204: Rehearse Page Layout Alignment**
   - **Description:** Re-layout the Rehearse Page so it shares consistent sidebar page-selectors and structure with the Convert Page. Componentize matching modules.
   - **Source:** [next_steps.md - Bug 6](file:///c:/Users/Dwitt/Projects/ChordGeniusWebpage/next_steps.md#L16)

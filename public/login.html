@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chord Genius Studio | Login & Signup</title>
+    <title>Chord Genius Studio | Musician Profile & Library</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -37,11 +37,11 @@
             </a>
             <a href="premium.html" class="nav-btn" id="sidebarPremiumBtn">
                 <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-                Premium
+                Features
             </a>
             <a href="login.html" class="nav-btn active" id="sidebarLoginBtn">
                 <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-                Login / Signup
+                <span id="sidebarLoginLabel">Profile / Login</span>
             </a>
         </div>
 
@@ -50,108 +50,194 @@
                 <svg id="moonIcon" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
                 <svg id="sunIcon" style="display:none" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
             </button>
-            <div class="pro-badge-capsule" id="proStatusBadge" style="cursor: pointer;">
-                Plan: Free
+            <div class="free-status-capsule" id="proStatusBadge">
+                100% Free 🎸
             </div>
         </div>
     </div>
 
     <!-- MAIN WORKSPACE BODY -->
     <div class="workspace-body">
-        <!-- CENTER PANEL: AUTH INPUTS (Pane 2: 400px wide) -->
-        <div class="panel-left">
-            <div class="panel-header">
-                <h2>Account Settings</h2>
-            </div>
-            <div class="panel-scrollable">
-                <!-- Tab Toggler -->
-                <div class="auth-tabs-container">
-                    <div class="auth-tabs">
-                        <button class="auth-tab active" id="signInTabBtn">Sign In</button>
-                        <button class="auth-tab" id="signUpTabBtn">Sign Up</button>
+        
+        <!-- SECTION 1: AUTH VIEW (When Logged Out) -->
+        <div id="authContainer" style="display: none; width: 100%; height: 100%;">
+            <!-- CENTER PANEL: AUTH INPUTS (Pane 2: 420px wide) -->
+            <div class="panel-left" style="max-width: 440px;">
+                <div class="panel-header">
+                    <h2>Account Access</h2>
+                </div>
+                <div class="panel-scrollable">
+                    <!-- Tab Toggler -->
+                    <div class="auth-tabs-container">
+                        <div class="auth-tabs">
+                            <button class="auth-tab active" id="signInTabBtn">Sign In</button>
+                            <button class="auth-tab" id="signUpTabBtn">Sign Up</button>
+                        </div>
+                    </div>
+
+                    <div class="auth-form-container">
+                        <!-- SIGN IN FORM -->
+                        <div id="signInForm" class="auth-form">
+                            <h3 class="auth-title">Welcome Back</h3>
+                            <p class="auth-subtitle">Sign in to save chord sheets, track your searches, and sync setlists across all devices.</p>
+                            
+                            <div class="auth-field">
+                                <label class="auth-label">Email Address</label>
+                                <input type="email" id="signInEmail" placeholder="you@example.com" autocomplete="email">
+                            </div>
+                            
+                            <div class="auth-field" style="margin-bottom: 24px;">
+                                <label class="auth-label">Password</label>
+                                <input type="password" id="signInPassword" placeholder="••••••••" autocomplete="current-password">
+                            </div>
+                            
+                            <button id="signInSubmitBtn" class="auth-submit-btn">
+                                Sign In
+                            </button>
+                        </div>
+
+                        <!-- SIGN UP FORM -->
+                        <div id="signUpForm" class="auth-form" style="display: none;">
+                            <h3 class="auth-title">Create Free Account</h3>
+                            <p class="auth-subtitle">100% free forever. Save your favorite chord scrapes and custom transpositions to your cloud library.</p>
+                            
+                            <div class="auth-field">
+                                <label class="auth-label">Full Name or Artist Name</label>
+                                <input type="text" id="signUpName" placeholder="e.g. Chris Tomlin" autocomplete="name">
+                            </div>
+
+                            <div class="auth-field">
+                                <label class="auth-label">Email Address</label>
+                                <input type="email" id="signUpEmail" placeholder="you@example.com" autocomplete="email">
+                            </div>
+                            
+                            <div class="auth-field" style="margin-bottom: 24px;">
+                                <label class="auth-label">Password (Min 6 characters)</label>
+                                <input type="password" id="signUpPassword" placeholder="••••••••" autocomplete="new-password">
+                            </div>
+                            
+                            <button id="signUpSubmitBtn" class="auth-submit-btn">
+                                Create Free Account
+                            </button>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="auth-form-container">
-                    <!-- SIGN IN FORM -->
-                    <div id="signInForm" class="auth-form">
-                        <h3 class="auth-title">Welcome Back</h3>
-                        <p class="auth-subtitle">Sign in to sync your custom song sheets across all your devices.</p>
-                        
-                        <div class="auth-field">
-                            <label class="auth-label">Email Address</label>
-                            <input type="text" id="signInEmail" placeholder="you@example.com">
+            <!-- RIGHT PANEL: AMBIENT GRAPHIC (Pane 3) -->
+            <div class="panel-right login-right">
+                <div class="panel-header">
+                    <h2>Chord Genius Library</h2>
+                </div>
+                <div class="panel-scrollable" style="display: flex; align-items: center; justify-content: center; position: relative;">
+                    <div class="ambient-graphic-container">
+                        <div class="ambient-glow-circle"></div>
+                        <div class="onboarding-graphics">
+                            <div class="floating-chord c-chord">C</div>
+                            <div class="floating-chord g-chord">G</div>
+                            <div class="floating-chord am-chord">Am</div>
+                            <div class="floating-chord f-chord">F</div>
+                            
+                            <div class="stage-snippet">
+                                <div class="stage-line"><span class="stage-chord">1</span>            <span class="stage-chord">5</span></div>
+                                <div class="stage-lyrics">Saved chord charts &amp; Nashville conversions</div>
+                                <div class="stage-line"><span class="stage-chord">6m</span>           <span class="stage-chord">4</span></div>
+                                <div class="stage-lyrics">Synced everywhere you perform</div>
+                            </div>
                         </div>
                         
-                        <div class="auth-field" style="margin-bottom: 24px;">
-                            <label class="auth-label">Password</label>
-                            <input type="password" id="signInPassword" placeholder="••••••••">
+                        <div class="ambient-text">
+                            <h3>Save Unlimited Scrapes &amp; Charts</h3>
+                            <p>Every chart you scrape from Ultimate Guitar or upload can be saved to your personal library with one click, completely free.</p>
                         </div>
-                        
-                        <button id="signInSubmitBtn" class="auth-submit-btn">
-                            Sign In to Chord Genius
-                        </button>
-                    </div>
-
-                    <!-- SIGN UP FORM -->
-                    <div id="signUpForm" class="auth-form" style="display: none;">
-                        <h3 class="auth-title">Create Account</h3>
-                        <p class="auth-subtitle">Unlock personalized setlist builders, collaborative rehearsals, and clean sheets.</p>
-                        
-                        <div class="auth-field">
-                            <label class="auth-label">Full Name</label>
-                            <input type="text" id="signUpName" placeholder="Jane Doe">
-                        </div>
-
-                        <div class="auth-field">
-                            <label class="auth-label">Email Address</label>
-                            <input type="text" id="signUpEmail" placeholder="you@example.com">
-                        </div>
-                        
-                        <div class="auth-field" style="margin-bottom: 24px;">
-                            <label class="auth-label">Password</label>
-                            <input type="password" id="signUpPassword" placeholder="••••••••">
-                        </div>
-                        
-                        <button id="signUpSubmitBtn" class="auth-submit-btn">
-                            Create Free Account
-                        </button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- RIGHT PANEL: AMBIENT DISPLAY (Pane 3: flex: 1) -->
-        <div class="panel-right login-right">
-            <div class="panel-header">
-                <h2>Overview</h2>
-            </div>
-            <div class="panel-scrollable" style="display: flex; align-items: center; justify-content: center; position: relative;">
-                <div class="ambient-graphic-container">
-                    <div class="ambient-glow-circle"></div>
-                    <div class="onboarding-graphics">
-                        <!-- Floating chords -->
-                        <div class="floating-chord c-chord">C</div>
-                        <div class="floating-chord g-chord">G</div>
-                        <div class="floating-chord am-chord">Am</div>
-                        <div class="floating-chord f-chord">F</div>
-                        
-                        <!-- Virtual Stage sheet snippet -->
-                        <div class="stage-snippet">
-                            <div class="stage-line"><span class="stage-chord">C</span>            <span class="stage-chord">G</span></div>
-                            <div class="stage-lyrics">Turn your chords into stage power</div>
-                            <div class="stage-line"><span class="stage-chord">Am</span>           <span class="stage-chord">F</span></div>
-                            <div class="stage-lyrics">With autoscrolling and capos locked in</div>
+        <!-- SECTION 2: PROFILE & SAVED SONGS DASHBOARD (When Logged In) -->
+        <div id="profileContainer" class="profile-container" style="display: none; padding: 24px; box-sizing: border-box; overflow-y: auto; height: 100%;">
+            
+            <!-- User Header Card -->
+            <div class="profile-header-card">
+                <div class="profile-user-info">
+                    <div class="profile-avatar" id="userAvatarLetter">U</div>
+                    <div>
+                        <h2 class="profile-name" id="profileUserName">Musician Profile</h2>
+                        <p class="profile-email" id="profileUserEmail">musician@example.com</p>
+                        <div style="margin-top: 6px; display: flex; gap: 8px; align-items: center;">
+                            <span class="free-status-capsule">100% Free Plan 🎸</span>
+                            <span class="saved-tag" id="profileJoinDate">Member</span>
                         </div>
                     </div>
-                    
-                    <div class="ambient-text">
-                        <h3>Master Your Stage Presence</h3>
-                        <p>Transposing, capos, metronomes, and setlists. Everything a modern worship leader or gigging musician needs in one stage-ready workspace.</p>
-                    </div>
+                </div>
+                <div>
+                    <button id="logoutBtn" class="action-icon-btn btn-delete" style="padding: 10px 18px; font-size: 13px;">
+                        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                        Sign Out
+                    </button>
                 </div>
             </div>
+
+            <!-- Stats Grid -->
+            <div class="profile-stats-grid">
+                <div class="profile-stat-box">
+                    <div class="profile-stat-val" id="statSavedSongs">0</div>
+                    <div class="profile-stat-label">Saved Scrapes &amp; Songs</div>
+                </div>
+                <div class="profile-stat-box">
+                    <div class="profile-stat-val" id="statSavedSetlists">0</div>
+                    <div class="profile-stat-label">Gig Setlists</div>
+                </div>
+                <div class="profile-stat-box">
+                    <div class="profile-stat-val" id="statRecentSearches">0</div>
+                    <div class="profile-stat-label">Search Inquiries</div>
+                </div>
+                <div class="profile-stat-box">
+                    <div class="profile-stat-val" style="color: #10b981;">Unlimited</div>
+                    <div class="profile-stat-label">Usage Tier</div>
+                </div>
+            </div>
+
+            <!-- SAVED SONGS & SCRAPES LIBRARY -->
+            <div class="console-box" style="margin-bottom: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+                    <div>
+                        <h3 style="font-size: 18px; margin: 0; color: var(--text-main); font-family: 'Playfair Display', Georgia, serif;">Saved Songs &amp; Scrapes</h3>
+                        <p style="font-size: 12px; color: var(--text-muted); margin: 4px 0 0 0;">Click 'Stage View' to open in the active transposer, or 'Rehearse' to launch with the metronome.</p>
+                    </div>
+                    <a href="index.html" class="action-icon-btn btn-primary" style="text-decoration: none;">
+                        + New Scrape / Search
+                    </a>
+                </div>
+
+                <div class="library-search-box">
+                    <input type="text" id="librarySearchInput" class="library-search-input" placeholder="🔍 Filter saved songs by title, artist, or key...">
+                </div>
+
+                <!-- List Container -->
+                <div id="savedSongsEmptyMsg" style="text-align: center; color: var(--text-muted); font-size: 13px; padding: 40px; border: 1px dashed var(--border); border-radius: 12px;">
+                    You haven't saved any chord charts yet.<br>
+                    Search or upload any song on the <a href="index.html" style="color: var(--primary);">Convert tab</a> and click <strong>⭐ Save Song</strong> to build your library!
+                </div>
+
+                <div class="saved-songs-list" id="savedSongsList"></div>
+            </div>
+
+            <!-- SEARCH HISTORY SECTION -->
+            <div class="console-box" style="margin-bottom: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <div class="section-label" style="margin: 0;">
+                        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Recent Search History
+                    </div>
+                    <button id="clearHistoryBtn" class="history-clear">Clear History</button>
+                </div>
+                <div id="profileHistoryList" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+            </div>
+
         </div>
+
     </div>
 </div>
 
@@ -211,41 +297,262 @@
         }, 5000);
     }
 
-    // ── PRO PLAN & BADGE SYNCHRONIZATION ──
-    const proStatusBadge = document.getElementById('proStatusBadge');
+    // ── AUTH STATE MANAGEMENT ──
+    let savedSongsData = [];
 
-    if (localStorage.getItem('cg_pro_status') === null) {
-        localStorage.setItem('cg_pro_status', 'pro');
+    function getToken() {
+        return localStorage.getItem('cg_auth_token');
     }
 
-    function updateProStatusUI() {
-        const isPro = localStorage.getItem('cg_pro_status') === 'pro' || localStorage.getItem('cg_pro_status') === 'true';
-        if (proStatusBadge) {
-            if (isPro) {
-                proStatusBadge.innerHTML = 'Plan: Pro 👑';
-                proStatusBadge.classList.add('gold-glow');
-                proStatusBadge.style.color = '';
-                proStatusBadge.style.borderColor = '';
-                proStatusBadge.style.background = '';
-            } else {
-                proStatusBadge.innerHTML = 'Plan: Free';
-                proStatusBadge.classList.remove('gold-glow');
-                proStatusBadge.style.color = 'var(--primary)';
-                proStatusBadge.style.borderColor = 'var(--primary)';
-                proStatusBadge.style.background = 'var(--primary-glow)';
-            }
+    function checkAuthState() {
+        const token = getToken();
+        const authContainer = document.getElementById('authContainer');
+        const profileContainer = document.getElementById('profileContainer');
+        const sidebarLoginLabel = document.getElementById('sidebarLoginLabel');
+
+        if (token) {
+            authContainer.style.display = 'none';
+            profileContainer.style.display = 'flex';
+            sidebarLoginLabel.innerText = 'My Profile';
+            loadUserProfile();
+            loadSavedSongs();
+            loadSearchHistory();
+        } else {
+            authContainer.style.display = 'flex';
+            profileContainer.style.display = 'none';
+            sidebarLoginLabel.innerText = 'Login / Signup';
         }
     }
 
-    updateProStatusUI();
+    // ── LOAD USER PROFILE ──
+    async function loadUserProfile() {
+        try {
+            const res = await fetch('/api/auth/me', {
+                headers: { 'Authorization': `Bearer ${getToken()}` }
+            });
 
-    if (proStatusBadge) {
-        proStatusBadge.addEventListener('click', () => {
-            window.location.href = 'premium.html';
-        });
+            if (!res.ok) {
+                // Token expired or invalid
+                localStorage.removeItem('cg_auth_token');
+                localStorage.removeItem('cg_user');
+                checkAuthState();
+                return;
+            }
+
+            const data = await res.json();
+            const user = data.user;
+            const stats = data.stats || {};
+
+            document.getElementById('profileUserName').innerText = user.name || 'Musician';
+            document.getElementById('profileUserEmail').innerText = user.email || '';
+            document.getElementById('userAvatarLetter').innerText = (user.name || user.email || 'U').charAt(0).toUpperCase();
+            
+            if (user.createdAt) {
+                const date = new Date(user.createdAt);
+                document.getElementById('profileJoinDate').innerText = `Member since ${date.toLocaleDateString()}`;
+            }
+
+            document.getElementById('statSavedSongs').innerText = stats.savedSongsCount || 0;
+            document.getElementById('statSavedSetlists').innerText = stats.savedSetlistsCount || 0;
+            document.getElementById('statRecentSearches').innerText = stats.searchHistoryCount || 0;
+
+            localStorage.setItem('cg_user', JSON.stringify(user));
+        } catch (err) {
+            console.error('Error fetching profile:', err);
+        }
     }
 
-    // ── AUTH TOGGLE SWITCHER ──
+    // ── LOAD SAVED SONGS ──
+    async function loadSavedSongs() {
+        try {
+            const res = await fetch('/api/saved-songs', {
+                headers: { 'Authorization': `Bearer ${getToken()}` }
+            });
+
+            if (!res.ok) return;
+
+            const data = await res.json();
+            savedSongsData = data.songs || [];
+            renderSavedSongs(savedSongsData);
+            document.getElementById('statSavedSongs').innerText = savedSongsData.length;
+        } catch (err) {
+            console.error('Error fetching saved songs:', err);
+        }
+    }
+
+    function renderSavedSongs(songs) {
+        const list = document.getElementById('savedSongsList');
+        const emptyMsg = document.getElementById('savedSongsEmptyMsg');
+
+        if (!songs || songs.length === 0) {
+            list.innerHTML = '';
+            emptyMsg.style.display = 'block';
+            return;
+        }
+
+        emptyMsg.style.display = 'none';
+        list.innerHTML = songs.map(song => {
+            const dateStr = song.created_at ? new Date(song.created_at).toLocaleDateString() : '';
+            const capoText = song.capo > 0 ? `Capo ${song.capo}` : 'No Capo';
+            const keyText = song.target_key || song.original_key || 'Standard';
+
+            return `
+                <div class="saved-song-card" data-id="${song.id}">
+                    <div class="saved-song-main">
+                        <div class="saved-song-title">${escapeHtml(song.title)}</div>
+                        <div class="saved-song-meta">
+                            <span class="saved-tag key-tag">Key: ${escapeHtml(keyText)}</span>
+                            <span class="saved-tag">${escapeHtml(capoText)}</span>
+                            ${song.bpm ? `<span class="saved-tag">${song.bpm} BPM</span>` : ''}
+                            <span class="saved-tag" style="font-size: 10px;">${escapeHtml(dateStr)}</span>
+                        </div>
+                    </div>
+                    <div class="saved-song-actions">
+                        <button class="action-icon-btn btn-primary" onclick="openSongInStage(${song.id})" title="Open in Convert / Stage View">
+                            🎸 Stage
+                        </button>
+                        <button class="action-icon-btn" onclick="openSongInRehearse(${song.id})" title="Take to Rehearsal Studio">
+                            ⚡ Rehearse
+                        </button>
+                        <button class="action-icon-btn btn-delete" onclick="deleteSong(${song.id})" title="Remove from Library">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Filter library search
+    document.getElementById('librarySearchInput').addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        if (!query) {
+            renderSavedSongs(savedSongsData);
+            return;
+        }
+        const filtered = savedSongsData.filter(s => 
+            (s.title && s.title.toLowerCase().includes(query)) ||
+            (s.original_key && s.original_key.toLowerCase().includes(query)) ||
+            (s.target_key && s.target_key.toLowerCase().includes(query))
+        );
+        renderSavedSongs(filtered);
+    });
+
+    // Open song in Stage View (Convert tab)
+    window.openSongInStage = function(id) {
+        const song = savedSongsData.find(s => s.id === id);
+        if (!song) return;
+
+        const stagePayload = {
+            title: song.title,
+            query: song.query || song.title,
+            key: song.original_key || 'C',
+            originalKey: song.original_key || 'C',
+            targetKey: song.target_key || 'Nashville',
+            capo: String(song.capo || '0'),
+            rawText: song.chart_text,
+            text: song.chart_text,
+            originalText: song.original_text || song.chart_text,
+            bpm: song.bpm ? String(song.bpm) : '',
+            timeSignature: song.time_signature || '',
+            format: 'docx',
+            source: 'search'
+        };
+
+        localStorage.setItem('cg_active_song', JSON.stringify(stagePayload));
+        window.location.href = 'index.html';
+    };
+
+    // Open song in Rehearsal Studio
+    window.openSongInRehearse = function(id) {
+        const song = savedSongsData.find(s => s.id === id);
+        if (!song) return;
+
+        const rehearsePayload = {
+            title: song.title,
+            originalKey: song.original_key || 'C',
+            keyText: song.target_key || song.original_key || 'C',
+            targetKey: song.target_key || 'Nashville',
+            capo: String(song.capo || '0'),
+            text: song.chart_text,
+            originalText: song.original_text || song.chart_text,
+            bpm: song.bpm ? String(song.bpm) : '120',
+            timeSignature: song.time_signature || '4',
+            voicing: song.voicing_mode || 'guitar'
+        };
+
+        localStorage.setItem('cg_rehearse_song', JSON.stringify(rehearsePayload));
+        window.location.href = 'rehearse.html';
+    };
+
+    // Delete song from library
+    window.deleteSong = async function(id) {
+        if (!confirm('Remove this chord chart from your profile library?')) return;
+
+        try {
+            const res = await fetch(`/api/saved-songs/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${getToken()}` }
+            });
+
+            if (!res.ok) {
+                showStatus('Failed to delete song.', 'error');
+                return;
+            }
+
+            savedSongsData = savedSongsData.filter(s => s.id !== id);
+            renderSavedSongs(savedSongsData);
+            document.getElementById('statSavedSongs').innerText = savedSongsData.length;
+            showStatus('Song removed from your library.', 'success');
+        } catch (e) {
+            showStatus('Error deleting song.', 'error');
+        }
+    };
+
+    // ── SEARCH HISTORY ──
+    async function loadSearchHistory() {
+        try {
+            const res = await fetch('/api/search-history', {
+                headers: { 'Authorization': `Bearer ${getToken()}` }
+            });
+
+            if (!res.ok) return;
+
+            const data = await res.json();
+            const history = data.history || [];
+            const container = document.getElementById('profileHistoryList');
+            document.getElementById('statRecentSearches').innerText = history.length;
+
+            if (history.length === 0) {
+                container.innerHTML = '<span style="color: var(--text-muted); font-size: 12px;">No search history recorded yet.</span>';
+                return;
+            }
+
+            container.innerHTML = history.map(item => `
+                <a href="index.html?q=${encodeURIComponent(item.query)}" class="saved-tag" style="text-decoration: none; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                    🔎 ${escapeHtml(item.query)}
+                </a>
+            `).join('');
+        } catch (e) {
+            console.error('Error fetching history:', e);
+        }
+    }
+
+    document.getElementById('clearHistoryBtn').addEventListener('click', async () => {
+        try {
+            await fetch('/api/search-history', {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${getToken()}` }
+            });
+            document.getElementById('profileHistoryList').innerHTML = '<span style="color: var(--text-muted); font-size: 12px;">Search history cleared.</span>';
+            document.getElementById('statRecentSearches').innerText = '0';
+            showStatus('Search history cleared.', 'success');
+        } catch (e) {
+            showStatus('Failed to clear history.', 'error');
+        }
+    });
+
+    // ── TAB SWITCHER (Sign In vs Sign Up) ──
     const signInTabBtn = document.getElementById('signInTabBtn');
     const signUpTabBtn = document.getElementById('signUpTabBtn');
     const signInForm = document.getElementById('signInForm');
@@ -265,59 +572,118 @@
         signInForm.style.display = 'none';
     });
 
-    // ── FORM SUBMISSIONS ──
-    const signInSubmitBtn = document.getElementById('signInSubmitBtn');
-    const signUpSubmitBtn = document.getElementById('signUpSubmitBtn');
+    // ── SUBMIT SIGN IN ──
+    document.getElementById('signInSubmitBtn').addEventListener('click', async () => {
+        const email = document.getElementById('signInEmail').value.trim();
+        const password = document.getElementById('signInPassword').value;
+        const btn = document.getElementById('signInSubmitBtn');
 
-    signInSubmitBtn.addEventListener('click', () => {
-        const email = document.getElementById('signInEmail').value;
-        if (!email) {
-            showStatus("Please enter your email address.", "error");
+        if (!email || !password) {
+            showStatus('Please provide both email and password.', 'error');
             return;
         }
-        signInSubmitBtn.innerHTML = '⏳ Accessing Account...';
-        signInSubmitBtn.disabled = true;
-        setTimeout(() => {
-            showStatus("🚀 Welcome back! Sync complete.", "success");
-            setTimeout(() => {
-                window.location.href = 'index.html';
-            }, 1200);
-        }, 1000);
-    });
 
-    signUpSubmitBtn.addEventListener('click', () => {
-        const email = document.getElementById('signUpEmail').value;
-        const name = document.getElementById('signUpName').value;
-        if (!email || !name) {
-            showStatus("Please fill in all the required fields.", "error");
-            return;
-        }
-        signUpSubmitBtn.innerHTML = '⏳ Creating Profile...';
-        signUpSubmitBtn.disabled = true;
-        setTimeout(() => {
-            showStatus("🎉 Account created successfully!", "success");
-            setTimeout(() => {
-                window.location.href = 'index.html';
-            }, 1200);
-        }, 1000);
-    });
+        btn.innerText = 'Signing In...';
+        btn.disabled = true;
 
-    // Page transition transitions on sidebar navigation
-    document.querySelectorAll('.sidebar-nav a.nav-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const targetUrl = btn.getAttribute('href');
-            if (targetUrl && targetUrl !== '#' && !btn.classList.contains('active')) {
-                e.preventDefault();
-                const panelLeft = document.querySelector('.panel-left');
-                const panelRight = document.querySelector('.panel-right');
-                if (panelLeft) panelLeft.classList.add('page-exit');
-                if (panelRight) panelRight.classList.add('page-exit');
-                setTimeout(() => {
-                    window.location.href = targetUrl;
-                }, 200);
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                showStatus(data.error || 'Failed to sign in.', 'error');
+                btn.innerText = 'Sign In';
+                btn.disabled = false;
+                return;
             }
-        });
+
+            localStorage.setItem('cg_auth_token', data.token);
+            localStorage.setItem('cg_user', JSON.stringify(data.user));
+            showStatus('🎉 Welcome back, ' + (data.user.name || 'Musician') + '!', 'success');
+
+            btn.innerText = 'Sign In';
+            btn.disabled = false;
+            checkAuthState();
+        } catch (err) {
+            showStatus('Network error while signing in.', 'error');
+            btn.innerText = 'Sign In';
+            btn.disabled = false;
+        }
     });
+
+    // ── SUBMIT SIGN UP ──
+    document.getElementById('signUpSubmitBtn').addEventListener('click', async () => {
+        const name = document.getElementById('signUpName').value.trim();
+        const email = document.getElementById('signUpEmail').value.trim();
+        const password = document.getElementById('signUpPassword').value;
+        const btn = document.getElementById('signUpSubmitBtn');
+
+        if (!name || !email || !password) {
+            showStatus('Please fill out all fields.', 'error');
+            return;
+        }
+        if (password.length < 6) {
+            showStatus('Password must be at least 6 characters long.', 'error');
+            return;
+        }
+
+        btn.innerText = 'Creating Profile...';
+        btn.disabled = true;
+
+        try {
+            const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, password })
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                showStatus(data.error || 'Failed to create account.', 'error');
+                btn.innerText = 'Create Free Account';
+                btn.disabled = false;
+                return;
+            }
+
+            localStorage.setItem('cg_auth_token', data.token);
+            localStorage.setItem('cg_user', JSON.stringify(data.user));
+            showStatus('🎸 Account created! Welcome to Chord Genius.', 'success');
+
+            btn.innerText = 'Create Free Account';
+            btn.disabled = false;
+            checkAuthState();
+        } catch (err) {
+            showStatus('Network error while creating account.', 'error');
+            btn.innerText = 'Create Free Account';
+            btn.disabled = false;
+        }
+    });
+
+    // ── LOGOUT ──
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+        localStorage.removeItem('cg_auth_token');
+        localStorage.removeItem('cg_user');
+        showStatus('Logged out successfully.', 'success');
+        checkAuthState();
+    });
+
+    // Helper HTML escape
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    // Initialize state
+    checkAuthState();
 </script>
 </body>
 </html>

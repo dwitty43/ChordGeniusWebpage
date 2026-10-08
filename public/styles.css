@@ -2482,4 +2482,239 @@
                 flex-direction: column !important;
             }
         }
-    
+
+        /* ── USER PROFILE & SAVED SONGS STYLES ── */
+        .profile-container {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            width: 100%;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .profile-header-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .profile-user-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .profile-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+            color: #080a10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 800;
+            box-shadow: 0 4px 14px var(--primary-glow);
+        }
+
+        .profile-name {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--text-main);
+            margin: 0 0 4px 0;
+            font-family: 'Playfair Display', Georgia, serif;
+        }
+
+        .profile-email {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .profile-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 12px;
+            width: 100%;
+        }
+
+        .profile-stat-box {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .profile-stat-box:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .profile-stat-val {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--primary);
+            line-height: 1;
+            margin-bottom: 6px;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .profile-stat-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        .library-search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .library-search-input {
+            flex: 1;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--input-bg);
+            color: var(--text-main);
+            font-size: 13px;
+            outline: none;
+        }
+
+        .library-search-input:focus {
+            border-color: var(--primary);
+        }
+
+        .saved-songs-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 550px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .saved-song-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .saved-song-card:hover {
+            border-color: rgba(245, 158, 11, 0.4);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .saved-song-main {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .saved-song-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .saved-song-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .saved-tag {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 6px;
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        .saved-tag.key-tag {
+            background: var(--primary-glow);
+            border-color: rgba(245, 158, 11, 0.3);
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        .saved-song-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        .action-icon-btn {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: var(--input-bg);
+            color: var(--text-muted);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+
+        .action-icon-btn:hover {
+            color: var(--text-main);
+            border-color: var(--primary);
+        }
+
+        .action-icon-btn.btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+            color: #080a10;
+            border: none;
+        }
+
+        .action-icon-btn.btn-delete:hover {
+            color: #ef4444;
+            border-color: rgba(239, 68, 68, 0.4);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .free-status-capsule {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.25);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }

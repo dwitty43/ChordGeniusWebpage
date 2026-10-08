@@ -24,6 +24,34 @@ const {
     selectBestKey
 } = require('./engine'); 
 
+const {
+    initDb,
+    createUser,
+    findUserByEmail,
+    findUserById,
+    createSavedSong,
+    getSavedSongsByUserId,
+    getSavedSongById,
+    deleteSavedSong,
+    updateSavedSong,
+    saveSearchHistory,
+    getSearchHistoryByUserId,
+    clearSearchHistory,
+    createSavedSetlist,
+    getSavedSetlistsByUserId,
+    deleteSavedSetlist,
+    getUserStats,
+    getActiveDriver
+} = require('./db');
+
+const {
+    hashPassword,
+    comparePassword,
+    generateToken,
+    requireAuth,
+    optionalAuth
+} = require('./auth'); 
+
 // --- SPOTIFY WEB API INTEGRATION ---
 let spotifyAccessToken = null;
 let spotifyTokenExpiry = 0;
@@ -340,8 +368,11 @@ app.get('/api/transition-remedies', (req, res) => {
 });
 
 // --- ROUTE 3: RAW TEXT GENERATOR FOR EDITOR ---
-app.get('/api/preview', async (req, res) => {
+app.get('/api/preview', optionalAuth, async (req, res) => {
     let { q: query, key: songKey, targetKey, simplify, capo: capoParam } = req.query;
+    if (!query) {
+        return res.status(400).json({ error: "Missing required query parameter 'q'." });
+    }
     if (songKey === 'nashville') songKey = '';
     try {
         let tabUrl;
@@ -378,7 +409,21 @@ app.get('/api/preview', async (req, res) => {
         if (typeof query === 'string' && /(tabs\.ultimate-guitar\.com|e-chords\.com)/i.test(query)) {
             title = tabData.songTitle || query;
         }
-        title = title.replace(/_/g, ' ').trim();
+        title = (title || 'Untitled Song').replace(/_/g, ' ').trim();
+
+        // If authenticated user, auto-record this search/scrape to user's search history
+        if (req.user) {
+            try {
+                await saveSearchHistory({
+                    userId: req.user.id,
+                    query: title,
+                    key: finalKey,
+                    capo: capo
+                });
+            } catch (histErr) {
+                console.error('[Search History Auto-save Error]', histErr.message);
+            }
+        }
 
         res.json({ 
             title: title, 
@@ -711,7 +756,294 @@ app.post('/api/spotify/playlist-import', async (req, res) => {
     }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🎸 Nashville Engine API is running on port ${PORT}`);
+// ===========================================================================
+// USER AUTHENTICATION & PROFILES APIS
+// ===========================================================================
+
+app.post('/api/auth/register', async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
+        if (!name || !email || !password) {
+            return res.status(400).json({ error: 'Name, email, and password are required.' });
+        }
+        if (password.length < 6) {
+            return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
+        }
+        const existing = await findUserByEmail(email);
+        if (existing) {
+            return res.status(409).json({ error: 'An account with this email already exists.' });
+        }
+
+        const passwordHash = await hashPassword(password);
+        const user = await createUser({ name: name.trim(), email, passwordHash });
+        const token = generateToken(user);
+
+        res.status(201).json({
+            message: 'Account created successfully!',
+            token,
+            user: { id: user.id, name: user.name, email: user.email, createdAt: user.created_at }
+        });
+    } catch (err) {
+        console.error('[Auth Register Error]', err);
+        res.status(500).json({ error: 'Internal server error while creating account.' });
+    }
 });
+
+app.post('/api/auth/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        if (!email || !password) {
+            return res.status(400).json({ error: 'Email and password are required.' });
+        }
+        const user = await findUserByEmail(email);
+        if (!user) {
+            return res.status(401).json({ error: 'Invalid email or password.' });
+        }
+        const isMatch = await comparePassword(password, user.password_hash);
+        if (!isMatch) {
+            return res.status(401).json({ error: 'Invalid email or password.' });
+        }
+
+        const token = generateToken(user);
+        res.json({
+            message: 'Signed in successfully!',
+            token,
+            user: { id: user.id, name: user.name, email: user.email, createdAt: user.created_at }
+        });
+    } catch (err) {
+        console.error('[Auth Login Error]', err);
+        res.status(500).json({ error: 'Internal server error while signing in.' });
+    }
+});
+
+app.get('/api/auth/me', requireAuth, async (req, res) => {
+    try {
+        const user = await findUserById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found.' });
+        }
+        const stats = await getUserStats(user.id);
+        res.json({
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                createdAt: user.created_at
+            },
+            stats
+        });
+    } catch (err) {
+        console.error('[Auth Me Error]', err);
+        res.status(500).json({ error: 'Failed to retrieve profile data.' });
+    }
+});
+
+// ===========================================================================
+// SAVED SONGS & SCRAPES APIS
+// ===========================================================================
+
+app.get('/api/saved-songs', requireAuth, async (req, res) => {
+    try {
+        const songs = await getSavedSongsByUserId(req.user.id);
+        res.json({ songs });
+    } catch (err) {
+        console.error('[Get Saved Songs Error]', err);
+        res.status(500).json({ error: 'Failed to retrieve saved songs.' });
+    }
+});
+
+app.post('/api/saved-songs', requireAuth, async (req, res) => {
+    try {
+        const {
+            title,
+            artist,
+            query,
+            sourceUrl,
+            originalKey,
+            targetKey,
+            capo,
+            bpm,
+            timeSignature,
+            chartText,
+            originalText,
+            voicingMode,
+            notes
+        } = req.body;
+
+        if (!title || !chartText) {
+            return res.status(400).json({ error: 'Song title and chart text are required.' });
+        }
+
+        const song = await createSavedSong({
+            userId: req.user.id,
+            title: title.trim(),
+            artist: (artist || '').trim(),
+            query: (query || '').trim(),
+            sourceUrl: (sourceUrl || '').trim(),
+            originalKey: (originalKey || '').trim(),
+            targetKey: (targetKey || '').trim(),
+            capo: parseInt(capo, 10) || 0,
+            bpm: bpm ? parseInt(bpm, 10) : null,
+            timeSignature: (timeSignature || '').trim(),
+            chartText,
+            originalText: originalText || '',
+            voicingMode: voicingMode || 'guitar',
+            notes: (notes || '').trim()
+        });
+
+        res.status(201).json({ message: 'Song saved to your profile library!', song });
+    } catch (err) {
+        console.error('[Save Song Error]', err);
+        res.status(500).json({ error: 'Failed to save song to library.' });
+    }
+});
+
+app.get('/api/saved-songs/:id', requireAuth, async (req, res) => {
+    try {
+        const songId = parseInt(req.params.id, 10);
+        const song = await getSavedSongById(songId, req.user.id);
+        if (!song) {
+            return res.status(404).json({ error: 'Saved song not found.' });
+        }
+        res.json({ song });
+    } catch (err) {
+        console.error('[Get Saved Song Error]', err);
+        res.status(500).json({ error: 'Failed to retrieve song.' });
+    }
+});
+
+app.put('/api/saved-songs/:id', requireAuth, async (req, res) => {
+    try {
+        const songId = parseInt(req.params.id, 10);
+        const { title, notes, chartText, targetKey, capo } = req.body;
+        const updated = await updateSavedSong(songId, req.user.id, {
+            title,
+            notes,
+            chartText,
+            targetKey,
+            capo: capo !== undefined ? parseInt(capo, 10) : undefined
+        });
+        if (!updated) {
+            return res.status(404).json({ error: 'Song not found or update failed.' });
+        }
+        res.json({ message: 'Saved song updated!', song: updated });
+    } catch (err) {
+        console.error('[Update Saved Song Error]', err);
+        res.status(500).json({ error: 'Failed to update song.' });
+    }
+});
+
+app.delete('/api/saved-songs/:id', requireAuth, async (req, res) => {
+    try {
+        const songId = parseInt(req.params.id, 10);
+        const success = await deleteSavedSong(songId, req.user.id);
+        if (!success) {
+            return res.status(404).json({ error: 'Song not found or already deleted.' });
+        }
+        res.json({ message: 'Song removed from your library.' });
+    } catch (err) {
+        console.error('[Delete Saved Song Error]', err);
+        res.status(500).json({ error: 'Failed to delete song.' });
+    }
+});
+
+// ===========================================================================
+// SAVED SETLISTS APIS
+// ===========================================================================
+
+app.get('/api/saved-setlists', requireAuth, async (req, res) => {
+    try {
+        const setlists = await getSavedSetlistsByUserId(req.user.id);
+        res.json({ setlists });
+    } catch (err) {
+        console.error('[Get Saved Setlists Error]', err);
+        res.status(500).json({ error: 'Failed to retrieve setlists.' });
+    }
+});
+
+app.post('/api/saved-setlists', requireAuth, async (req, res) => {
+    try {
+        const { title, songs } = req.body;
+        if (!songs || !Array.isArray(songs)) {
+            return res.status(400).json({ error: 'Songs array is required.' });
+        }
+        const setlist = await createSavedSetlist({
+            userId: req.user.id,
+            title: (title || 'Setlist Binder').trim(),
+            songs
+        });
+        res.status(201).json({ message: 'Setlist saved to your profile!', setlist });
+    } catch (err) {
+        console.error('[Save Setlist Error]', err);
+        res.status(500).json({ error: 'Failed to save setlist.' });
+    }
+});
+
+app.delete('/api/saved-setlists/:id', requireAuth, async (req, res) => {
+    try {
+        const setlistId = parseInt(req.params.id, 10);
+        const success = await deleteSavedSetlist(setlistId, req.user.id);
+        if (!success) {
+            return res.status(404).json({ error: 'Setlist not found.' });
+        }
+        res.json({ message: 'Setlist deleted.' });
+    } catch (err) {
+        console.error('[Delete Setlist Error]', err);
+        res.status(500).json({ error: 'Failed to delete setlist.' });
+    }
+});
+
+// ===========================================================================
+// SEARCH & SCRAPE HISTORY APIS
+// ===========================================================================
+
+app.get('/api/search-history', requireAuth, async (req, res) => {
+    try {
+        const history = await getSearchHistoryByUserId(req.user.id, 25);
+        res.json({ history });
+    } catch (err) {
+        console.error('[Get History Error]', err);
+        res.status(500).json({ error: 'Failed to retrieve search history.' });
+    }
+});
+
+app.post('/api/search-history', requireAuth, async (req, res) => {
+    try {
+        const { query, key, capo } = req.body;
+        if (!query) return res.status(400).json({ error: 'Query is required.' });
+        const item = await saveSearchHistory({
+            userId: req.user.id,
+            query: query.trim(),
+            key: key || '',
+            capo: parseInt(capo, 10) || 0
+        });
+        res.status(201).json({ message: 'Search history saved.', item });
+    } catch (err) {
+        console.error('[Save History Error]', err);
+        res.status(500).json({ error: 'Failed to save search history.' });
+    }
+});
+
+app.delete('/api/search-history', requireAuth, async (req, res) => {
+    try {
+        await clearSearchHistory(req.user.id);
+        res.json({ message: 'Search history cleared.' });
+    } catch (err) {
+        console.error('[Clear History Error]', err);
+        res.status(500).json({ error: 'Failed to clear search history.' });
+    }
+});
+
+const PORT = process.env.PORT || 3000;
+async function startServer() {
+    try {
+        await initDb();
+    } catch (dbErr) {
+        console.error('[Startup Warning] Database initialization encountered an error:', dbErr.message);
+    }
+    app.listen(PORT, '0.0.0.0', () => {
+        console.log(`🎸 Chord Genius Studio API, Database & Auth running on port ${PORT}`);
+    });
+}
+
+startServer();
